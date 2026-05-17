@@ -203,7 +203,7 @@ class JsonDB {
 /**
  * Convenience function to get a table instance
  */
-function json_db($table) {
+function db($table) {
     static $instances = [];
     if (!isset($instances[$table])) {
         $instances[$table] = new JsonDB($table);

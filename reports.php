@@ -34,7 +34,7 @@ try {
     // Fetch all order items for these orders
     $orderIds = array_map(fn($o) => $o['id'], $orders);
     if (!empty($orderIds)) {
-        $items = db('order_items')->findMany([
+        $items = db('orderItems')->findMany([
             'where' => ['orderId' => ['in' => $orderIds], 'isDeleted' => false]
         ]);
     } else {

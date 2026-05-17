@@ -19,7 +19,7 @@ try {
     $type = $_GET['type'] ?? 'all';
 
     if ($type === 'categories') {
-        $categories = db('menu_categories')->findMany(['orderBy' => ['name' => 'asc']]);
+        $categories = db('menuCategories')->findMany(['orderBy' => ['name' => 'asc']]);
         sendJson($categories);
     }
 
@@ -29,13 +29,13 @@ try {
         if ($categoryId) {
             $where['categoryId'] = $categoryId;
         }
-        $items = db('menu_items')->findMany(['where' => $where, 'orderBy' => ['name' => 'asc']]);
+        $items = db('menuItems')->findMany(['where' => $where, 'orderBy' => ['name' => 'asc']]);
         sendJson($items);
     }
 
     // Default: return both
-    $categories = db('menu_categories')->findMany(['orderBy' => ['name' => 'asc']]);
-    $items = db('menu_items')->findMany(['where' => ['isDeleted' => false], 'orderBy' => ['name' => 'asc']]);
+    $categories = db('menuCategories')->findMany(['orderBy' => ['name' => 'asc']]);
+    $items = db('menuItems')->findMany(['where' => ['isDeleted' => false], 'orderBy' => ['name' => 'asc']]);
     
     sendJson([
         'categories' => $categories,

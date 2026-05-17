@@ -2,23 +2,21 @@
 /**
  * System Audit & Verification
  */
-require_once 'includes/db_config.php';
+require_once 'includes/JsonDB.php';
 
 echo "--- Abe Hotel V2 System Audit ---\n";
 
-// 1. MySQL Connectivity
+// 1. Data Integrity Audit (JSON)
 try {
-    $db = getDB();
-    echo "[PASS] MySQL Connection Successful.\n";
+    echo "[INFO] Verifying JSON Data Tables...\n";
     
-    // Check tables
-    $tables = ['users', 'rooms', 'reception_requests', 'orders', 'stocks'];
+    $tables = ['users', 'rooms', 'receptionRequests', 'orders', 'orderItems', 'menuCategories', 'menuItems', 'stocks'];
     foreach ($tables as $t) {
-        $db->query("SELECT 1 FROM $t LIMIT 1");
-        echo "[PASS] Table '$t' exists.\n";
+        $count = db($t)->count();
+        echo "[PASS] Table '$t' active ($count records).\n";
     }
 } catch (Exception $e) {
-    echo "[FAIL] MySQL Error: " . $e->getMessage() . "\n";
+    echo "[FAIL] Data Error: " . $e->getMessage() . "\n";
 }
 
 // 2. File Permissions

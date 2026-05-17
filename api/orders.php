@@ -63,9 +63,9 @@ try {
             // Save items & Handle Stock Deduction
             foreach ($input['items'] as $item) {
                 // Fetch menu item details
-                $menuItem = db('menu_items')->findUnique(['where' => ['id' => $item['menuItemId']]]);
+                $menuItem = db('menuItems')->findUnique(['where' => ['id' => $item['menuItemId']]]);
                 
-                db('order_items')->create(['data' => [
+                db('orderItems')->create(['data' => [
                     'id' => bin2hex(random_bytes(16)),
                     'orderId' => $orderData['id'],
                     'menuItemId' => $item['menuItemId'],
@@ -108,7 +108,7 @@ try {
     ]);
 
     // Simple population for items (assuming orderItems table)
-    $allOrderItems = db('order_items')->findMany(['where' => ['isDeleted' => false]]);
+    $allOrderItems = db('orderItems')->findMany(['where' => ['isDeleted' => false]]);
     $itemsMap = [];
     foreach ($allOrderItems as $item) {
         $itemsMap[$item['orderId']][] = $item;

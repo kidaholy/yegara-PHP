@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         if (!preg_match('/^[0-9]{16}$/', $faydaId)) {
             $message = "Error: Fayda ID must be exactly 16 digits.";
         } else {
-            db('reception_requests')->create(['data' => [
+            db('receptionRequests')->create(['data' => [
                 'id' => bin2hex(random_bytes(16)),
                 'guestName' => $_POST['guestName'],
                 'faydaId' => $faydaId,
@@ -43,9 +43,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'extend') {
         $stayId = $_POST['stayId'];
         $extraDays = (int)$_POST['extraDays'];
-        $stay = db('reception_requests')->findUnique(['where' => ['id' => $stayId]]);
+        $stay = db('receptionRequests')->findUnique(['where' => ['id' => $stayId]]);
         if ($stay) {
-            db('reception_requests')->update([
+            db('receptionRequests')->update([
                 'where' => ['id' => $stayId],
                 'data' => ['stayDays' => $stay['stayDays'] + $extraDays]
             ]);
@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
     if ($_POST['action'] === 'checkout') {
         $stayId = $_POST['stayId'];
-        $stay = db('reception_requests')->update([
+        $stay = db('receptionRequests')->update([
             'where' => ['id' => $stayId],
             'data' => ['status' => 'checked-out']
         ]);
@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 }
 
 try {
-    $activeStays = db('reception_requests')->findMany(['where' => ['status' => 'staying', 'isDeleted' => false]]);
+    $activeStays = db('receptionRequests')->findMany(['where' => ['status' => 'staying', 'isDeleted' => false]]);
     $rooms = db('rooms')->findMany(['orderBy' => ['roomNumber' => 'asc']]);
 } catch (Exception $e) {
     $activeStays = []; $rooms = [];
