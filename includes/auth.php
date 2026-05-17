@@ -6,11 +6,13 @@
 require_once 'config.php';
 require_once 'DB.php';
 
-session_start([
-    'cookie_lifetime' => SESSION_LIFETIME,
-    'cookie_httponly' => true,
-    'use_strict_mode' => true,
-]);
+if (session_status() === PHP_SESSION_NONE) {
+    session_start([
+        'cookie_lifetime' => SESSION_LIFETIME,
+        'cookie_httponly' => true,
+        'use_strict_mode' => true,
+    ]);
+}
 
 /**
  * Check if a user is logged in

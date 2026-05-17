@@ -215,7 +215,8 @@ function renderHeader($title = "Management System") {
         <?php endif; ?>
 
         <!-- Main Content -->
-        <main class="flex-1 flex flex-col h-screen overflow-hidden bg-[#030712]">
+        <main class="flex-1 flex flex-col min-h-screen overflow-hidden bg-[#0a0c0b] relative">
+            <div class="absolute inset-0 gold-mesh pointer-events-none"></div>
             <!-- Topbar -->
             <?php if ($user): ?>
             <header class="h-14 border-b border-white/5 bg-[#030712]/80 backdrop-blur-md flex items-center justify-between px-6 shrink-0 z-40">

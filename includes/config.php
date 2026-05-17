@@ -12,6 +12,10 @@ define('API_DIR', BASE_DIR . '/api');
 
 // Authentication settings
 define('SESSION_LIFETIME', 7 * 24 * 60 * 60); // 7 days in seconds
+
+// Production Settings (Disable display errors to keep UI clean)
+ini_set('display_errors', 0);
+error_reporting(E_ALL & ~E_NOTICE);
 define('JWT_SECRET', 'your-secret-key-change-this-in-production'); // Kept for consistency if needed
 
 // Timezone (matching the existing app)
