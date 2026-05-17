@@ -1,0 +1,13 @@
+# .htaccess for Prime Addis PHP
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Security: Protect data folder
+    RewriteRule ^data/.*$ - [F,L]
+    
+    # Optional: Clean URLs (e.g. /admin instead of /admin.php)
+    # RewriteCond %{REQUEST_FILENAME} !-f
+    # RewriteCond %{REQUEST_FILENAME} !-d
+    # RewriteRule ^([^\.]+)$ $1.php [NC,L]
+</IfModule>
