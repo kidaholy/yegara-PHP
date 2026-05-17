@@ -1,93 +1,82 @@
 <?php
 /**
- * Luxury Welcome Landing Page for Abe Hotel & Spa
+ * High-Fidelity Luxury Landing Page for Abe Hotel
  */
 require_once 'includes/layout.php';
 
 $user = getCurrentUser();
-$title = "Welcome";
+$title = "Abe Hotel - Management System";
 
 renderHeader($title);
 ?>
 
-<div class="h-[calc(100vh-140px)] flex flex-col items-center justify-center p-4 relative overflow-hidden">
-    <!-- Hero Section -->
-    <div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center z-10">
-        <div class="space-y-8 text-left">
-            <div class="inline-flex items-center gap-3 px-4 py-2 rounded-2xl bg-gold/10 border border-gold/20 text-gold text-[10px] font-black uppercase tracking-widest animate-in slide-in-from-left duration-700">
-                <i data-lucide="sparkles" class="w-4 h-4"></i>
-                Luxury Hospitality Experience
-            </div>
-            
-            <div class="space-y-4">
-                <h1 class="text-6xl lg:text-8xl font-black font-playfair text-white tracking-tighter leading-none animate-in slide-in-from-left duration-1000 delay-100">
-                    Prime <span class="text-gold">Addis</span>
-                </h1>
-                <p class="text-lg text-muted-foreground font-medium max-w-lg leading-relaxed animate-in slide-in-from-left duration-1000 delay-200">
-                    A masterpiece of modern hospitality engineering. Seamlessly managing stays, culinary excellence, and executive intelligence.
-                </p>
-            </div>
-
-            <div class="flex flex-wrap gap-4 pt-4 animate-in slide-in-from-left duration-1000 delay-300">
-                <?php if ($user): ?>
-                    <a href="admin.php" class="px-8 py-4 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-[1.05] active:scale-[0.95] transition-all shadow-2xl flex items-center gap-3">
-                        Enter System Intelligence
-                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                    </a>
-                    <a href="logout.php" class="px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all">
-                        Switch Account
-                    </a>
-                <?php else: ?>
-                    <a href="login.php" class="px-8 py-4 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-[1.05] active:scale-[0.95] transition-all shadow-2xl flex items-center gap-3">
-                        Secure Authentication
-                        <i data-lucide="lock" class="w-4 h-4"></i>
-                    </a>
-                    <button class="px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all">
-                        Guest Portal
-                    </button>
-                <?php endif; ?>
-            </div>
-        </div>
-
-        <!-- Visual Bento -->
-        <div class="hidden lg:grid grid-cols-2 gap-4 animate-in zoom-in duration-1000 delay-500">
-            <div class="glass p-8 rounded-[3rem] border border-white/5 aspect-square flex flex-col justify-end translate-y-8">
-                <div class="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500 mb-6">
-                    <i data-lucide="key-round" class="w-6 h-6"></i>
-                </div>
-                <h3 class="font-bold text-white text-xl">Reception</h3>
-                <p class="text-xs text-muted-foreground mt-2">ID Vault & Stay Control</p>
-            </div>
-            <div class="glass p-8 rounded-[3rem] border border-white/5 aspect-square flex flex-col justify-end">
-                <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 mb-6">
-                    <i data-lucide="utensils" class="w-6 h-6"></i>
-                </div>
-                <h3 class="font-bold text-white text-xl">Kitchen</h3>
-                <p class="text-xs text-muted-foreground mt-2">Active KDS Service</p>
-            </div>
-            <div class="glass p-8 rounded-[3rem] border border-white/5 aspect-square flex flex-col justify-end translate-y-8">
-                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 mb-6">
-                    <i data-lucide="bar-chart-3" class="w-6 h-6"></i>
-                </div>
-                <h3 class="font-bold text-white text-xl">Insights</h3>
-                <p class="text-xs text-muted-foreground mt-2">Financial Intelligence</p>
-            </div>
-            <div class="glass p-8 rounded-[3rem] border border-white/5 aspect-square flex flex-col justify-end">
-                <div class="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-500 mb-6">
-                    <i data-lucide="beer" class="w-6 h-6"></i>
-                </div>
-                <h3 class="font-bold text-white text-xl">Bar</h3>
-                <p class="text-xs text-muted-foreground mt-2">Kiosk Pours</p>
-            </div>
-        </div>
+<div class="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-[#0a0a0a]">
+    <!-- Background Image with Overlay -->
+    <div class="absolute inset-0 z-0">
+        <img src="assets/welcome_bg.png" alt="Abe Hotel" class="w-full h-full object-cover opacity-60">
+        <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80"></div>
     </div>
 
-    <!-- Background Decoration -->
-    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gold/5 rounded-full blur-[120px] pointer-events-none"></div>
-    <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.4em] text-white/20">
-        <span class="w-12 h-[1px] bg-white/10"></span>
-        Prime Addis V2 · Management Edition
-        <span class="w-12 h-[1px] bg-white/10"></span>
+    <!-- Header / Navigation -->
+    <header class="absolute top-0 w-full px-12 py-10 flex justify-between items-center z-50">
+        <div class="flex items-center gap-4">
+            <!-- Circular Logo -->
+            <div class="w-14 h-14 rounded-full border-2 border-[#c5a059] flex flex-col items-center justify-center p-1 bg-black/40 backdrop-blur-sm shadow-xl">
+                <span class="text-[8px] font-black tracking-widest text-[#c5a059] leading-none mb-0.5">ABE</span>
+                <span class="text-[6px] font-bold tracking-[0.2em] text-[#c5a059] leading-none">HOTEL</span>
+            </div>
+            <div class="hidden md:block">
+                <h2 class="text-[#c5a059] font-black text-xl italic tracking-tight leading-none mb-1">ABE HOTEL</h2>
+                <p class="text-[8px] text-[#c5a059]/60 font-bold uppercase tracking-widest">ምርጥ አገልግሎት ለመስጠት</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-8">
+            <button class="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white/60 hover:bg-white/20 transition-all">
+                <i data-lucide="languages" class="w-5 h-5"></i>
+            </button>
+            <a href="login.php" class="px-10 py-3 border border-[#c5a059] text-[#c5a059] text-xs font-black uppercase tracking-[0.2em] rounded-sm hover:bg-[#c5a059] hover:text-black transition-all shadow-lg backdrop-blur-sm">
+                Login
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Hero Content -->
+    <main class="relative z-10 flex flex-col items-center text-center px-4 max-w-4xl animate-in fade-in slide-in-from-bottom duration-1000">
+        <div class="flex items-center gap-8 mb-4">
+            <span class="w-16 h-[1px] bg-[#c5a059]/40 mt-1"></span>
+            <span class="font-light italic text-[#c5a059] font-['Cormorant_Garamond'] text-2xl tracking-wide">Welcome to</span>
+            <span class="w-16 h-[1px] bg-[#c5a059]/40 mt-1"></span>
+        </div>
+
+        <h1 class="font-['Cormorant_Garamond'] text-[160px] leading-none text-[#c5a059] italic font-semibold mb-2 drop-shadow-2xl">
+            Abe
+        </h1>
+        
+        <h2 class="text-3xl font-black uppercase tracking-[0.6em] text-[#c5a059] mb-12 drop-shadow-lg scale-x-110">
+            Hotel.
+        </h2>
+
+        <div class="flex items-center gap-12 mb-16 px-4">
+            <span class="w-full h-[1px] bg-white/10"></span>
+            <p class="whitespace-nowrap text-xs font-bold tracking-[0.4em] text-white/60 uppercase">
+                Refined Accommodation and Authentic Dining.
+            </p>
+            <span class="w-full h-[1px] bg-white/10"></span>
+        </div>
+
+        <!-- Primary Call to Action -->
+        <a href="login.php" class="group relative px-20 py-5 bg-gradient-to-r from-[#c5a059] via-[#d4af37] to-[#c5a059] text-black text-xs font-black uppercase tracking-[0.3em] overflow-hidden rounded-md shadow-[0_20px_50px_rgba(197,160,89,0.3)] transition-all hover:scale-105 active:scale-95">
+            <span class="relative z-10">Rooms</span>
+            <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity"></div>
+        </a>
+    </main>
+
+    <!-- Bottom Ornament -->
+    <div class="absolute bottom-12 flex items-center gap-4 text-[10px] font-bold text-white/20 tracking-[0.5em] uppercase">
+        <span class="w-10 h-[1px] bg-white/5"></span>
+        Experience the Sublime
+        <span class="w-10 h-[1px] bg-white/5"></span>
     </div>
 </div>
 
