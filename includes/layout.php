@@ -20,9 +20,13 @@ function renderHeader($title = "Management System") {
         <!-- Tailwind CSS CDN -->
         <script src="https://cdn.tailwindcss.com"></script>
         <!-- Google Fonts: Inter, Playfair Display, and JetBrains Mono -->
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+        <!-- Geist Mono via CDN fallback -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist-mono@1.2.0/dist/index.css">
         <!-- Lucide Icons -->
         <script src="https://unpkg.com/lucide@latest"></script>
+        <!-- Chart.js -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <style>
             :root {
                 --background: 144 8% 6%; /* #0f1110 */

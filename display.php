@@ -15,7 +15,7 @@ try {
             'isDeleted' => false,
             'createdAt' => ['gte' => date('Y-m-d 00:00:00')]
         ],
-        'orderBy' => ['updatedAt' => 'desc']
+        'orderBy' => ['createdAt' => 'desc']
     ]);
 
     $preparing = array_filter($orders, fn($o) => $o['status'] === 'preparing');
@@ -32,7 +32,8 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order Status - Prime Addis</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist-mono@1.2.0/dist/index.css">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body {
@@ -42,7 +43,7 @@ try {
             overflow: hidden;
         }
         .font-playfair { font-family: 'Playfair Display', serif; }
-        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .font-mono { font-family: 'Geist Mono', monospace; }
         
         .grid-cols-display {
             display: grid;

@@ -28,9 +28,15 @@ renderHeader($title);
                 <button class="px-5 py-2 rounded-lg text-xs font-bold bg-white text-slate-950 shadow-lg">Newest</button>
                 <button class="px-5 py-2 rounded-lg text-xs font-bold text-muted-foreground hover:text-white transition-colors">By Priority</button>
             </div>
-            <button onclick="refreshOrders()" class="bg-white/5 border border-white/10 text-white p-2.5 rounded-xl hover:bg-white/10 transition-all font-bold group">
-                <i data-lucide="rotate-cw" class="w-4 h-4 group-active:rotate-180 transition-transform"></i>
-            </button>
+            <div class="flex items-center gap-2">
+                <button onclick="toggleKiosk()" id="kiosk-btn" class="bg-white/5 border border-white/10 text-white px-4 py-2.5 rounded-xl hover:bg-white/10 transition-all font-bold flex items-center gap-2">
+                    <i data-lucide="maximize" class="w-4 h-4"></i>
+                    <span class="text-[10px] uppercase tracking-widest">Kiosk Mode</span>
+                </button>
+                <button onclick="refreshOrders()" class="bg-white/5 border border-white/10 text-white p-2.5 rounded-xl hover:bg-white/10 transition-all font-bold group">
+                    <i data-lucide="rotate-cw" class="w-4 h-4 group-active:rotate-180 transition-transform"></i>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -158,6 +164,38 @@ renderHeader($title);
     }, 1000);
 
     refreshOrders();
+    function toggleKiosk() {
+        const isKiosk = document.body.classList.toggle('kiosk-active');
+        const btn = document.getElementById('kiosk-btn');
+        const sidebar = document.querySelector('aside');
+        const topNav = document.querySelector('nav');
+        
+        if (isKiosk) {
+            if (sidebar) sidebar.style.display = 'none';
+            if (topNav) topNav.style.display = 'none';
+            document.querySelector('.main-content').style.marginLeft = '0';
+            btn.innerHTML = '<i data-lucide="minimize" class="w-4 h-4"></i> <span class="text-[10px] uppercase tracking-widest">Exit Kiosk</span>';
+        } else {
+            if (sidebar) sidebar.style.display = 'block';
+            if (topNav) topNav.style.display = 'flex';
+            document.querySelector('.main-content').style.marginLeft = '';
+            btn.innerHTML = '<i data-lucide="maximize" class="w-4 h-4"></i> <span class="text-[10px] uppercase tracking-widest">Kiosk Mode</span>';
+        }
+        lucide.createIcons();
+    }
 </script>
+
+<style>
+    .kiosk-active .max-w-\[1600px\] {
+        max-width: 100% !important;
+        padding: 2rem !important;
+    }
+    .kiosk-active #orders-grid {
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)) !important;
+    }
+    .kiosk-active .glass {
+        border-width: 2px !important;
+    }
+</style>
 
 <?php renderFooter(); ?>

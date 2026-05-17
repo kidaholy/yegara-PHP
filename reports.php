@@ -33,9 +33,13 @@ try {
     
     // Fetch all order items for these orders
     $orderIds = array_map(fn($o) => $o['id'], $orders);
-    $items = db('orderItems')->findMany([
-        'where' => ['orderId' => ['in' => $orderIds], 'isDeleted' => false]
-    ]);
+    if (!empty($orderIds)) {
+        $items = db('order_items')->findMany([
+            'where' => ['orderId' => ['in' => $orderIds], 'isDeleted' => false]
+        ]);
+    } else {
+        $items = [];
+    }
 
     foreach ($items as $item) {
         $cat = $item['mainCategory'] ?? 'Uncategorized';

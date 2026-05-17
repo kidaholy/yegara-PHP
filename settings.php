@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     
     if ($action === 'add-category') {
-        db('categories')->create(['data' => [
+        db('menu_categories')->create(['data' => [
             'id' => bin2hex(random_bytes(16)),
             'name' => $_POST['name'],
             'createdAt' => date('Y-m-d H:i:s')
@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'add-item') {
-        db('menuItems')->create(['data' => [
+        db('menu_items')->create(['data' => [
             'id' => bin2hex(random_bytes(16)),
             'name' => $_POST['name'],
             'price' => (float)$_POST['price'],
@@ -37,8 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 try {
-    $categories = db('categories')->findMany(['orderBy' => ['name' => 'asc']]);
-    $items = db('menuItems')->findMany(['where' => ['isDeleted' => false], 'orderBy' => ['name' => 'asc']]);
+    $categories = db('menu_categories')->findMany(['orderBy' => ['name' => 'asc']]);
+    $items = db('menu_items')->findMany(['where' => ['isDeleted' => false], 'orderBy' => ['name' => 'asc']]);
 } catch (Exception $e) {
     $categories = []; $items = [];
 }

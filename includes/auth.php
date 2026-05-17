@@ -4,7 +4,7 @@
  */
 
 require_once 'config.php';
-require_once 'JsonDB.php';
+require_once 'DB.php';
 
 session_start([
     'cookie_lifetime' => SESSION_LIFETIME,
