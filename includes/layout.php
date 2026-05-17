@@ -166,81 +166,62 @@ function renderHeader($title = "Management System") {
             }
         </script>
     </head>
-    <body class="min-h-screen flex overflow-hidden selection:bg-primary/10 selection:text-primary">
+    <body class="min-h-screen flex flex-col overflow-hidden selection:bg-primary/10 selection:text-primary">
         
         <?php if ($user): ?>
-        <!-- Sidebar -->
-        <aside class="w-[260px] glass h-screen flex flex-col border-r border-border sticky top-0 z-50">
-            <div class="px-6 py-8">
-                <h1 class="text-xl font-bold font-playfair tracking-tight text-white flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
-                        <i data-lucide="hotel" class="w-5 h-5 text-slate-950"></i>
-                    </div>
-                    <?php echo $appName; ?>
-                </h1>
+        <!-- Top Navigation Bar -->
+        <nav class="h-[60px] bg-[#111413] border-b border-white/5 flex items-center justify-between px-6 shrink-0 z-50 sticky top-0">
+            <!-- Logo -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-[#1a1209] border-2 border-[#c5a059] flex flex-col items-center justify-center shadow-lg flex-shrink-0">
+                    <span class="text-[7px] font-black tracking-widest text-[#c5a059] leading-none">ABE</span>
+                    <span class="text-[5px] font-bold tracking-[0.2em] text-[#c5a059] leading-none">HOTEL</span>
+                </div>
+                <div>
+                    <h1 class="text-[#c5a059] font-black text-lg italic leading-none tracking-tight">ABE HOTEL</h1>
+                    <p class="text-[7px] text-[#c5a059]/40 font-bold uppercase tracking-widest leading-none mt-0.5">ምርጥ አገልግሎት ለመስጠት</p>
+                </div>
             </div>
 
-            <nav class="flex-1 px-3 space-y-1 overflow-y-auto">
-                <p class="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground opacity-50">Navigation</p>
-                <?php renderSidebarLinks($user['role']); ?>
-            </nav>
+            <!-- Nav Links -->
+            <div class="hidden md:flex items-center gap-1">
+                <?php renderTopNavLinks($user['role']); ?>
+            </div>
 
-            <div class="p-6 border-t border-white/5 space-y-4">
-                <div class="flex items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5 mx-2">
-                    <div class="w-10 h-10 rounded-xl bg-gold flex items-center justify-center text-charcoal font-black shadow-[0_0_15px_rgba(197,160,89,0.3)]">
-                        <?php echo strtoupper(substr($user['name'] ?? 'U', 0, 1)); ?>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-bold text-white truncate"><?php echo $user['name']; ?></p>
-                        <p class="text-[10px] text-gold/50 truncate uppercase font-bold tracking-tight"><?php echo $user['role']; ?></p>
-                    </div>
+            <!-- Right Side -->
+            <div class="flex items-center gap-4">
+                <!-- Notification Bell -->
+                <div class="relative">
+                    <button class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all">
+                        <i data-lucide="bell" class="w-4 h-4"></i>
+                    </button>
+                    <span class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#c5a059] text-black text-[8px] font-black rounded-full flex items-center justify-center">0</span>
                 </div>
 
-                <!-- Language Switcher -->
-                <div class="flex gap-2 px-2">
-                    <?php 
-                    $currentUrl = $_SERVER['REQUEST_URI'];
-                    $cleanUrl = strtok($currentUrl, '?');
-                    ?>
-                    <a href="<?php echo $cleanUrl; ?>?lang=en" class="flex-1 py-1.5 text-[9px] font-black border border-white/5 rounded-lg text-center <?php echo $currentLang == 'en' ? 'bg-gold/10 text-gold border-gold/20' : 'text-white/40 hover:bg-white/5'; ?>">EN</a>
-                    <a href="<?php echo $cleanUrl; ?>?lang=am" class="flex-1 py-1.5 text-[9px] font-black border border-white/5 rounded-lg text-center <?php echo $currentLang == 'am' ? 'bg-gold/10 text-gold border-gold/20' : 'text-white/40 hover:bg-white/5'; ?>">አማ</a>
+                <!-- User Avatar -->
+                <div class="w-9 h-9 rounded-full bg-[#2a2a2a] border border-white/10 flex items-center justify-center text-white font-black text-sm">
+                    <?php echo strtoupper(substr($user['name'] ?? 'U', 0, 1)); ?>
                 </div>
 
-                <a href="logout.php" class="sidebar-link text-red-500/60 hover:text-red-400 font-bold text-xs px-4">
-                    <i data-lucide="log-out" class="w-4 h-4"></i>
-                    <span><?php echo __('sign_out'); ?></span>
+                <!-- User Greeting -->
+                <span class="hidden lg:block text-[11px] font-black uppercase tracking-widest text-white/60">
+                    Hi, <?php echo strtoupper(explode(' ', $user['name'])[0]); ?>! 
+                    <span class="text-[#c5a059]">→</span>
+                </span>
+
+                <!-- Logout -->
+                <a href="logout.php" class="px-5 py-2 bg-red-600/90 hover:bg-red-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full transition-all shadow-lg">
+                    Logout
                 </a>
             </div>
-        </aside>
+        </nav>
         <?php endif; ?>
 
         <!-- Main Content -->
-        <main class="flex-1 flex flex-col min-h-screen overflow-hidden bg-[#0a0c0b] relative">
+        <main class="flex-1 flex overflow-hidden bg-[#0f1110] relative">
             <div class="absolute inset-0 gold-mesh pointer-events-none"></div>
-            <!-- Topbar -->
-            <?php if ($user): ?>
-            <header class="h-14 border-b border-white/5 bg-[#030712]/80 backdrop-blur-md flex items-center justify-between px-6 shrink-0 z-40">
-                <div class="flex items-center gap-4">
-                    <button class="lg:hidden p-2 text-muted-foreground hover:bg-white/5 rounded-md transition-colors"><i data-lucide="menu" class="w-4 h-4"></i></button>
-                    <div class="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                        <span class="opacity-50">Pages</span>
-                        <i data-lucide="chevron-right" class="w-3 h-3 opacity-30"></i>
-                        <span class="text-foreground"><?php echo $title; ?></span>
-                    </div>
-                </div>
-                <div class="flex items-center gap-6">
-                    <div id="connection-status" class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-emerald-500 bg-emerald-500/5 px-2.5 py-1 rounded-full border border-emerald-500/10">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                        Live
-                    </div>
-                    <button class="w-8 h-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all">
-                        <i data-lucide="bell" class="w-4 h-4"></i>
-                    </button>
-                </div>
-            </header>
-            <?php endif; ?>
-
-            <div class="flex-1 overflow-y-auto p-6 md:p-8 relative page-enter">
+            
+            <div class="flex-1 flex overflow-hidden relative page-enter">
     <?php
 }
 
@@ -250,22 +231,36 @@ function renderFooter() {
         </main>
 
         <script>
-            // Initialize Lucide Icons
             lucide.createIcons();
-            
-            // Basic connection status mock (replaces Socket.io indicator)
-            window.addEventListener('online', () => {
-                const status = document.getElementById('connection-status');
-                if (status) status.innerHTML = '<span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Connected';
-            });
-            window.addEventListener('offline', () => {
-                const status = document.getElementById('connection-status');
-                if (status) status.innerHTML = '<span class="w-2 h-2 rounded-full bg-red-500"></span> Offline';
-            });
         </script>
     </body>
     </html>
     <?php
+}
+
+function renderTopNavLinks($role) {
+    $links = [
+        ['name' => 'Overview',  'url' => 'admin.php',    'roles' => ['admin']],
+        ['name' => 'Orders',    'url' => 'cashier.php',  'roles' => ['admin', 'cashier']],
+        ['name' => 'Users',     'url' => 'staff.php',    'roles' => ['admin']],
+        ['name' => 'Store',     'url' => 'settings.php', 'roles' => ['admin']],
+        ['name' => 'Stock',     'url' => 'reports.php',  'roles' => ['admin']],
+        ['name' => 'Reports',   'url' => 'reports.php',  'roles' => ['admin']],
+        ['name' => 'Services',  'url' => 'reception.php','roles' => ['admin', 'reception']],
+        ['name' => 'Settings',  'url' => 'settings.php', 'roles' => ['admin']],
+    ];
+
+    $currentUrl = basename($_SERVER['SCRIPT_NAME']);
+
+    foreach ($links as $link) {
+        if (in_array($role, $link['roles'])) {
+            $active = ($currentUrl === $link['url']);
+            $cls = $active
+                ? 'px-4 py-2 text-[11px] font-black uppercase tracking-widest text-[#c5a059] border-b-2 border-[#c5a059] bg-[#c5a059]/5 rounded-t-md'
+                : 'px-4 py-2 text-[11px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors rounded-md hover:bg-white/5';
+            echo "<a href='{$link['url']}' class='{$cls}'>{$link['name']}</a>";
+        }
+    }
 }
 
 function renderSidebarLinks($role) {
