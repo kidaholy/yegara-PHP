@@ -3,9 +3,11 @@
  * Shared layout components for the PHP Management System
  */
 
+require_once 'lang.php';
 require_once 'auth.php';
 
 function renderHeader($title = "Management System") {
+    global $currentLang;
     $user = getCurrentUser();
     $appName = "Prime Addis"; // Default from layout.tsx
     ?>
@@ -17,91 +19,112 @@ function renderHeader($title = "Management System") {
         <title><?php echo $title . " - " . $appName; ?></title>
         <!-- Tailwind CSS CDN -->
         <script src="https://cdn.tailwindcss.com"></script>
-        <!-- Google Fonts: Inter and Playfair Display -->
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+        <!-- Google Fonts: Inter, Playfair Display, and JetBrains Mono -->
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
         <!-- Lucide Icons -->
         <script src="https://unpkg.com/lucide@latest"></script>
         <style>
             :root {
-                --background: 222 47% 4%;
-                --foreground: 213 31% 91%;
-                --muted: 223 47% 11%;
-                --muted-foreground: 215.4 16.3% 56.9%;
-                --accent: 216 34% 17%;
-                --accent-foreground: 210 40% 98%;
-                --popover: 224 71% 4%;
-                --popover-foreground: 215 20.2% 65.1%;
-                --border: 216 34% 17%;
-                --input: 216 34% 17%;
-                --card: 222 47% 4%;
-                --card-foreground: 213 31% 91%;
-                --primary: 210 40% 98%;
-                --primary-foreground: 222.2 47.4% 11.2%;
-                --secondary: 222.2 47.4% 11.2%;
-                --secondary-foreground: 210 40% 98%;
+                --background: 144 8% 6%; /* #0f1110 */
+                --foreground: 40 10% 90%;
+                --muted: 150 5% 11%;
+                --muted-foreground: 40 5% 60%;
+                --accent: 40 45% 56%; /* #c5a059 - Elegance Gold */
+                --accent-foreground: 40 10% 10%;
+                --popover: 144 8% 4%;
+                --popover-foreground: 40 10% 90%;
+                --border: 150 5% 15%;
+                --input: 150 5% 15%;
+                --card: 150 6% 9%; /* #151817 - Obsidian Glass */
+                --card-foreground: 40 10% 90%;
+                --primary: 40 45% 56%;
+                --primary-foreground: 40 10% 10%;
+                --secondary: 150 5% 11%; /* #1a1d1c - Matte Graphite */
+                --secondary-foreground: 40 10% 90%;
                 --destructive: 0 63% 31%;
                 --destructive-foreground: 210 40% 98%;
-                --ring: 216 34% 17%;
-                --radius: 0.75rem;
+                --ring: 40 45% 56%;
+                --radius: 1.25rem;
             }
 
             body {
                 font-family: 'Inter', sans-serif;
-                background-color: hsl(var(--background));
+                background-color: #0f1110;
                 color: hsl(var(--foreground));
                 -webkit-font-smoothing: antialiased;
+                background-image: 
+                    radial-gradient(circle at 0% 0%, rgba(197, 160, 89, 0.03) 0%, transparent 40%),
+                    radial-gradient(circle at 100% 100%, rgba(197, 160, 89, 0.03) 0%, transparent 40%);
             }
 
             .font-playfair { font-family: 'Playfair Display', serif; }
+            .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+            /* Premium Animations */
+            @keyframes pulse-glow {
+                0% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.4); }
+                70% { box-shadow: 0 0 0 10px rgba(197, 160, 89, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0); }
+            }
+            .pulse-glow { animation: pulse-glow 2s infinite; }
 
             /* Smooth Page Transition */
             .page-enter {
-                animation: fadeIn 0.4s ease-out;
+                animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
             }
             @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(5px); }
+                from { opacity: 0; transform: translateY(10px); }
                 to { opacity: 1; transform: translateY(0); }
             }
 
-            /* Radix-UI like Sidebar and Cards */
+            /* Obsidian Glass Components */
             .glass {
-                background: rgba(3, 7, 18, 0.5);
+                background: rgba(21, 24, 23, 0.7);
                 backdrop-filter: blur(12px);
-                border: 1px solid hsl(var(--border));
+                border: 1px solid rgba(197, 160, 89, 0.1);
+                box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
             }
 
             .sidebar-link {
                 display: flex;
                 align-items: center;
-                gap: 0.75rem;
-                padding: 0.625rem 0.875rem;
+                gap: 0.875rem;
+                padding: 0.875rem 1.25rem;
                 border-radius: var(--radius);
-                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                color: hsl(var(--muted-foreground));
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                color: rgba(255, 255, 255, 0.4);
                 font-size: 0.875rem;
                 font-weight: 500;
             }
 
             .sidebar-link:hover {
-                background-color: hsl(var(--accent));
-                color: hsl(var(--foreground));
+                background-color: rgba(197, 160, 89, 0.08);
+                color: #c5a059;
+                transform: translateX(6px);
             }
 
             .sidebar-link.active {
-                background-color: hsl(var(--accent));
-                color: hsl(var(--foreground));
-                box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.4);
+                background-color: #c5a059;
+                color: #0f1110;
+                box-shadow: 0 12px 24px -6px rgba(197, 160, 89, 0.4);
+                font-weight: 700;
             }
 
-            /* Custom scrollbar matching Radix scroll-area */
-            ::-webkit-scrollbar { width: 8px; }
+            /* Custom Gold Scrollbar */
+            ::-webkit-scrollbar { width: 6px; }
             ::-webkit-scrollbar-track { background: transparent; }
             ::-webkit-scrollbar-thumb { 
-                background: hsl(var(--muted)); 
+                background: rgba(197, 160, 89, 0.3); 
                 border-radius: 9999px; 
-                border: 2px solid hsl(var(--background));
             }
-            ::-webkit-scrollbar-thumb:hover { background: hsl(var(--accent)); }
+            ::-webkit-scrollbar-thumb:hover { background: rgba(197, 160, 89, 0.6); }
+
+            /* Atmospheric Mesh */
+            .gold-mesh {
+                background-image: radial-gradient(#c5a059 0.5px, transparent 0.5px);
+                background-size: 32px 32px;
+                opacity: 0.03;
+            }
         </style>
         <script>
             tailwind.config = {
@@ -158,19 +181,30 @@ function renderHeader($title = "Management System") {
                 <?php renderSidebarLinks($user['role']); ?>
             </nav>
 
-            <div class="p-4 border-t border-border space-y-2">
-                <div class="flex items-center gap-3 px-3 py-3 rounded-lg bg-white/5 border border-white/5">
-                    <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-white shadow-lg">
-                        <span class="text-xs font-bold"><?php echo strtoupper(substr($user['name'], 0, 1)); ?></span>
+            <div class="p-6 border-t border-white/5 space-y-4">
+                <div class="flex items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5 mx-2">
+                    <div class="w-10 h-10 rounded-xl bg-gold flex items-center justify-center text-charcoal font-black shadow-[0_0_15px_rgba(197,160,89,0.3)]">
+                        <?php echo strtoupper(substr($user['name'] ?? 'U', 0, 1)); ?>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-semibold truncate text-white"><?php echo $user['name']; ?></p>
-                        <p class="text-[10px] text-muted-foreground truncate uppercase font-bold tracking-tight"><?php echo $user['role']; ?></p>
+                        <p class="text-sm font-bold text-white truncate"><?php echo $user['name']; ?></p>
+                        <p class="text-[10px] text-gold/50 truncate uppercase font-bold tracking-tight"><?php echo $user['role']; ?></p>
                     </div>
                 </div>
-                <a href="/logout.php" class="sidebar-link text-red-400/80 hover:bg-red-500/10 hover:text-red-400 group">
-                    <i data-lucide="log-out" class="w-4 h-4 transition-transform group-hover:-translate-x-1"></i>
-                    <span>Log Out</span>
+
+                <!-- Language Switcher -->
+                <div class="flex gap-2 px-2">
+                    <?php 
+                    $currentUrl = $_SERVER['REQUEST_URI'];
+                    $cleanUrl = strtok($currentUrl, '?');
+                    ?>
+                    <a href="<?php echo $cleanUrl; ?>?lang=en" class="flex-1 py-1.5 text-[9px] font-black border border-white/5 rounded-lg text-center <?php echo $currentLang == 'en' ? 'bg-gold/10 text-gold border-gold/20' : 'text-white/40 hover:bg-white/5'; ?>">EN</a>
+                    <a href="<?php echo $cleanUrl; ?>?lang=am" class="flex-1 py-1.5 text-[9px] font-black border border-white/5 rounded-lg text-center <?php echo $currentLang == 'am' ? 'bg-gold/10 text-gold border-gold/20' : 'text-white/40 hover:bg-white/5'; ?>">አማ</a>
+                </div>
+
+                <a href="logout.php" class="sidebar-link text-red-500/60 hover:text-red-400 font-bold text-xs px-4">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <span><?php echo __('sign_out'); ?></span>
                 </a>
             </div>
         </aside>
@@ -231,13 +265,14 @@ function renderFooter() {
 
 function renderSidebarLinks($role) {
     $links = [
-        ['name' => 'Dashboard', 'icon' => 'layout-dashboard', 'url' => 'admin.php', 'roles' => ['admin']],
-        ['name' => 'Sales Point', 'icon' => 'shopping-cart', 'url' => 'cashier.php', 'roles' => ['cashier', 'admin']],
-        ['name' => 'Kitchen', 'icon' => 'utensils', 'url' => 'chef.php', 'roles' => ['chef', 'admin']],
-        ['name' => 'Bar Monitor', 'icon' => 'beer', 'url' => 'bar.php', 'roles' => ['bar', 'admin']],
-        ['name' => 'Reports', 'icon' => 'bar-chart-3', 'url' => 'reports.php', 'roles' => ['admin']],
-        ['name' => 'Staff', 'icon' => 'users', 'url' => 'staff.php', 'roles' => ['admin']],
-        ['name' => 'Settings', 'icon' => 'settings', 'url' => 'settings.php', 'roles' => ['admin']],
+        ['name' => __('dashboard'), 'icon' => 'layout-dashboard', 'url' => 'admin.php', 'roles' => ['admin']],
+        ['name' => __('reception'), 'icon' => 'key-round', 'url' => 'reception.php', 'roles' => ['receptionist', 'admin']],
+        ['name' => __('cashier_pos'), 'icon' => 'shopping-cart', 'url' => 'cashier.php', 'roles' => ['cashier', 'admin']],
+        ['name' => __('kitchen'), 'icon' => 'utensils', 'url' => 'chef.php', 'roles' => ['chef', 'admin']],
+        ['name' => __('bar_monitor'), 'icon' => 'beer', 'url' => 'bar.php', 'roles' => ['bar', 'admin']],
+        ['name' => __('strategic_reports'), 'icon' => 'bar-chart-3', 'url' => 'reports.php', 'roles' => ['admin']],
+        ['name' => __('staff_directory'), 'icon' => 'users', 'url' => 'staff.php', 'roles' => ['admin']],
+        ['name' => __('menu_settings'), 'icon' => 'settings', 'url' => 'settings.php', 'roles' => ['admin']],
     ];
 
     $currentUrl = basename($_SERVER['SCRIPT_NAME']);

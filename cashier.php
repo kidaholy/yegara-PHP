@@ -103,11 +103,18 @@ renderHeader($title);
                 </div>
             </div>
             
-            <button id="place-order-btn" onclick="placeOrder()" disabled
-                    class="w-full bg-white text-slate-950 font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed enabled:hover:scale-[1.02] enabled:active:scale-[0.98] shadow-2xl">
-                <span>Confirm Order</span>
-                <i data-lucide="arrow-right" class="w-5 h-5"></i>
-            </button>
+            <div class="grid grid-cols-2 gap-3">
+                <button id="place-order-btn" onclick="placeOrder()" disabled
+                        class="w-full bg-white text-slate-950 font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed enabled:hover:scale-[1.02] enabled:active:scale-[0.98] shadow-2xl">
+                    <span>Order</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+                <button id="print-order-btn" onclick="printReceipt()" disabled
+                        class="w-full bg-blue-500/10 text-blue-500 border border-blue-500/20 font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed enabled:hover:bg-blue-500/20 enabled:active:scale-[0.98]">
+                    <span>Receipt</span>
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -321,6 +328,54 @@ renderHeader($title);
             btn.innerHTML = oldContent;
             lucide.createIcons();
         }
+    }
+
+    function printReceipt() {
+        if (cart.length === 0) return;
+        
+        const printWindow = window.open('', '_blank', 'width=300,height=600');
+        const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+        
+        let html = `
+            <html>
+            <head>
+                <style>
+                    body { font-family: 'Courier New', monospace; font-size: 12px; width: 80mm; padding: 10px; margin: 0; }
+                    .header { text-align: center; border-bottom: 1px dashed black; padding-bottom: 10px; margin-bottom: 10px; }
+                    .item { display: flex; justify-content: space-between; margin-bottom: 5px; }
+                    .total { border-top: 1px dashed black; margin-top: 10px; padding-top: 10px; font-weight: bold; }
+                    .footer { text-align: center; margin-top: 20px; font-size: 10px; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h2 style="margin:0;">PRIME ADDIS</h2>
+                    <p style="margin:5px 0;">Luxury Hotel & Spa</p>
+                    <p style="font-size:10px;">Date: ${new Date().toLocaleString()}</p>
+                </div>
+                \${cart.map(item => `
+                    <div class="item">
+                        <span>\${item.quantity}x \${item.name}</span>
+                        <span>\${(item.price * item.quantity).toFixed(2)}</span>
+                    </div>
+                `).join('')}
+                <div class="total">
+                    <div class="item">
+                        <span>TOTAL</span>
+                        <span>\${subtotal.toFixed(2)} Br</span>
+                    </div>
+                </div>
+                <div class="footer">
+                    <p>Thank you for choosing Prime Addis!</p>
+                    <p>*** LUXURY EXPERIENCE ***</p>
+                </div>
+                <script>window.print(); window.close();<\/script>
+            </body>
+            </html>
+        `;
+        
+        printWindow.document.write(html);
+        printWindow.document.close();
     }
 
     document.getElementById('item-search').addEventListener('input', renderItems);

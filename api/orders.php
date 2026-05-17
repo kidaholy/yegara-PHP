@@ -60,9 +60,9 @@ try {
 
             $newOrder = db('orders')->create(['data' => $orderData]);
 
-            // Save items
+            // Save items & Handle Stock Deduction
             foreach ($input['items'] as $item) {
-                // Fetch mainCategory for the item to support filtering later
+                // Fetch menu item details
                 $menuItem = db('menuItems')->findUnique(['where' => ['id' => $item['menuItemId']]]);
                 
                 db('orderItems')->create(['data' => [
@@ -73,10 +73,26 @@ try {
                     'quantity' => (int)$item['quantity'],
                     'price' => (float)$item['price'],
                     'notes' => $item['notes'] ?? '',
-                    'mainCategory' => $menuItem['mainCategory'] ?? 'Food', // Fallback to Food
+                    'mainCategory' => $menuItem['mainCategory'] ?? 'Food',
                     'isDeleted' => false,
                     'createdAt' => $orderData['createdAt']
                 ]]);
+
+                // STOCK DEDUCTION LOGIC
+                if ($menuItem && !empty($menuItem['stockItemId'])) {
+                    $stock = db('stocks')->findUnique(['where' => ['id' => $menuItem['stockItemId']]]);
+                    if ($stock) {
+                        $deduction = (float)$item['quantity'] * ($menuItem['stockConsumption'] ?? 1);
+                        db('stocks')->update([
+                            'where' => ['id' => $stock['id']],
+                            'data' => [
+                                'quantity' => (float)$stock['quantity'] - $deduction,
+                                'totalConsumed' => ($stock['totalConsumed'] ?? 0) + $deduction,
+                                'updatedAt' => date('Y-m-d H:i:s')
+                            ]
+                        ]);
+                    }
+                }
             }
 
             sendJson($newOrder);
