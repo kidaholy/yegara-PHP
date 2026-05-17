@@ -184,16 +184,20 @@ class JsonDB {
                 continue;
             }
 
+            $itemVal = isset($item[$key]) ? $item[$key] : null;
+
             if (is_array($val)) {
-                if (isset($val['equals']) && $item[$key] != $val['equals']) return false;
-                if (isset($val['in']) && !in_array($item[$key], $val['in'])) return false;
-                if (isset($val['not']) && $item[$key] == $val['not']) return false;
-                if (isset($val['contains']) && stripos($item[$key], $val['contains']) === false) return false;
-                // Basic gte/lte for strings/dates
-                if (isset($val['gte']) && strcasecmp($item[$key], $val['gte']) < 0) return false;
-                if (isset($val['lte']) && strcasecmp($item[$key], $val['lte']) > 0) return false;
+                if (isset($val['equals']) && $itemVal != $val['equals']) return false;
+                if (isset($val['in']) && !in_array($itemVal, $val['in'])) return false;
+                if (isset($val['not']) && $itemVal == $val['not']) return false;
+                if (isset($val['contains']) && stripos((string)$itemVal, $val['contains']) === false) return false;
+                if (isset($val['gte']) && strcasecmp((string)$itemVal, (string)$val['gte']) < 0) return false;
+                if (isset($val['lte']) && strcasecmp((string)$itemVal, (string)$val['lte']) > 0) return false;
             } else {
-                if ($item[$key] != $val) return false;
+                // Special case: if val is false and key doesn't exist, treat as a match
+                // (e.g., isDeleted: false matches records without the isDeleted key)
+                if ($val === false && $itemVal === null) continue;
+                if ($itemVal != $val) return false;
             }
         }
         return true;
