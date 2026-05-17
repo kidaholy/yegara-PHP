@@ -10,8 +10,42 @@ class JsonDB {
 
     public function __construct($table) {
         $this->table = $table;
-        $this->filePath = DATA_DIR . '/' . $table . '.json';
         
+        // Try to find the data directory robustly
+        if (!is_dir(DATA_DIR)) {
+            // Fallback for case sensitivity or common locations
+            $possible = [DATA_DIR, BASE_DIR . '/Data', dirname(BASE_DIR) . '/data'];
+            foreach ($possible as $p) {
+                if (is_dir($p)) {
+                    $found_data_dir = $p;
+                    break;
+                }
+            }
+            if (!isset($found_data_dir)) {
+                // Last resort: create it
+                if (@mkdir(DATA_DIR, 0755, true)) {
+                    $found_data_dir = DATA_DIR;
+                } else {
+                    die("CRITICAL ERROR: Data directory not found and could not be created at " . DATA_DIR . ". Please ensure a folder named 'data' exists in the root.");
+                }
+            }
+        } else {
+            $found_data_dir = DATA_DIR;
+        }
+
+        $this->filePath = $found_data_dir . '/' . $table . '.json';
+        
+        // Try case-insensitive filename match if file doesn't exist
+        if (!file_exists($this->filePath)) {
+            $files = glob($found_data_dir . '/*.json');
+            foreach ($files as $f) {
+                if (strtolower(basename($f)) === strtolower($table . '.json')) {
+                    $this->filePath = $f;
+                    break;
+                }
+            }
+        }
+
         if (!file_exists($this->filePath)) {
             file_put_contents($this->filePath, json_encode([], JSON_PRETTY_PRINT));
         }
@@ -76,6 +110,11 @@ class JsonDB {
         }
 
         return $data;
+    }
+
+    public function count($args = []) {
+        $data = $this->findMany($args);
+        return count($data);
     }
 
     public function findUnique($args) {
