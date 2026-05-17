@@ -231,34 +231,25 @@ function renderFooter() {
 
 function renderSidebarLinks($role) {
     $links = [
-        'admin' => [
-            ['icon' => 'layout-dashboard', 'label' => 'Dashboard', 'url' => '/admin.php'],
-            ['icon' => 'shopping-cart', 'label' => 'Orders', 'url' => '/admin-orders.php'],
-            ['icon' => 'pie-chart', 'label' => 'Reports', 'url' => '/admin-reports.php'],
-            ['icon' => 'users', 'label' => 'Staff', 'url' => '/admin-staff.php'],
-            ['icon' => 'settings', 'label' => 'Settings', 'url' => '/admin-settings.php'],
-        ],
-        'cashier' => [
-            ['icon' => 'plus-circle', 'label' => 'New Order', 'url' => '/cashier.php'],
-            ['icon' => 'list', 'label' => 'My Orders', 'url' => '/cashier-orders.php'],
-        ],
-        'chef' => [
-            ['icon' => 'utensils', 'label' => 'Kitchen', 'url' => '/chef.php'],
-        ],
-        'bar' => [
-            ['icon' => 'beer', 'label' => 'Bar', 'url' => '/bar.php'],
-        ]
+        ['name' => 'Dashboard', 'icon' => 'layout-dashboard', 'url' => 'admin.php', 'roles' => ['admin']],
+        ['name' => 'Sales Point', 'icon' => 'shopping-cart', 'url' => 'cashier.php', 'roles' => ['cashier', 'admin']],
+        ['name' => 'Kitchen', 'icon' => 'utensils', 'url' => 'chef.php', 'roles' => ['chef', 'admin']],
+        ['name' => 'Bar Monitor', 'icon' => 'beer', 'url' => 'bar.php', 'roles' => ['bar', 'admin']],
+        ['name' => 'Reports', 'icon' => 'bar-chart-3', 'url' => 'reports.php', 'roles' => ['admin']],
+        ['name' => 'Staff', 'icon' => 'users', 'url' => 'staff.php', 'roles' => ['admin']],
+        ['name' => 'Settings', 'icon' => 'settings', 'url' => 'settings.php', 'roles' => ['admin']],
     ];
 
-    $roleLinks = $links[$role] ?? [];
-    $currentUrl = $_SERVER['SCRIPT_NAME'];
+    $currentUrl = basename($_SERVER['SCRIPT_NAME']);
 
-    foreach ($roleLinks as $link) {
-        $active = ($currentUrl === $link['url']) ? 'active' : '';
-        echo "<a href='{$link['url']}' class='sidebar-link {$active}'>";
-        echo "<i data-lucide='{$link['icon']}' class='w-5 h-5'></i>";
-        echo "<span>{$link['label']}</span>";
-        echo "</a>";
+    foreach ($links as $link) {
+        if (in_array($role, $link['roles'])) {
+            $active = ($currentUrl === $link['url']) ? 'active' : '';
+            echo "<a href='{$link['url']}' class='sidebar-link {$active}'>";
+            echo "<i data-lucide='{$link['icon']}' class='w-4 h-4'></i>";
+            echo "<span>{$link['name']}</span>";
+            echo "</a>";
+        }
     }
 }
 ?>
