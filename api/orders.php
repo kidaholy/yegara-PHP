@@ -1,10 +1,9 @@
 <?php
 /**
- * API Endpoint to fetch active orders for the Kitchen/Bar
+ * API Endpoint for Orders - Handles specific admin actions
  */
 require_once '../includes/auth.php';
 
-// Simple response helper
 function sendJson($data, $status = 200) {
     header('Content-Type: application/json');
     http_response_code($status);
@@ -12,126 +11,110 @@ function sendJson($data, $status = 200) {
     exit;
 }
 
-// Require auth (Chef, Bar, or Admin)
 if (!isAuthenticated()) {
     sendJson(['message' => 'Unauthorized'], 401);
 }
 
 $user = getCurrentUser();
+$isAdmin = ($user['role'] ?? '') === 'admin';
 
 try {
-    $where = [
-        'isDeleted' => false,
-        'status' => ['not' => 'completed']
-    ];
-
-    $mainCategory = $_GET['mainCategory'] ?? null;
-
-    // POST: Create or Update Order
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $input = json_decode(file_get_contents('php://input'), true);
-        
-        // CASE A: Status Update
-        if (isset($input['id']) && isset($input['status'])) {
+        $action = $input['action'] ?? null;
+
+        // --- SINGLE DELETE (Soft Delete) ---
+        if ($action === 'delete') {
+            if (!$isAdmin) sendJson(['message' => 'Admin only'], 403);
+            $id = $input['id'] ?? null;
+            if (!$id) sendJson(['message' => 'ID required'], 400);
+
             $updated = db('orders')->update([
-                'where' => ['id' => $input['id']],
-                'data' => ['status' => $input['status']]
+                'where' => ['id' => $id],
+                'data' => [
+                    'isDeleted' => true,
+                    'status' => 'cancelled',
+                    'updatedAt' => date('Y-m-d H:i:s')
+                ]
             ]);
-            sendJson($updated);
-        }
 
-        // CASE B: New Order Creation
-        if (isset($input['items']) && isset($input['totalAmount'])) {
-            // Generate Order Number (Simple sequential-like with timestamp)
-            $orderCount = db('orders')->count();
-            $orderNumber = "ORD-" . date('ymd') . "-" . str_pad($orderCount + 1, 4, '0', STR_PAD_LEFT);
-            
-            $orderData = [
-                'id' => bin2hex(random_bytes(16)),
-                'orderNumber' => $orderNumber,
-                'tableNumber' => $input['tableNumber'] ?? 'Buy&Go',
-                'paymentMethod' => $input['paymentMethod'] ?? 'cash',
-                'totalAmount' => (float)$input['totalAmount'],
-                'status' => 'pending',
-                'createdAt' => date('Y-m-d H:i:s'),
-                'isDeleted' => false,
-                'cashierId' => $user['id'] ?? 'unknown'
-            ];
-
-            $newOrder = db('orders')->create(['data' => $orderData]);
-
-            // Save items & Handle Stock Deduction
-            foreach ($input['items'] as $item) {
-                // Fetch menu item details
+            // Restore Stock Logic (Simplified)
+            $items = db('orderItems')->findMany(['where' => ['orderId' => $id]]);
+            foreach ($items as $item) {
                 $menuItem = db('menuItems')->findUnique(['where' => ['id' => $item['menuItemId']]]);
-                
-                db('orderItems')->create(['data' => [
-                    'id' => bin2hex(random_bytes(16)),
-                    'orderId' => $orderData['id'],
-                    'menuItemId' => $item['menuItemId'],
-                    'name' => $item['name'],
-                    'quantity' => (int)$item['quantity'],
-                    'price' => (float)$item['price'],
-                    'notes' => $item['notes'] ?? '',
-                    'mainCategory' => $menuItem['mainCategory'] ?? 'Food',
-                    'isDeleted' => false,
-                    'createdAt' => $orderData['createdAt']
-                ]]);
-
-                // STOCK DEDUCTION LOGIC
                 if ($menuItem && !empty($menuItem['stockItemId'])) {
                     $stock = db('stocks')->findUnique(['where' => ['id' => $menuItem['stockItemId']]]);
                     if ($stock) {
                         $deduction = (float)$item['quantity'] * ($menuItem['stockConsumption'] ?? 1);
                         db('stocks')->update([
                             'where' => ['id' => $stock['id']],
-                            'data' => [
-                                'quantity' => (float)$stock['quantity'] - $deduction,
-                                'totalConsumed' => ($stock['totalConsumed'] ?? 0) + $deduction,
-                                'updatedAt' => date('Y-m-d H:i:s')
-                            ]
+                            'data' => ['quantity' => (float)$stock['quantity'] + $deduction]
                         ]);
                     }
                 }
             }
-
-            sendJson($newOrder);
+            sendJson(['success' => true]);
         }
 
-        sendJson(['message' => 'Invalid order data'], 400);
-    }
-
-    // Default GET: return active orders
-    $orders = db('orders')->findMany([
-        'where' => $where,
-        'orderBy' => ['createdAt' => 'asc']
-    ]);
-
-    // Simple population for items (assuming orderItems table)
-    $allOrderItems = db('orderItems')->findMany(['where' => ['isDeleted' => false]]);
-    $itemsMap = [];
-    foreach ($allOrderItems as $item) {
-        $itemsMap[$item['orderId']][] = $item;
-    }
-
-    foreach ($orders as &$order) {
-        $items = $itemsMap[$order['id']] ?? [];
-        if ($mainCategory) {
-            $items = array_filter($items, function($i) use ($mainCategory) {
-                return strtolower($i['mainCategory'] ?? '') === strtolower($mainCategory);
-            });
+        // --- BULK SERVE ---
+        if ($action === 'bulk-serve') {
+            if (!$isAdmin) sendJson(['message' => 'Admin only'], 403);
+            $activeOrders = db('orders')->findMany(['where' => [
+                'isDeleted' => false,
+                'status' => ['notIn' => ['served', 'completed', 'cancelled']]
+            ]]);
+            
+            foreach ($activeOrders as $o) {
+                db('orders')->update([
+                    'where' => ['id' => $o['id']],
+                    'data' => [
+                        'status' => 'served',
+                        'servedAt' => date('Y-m-d H:i:s'),
+                        'updatedAt' => date('Y-m-d H:i:s')
+                    ]
+                ]);
+            }
+            sendJson(['success' => true, 'count' => count($activeOrders)]);
         }
-        $order['items'] = array_values($items);
+
+        // --- BULK DELETE (Soft) ---
+        if ($action === 'bulk-delete') {
+            if (!$isAdmin) sendJson(['message' => 'Admin only'], 403);
+            $orders = db('orders')->findMany(['where' => ['isDeleted' => false]]);
+            foreach ($orders as $o) {
+                db('orders')->update([
+                    'where' => ['id' => $o['id']],
+                    'data' => [
+                        'isDeleted' => true,
+                        'status' => 'cancelled',
+                        'updatedAt' => date('Y-m-d H:i:s')
+                    ]
+                ]);
+            }
+            sendJson(['success' => true, 'count' => count($orders)]);
+        }
+
+        // --- EMPTY TRASH (Permanent) ---
+        if ($action === 'empty-trash') {
+            if (!$isAdmin) sendJson(['message' => 'Admin only'], 403);
+            
+            // Get IDs of deleted orders to also clean up items
+            $deleted = db('orders')->findMany(['where' => ['isDeleted' => true]]);
+            $ids = array_map(fn($o) => $o['id'], $deleted);
+
+            if (!empty($ids)) {
+                // Permanent remove the orders
+                db('orders')->deleteMany(['where' => ['id' => ['in' => $ids]]]);
+                // Permanent remove the items associated with these orders
+                db('orderItems')->deleteMany(['where' => ['orderId' => ['in' => $ids]]]);
+            }
+
+            sendJson(['success' => true, 'count' => count($ids)]);
+        }
     }
 
-    // Filter out orders that have no items for the requested category
-    if ($mainCategory) {
-        $orders = array_values(array_filter($orders, function($o) {
-            return !empty($o['items']);
-        }));
-    }
-
-    sendJson($orders);
+    // Default GET: Handled by original script logic or existing cashier.php pattern
+    sendJson(['message' => 'Method not allowed'], 405);
 
 } catch (Exception $e) {
     sendJson(['message' => $e->getMessage()], 500);

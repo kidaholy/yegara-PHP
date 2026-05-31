@@ -167,6 +167,16 @@ class JsonDB {
         throw new Exception("Record not found for delete in {$this->table}");
     }
 
+    public function deleteMany($args) {
+        $data = $this->read();
+        $initialCount = count($data);
+        $data = array_values(array_filter($data, function($item) use ($args) {
+            return !$this->matchCriteria($item, $args['where']);
+        }));
+        $this->write($data);
+        return $initialCount - count($data);
+    }
+
     private function matchCriteria($item, $where) {
         foreach ($where as $key => $val) {
             if ($key === 'OR') {

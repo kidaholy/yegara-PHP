@@ -50,8 +50,20 @@ $translations = [
 
 /**
  * Translation helper function
+ * Supports simple keys or dot-notation files (e.g. 'admin_orders.title')
  */
 function __($key) {
     global $translations, $currentLang;
+    
+    if (strpos($key, '.') !== false) {
+        list($file, $actualKey) = explode('.', $key, 2);
+        static $fileCache = [];
+        if (!isset($fileCache[$file])) {
+            $filePath = __DIR__ . "/../lang/{$currentLang}/{$file}.php";
+            $fileCache[$file] = file_exists($filePath) ? include $filePath : [];
+        }
+        return $fileCache[$file][$actualKey] ?? $actualKey;
+    }
+
     return $translations[$currentLang][$key] ?? $key;
 }

@@ -166,7 +166,7 @@ function renderHeader($title = "Management System") {
             }
         </script>
     </head>
-    <body class="min-h-screen flex flex-col overflow-hidden selection:bg-primary/10 selection:text-primary">
+    <body class="min-h-screen flex flex-col selection:bg-primary/10 selection:text-primary">
         
         <?php if ($user): ?>
         <!-- Top Navigation Bar -->
@@ -218,10 +218,10 @@ function renderHeader($title = "Management System") {
         <?php endif; ?>
 
         <!-- Main Content -->
-        <main class="flex-1 flex overflow-hidden bg-[#0f1110] relative">
+        <main class="flex-1 flex bg-[#0f1110] relative">
             <div class="absolute inset-0 gold-mesh pointer-events-none"></div>
             
-            <div class="flex-1 flex overflow-hidden relative page-enter">
+            <div class="flex-1 flex relative page-enter">
     <?php
 }
 
@@ -241,7 +241,7 @@ function renderFooter() {
 function renderTopNavLinks($role) {
     $links = [
         ['name' => 'Overview',  'url' => 'admin.php',    'roles' => ['admin']],
-        ['name' => 'Orders',    'url' => 'cashier.php',  'roles' => ['admin', 'cashier']],
+        ['name' => 'Orders',    'url' => 'orders.php',   'roles' => ['admin', 'cashier']],
         ['name' => 'Users',     'url' => 'staff.php',    'roles' => ['admin']],
         ['name' => 'Store',     'url' => 'settings.php', 'roles' => ['admin']],
         ['name' => 'Stock',     'url' => 'reports.php',  'roles' => ['admin']],
