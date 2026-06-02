@@ -88,9 +88,18 @@ renderHeader($title);
             const data = Object.fromEntries(fd.entries());
             const id = data.id;
             const method = id ? 'PUT' : 'POST';
-            const url = id ? `api/admin/menu.php?id=${id}` : `api/admin/menu.php?collection=vip1Menu`;
+            const url = id 
+                ? `api/admin/menu.php?id=${id}&collection=vip1Menu` 
+                : `api/admin/menu.php?collection=vip1Menu`;
+            
+            data.collection = 'vip1Menu';
             if (!id) data.mainCategory = AdminServices.menuManager.state.activeTab;
-            await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)});
+            
+            await fetch(url, { 
+                method, 
+                headers: {'Content-Type':'application/json'}, 
+                body: JSON.stringify(data)
+            });
             document.getElementById('menu-modal').classList.add('hidden');
             await AdminServices.menuManager.loadData();
             AdminServices.menuManager.render();

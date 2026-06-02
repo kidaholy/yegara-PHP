@@ -148,8 +148,44 @@ renderHeader($title);
                     <select id="menu-category" class="inp appearance-none"></select>
                 </div>
                 <div class="space-y-1.5"><label class="lbl">Description</label><textarea id="menu-desc" rows="3" class="inp resize-none"></textarea></div>
+
+                <!-- NEW: Stock Linkage -->
+                <div class="glass p-6 rounded-2xl border border-[#d4af37]/10 bg-[#d4af37]/5 space-y-4 items-start">
+                    <p class="text-[9px] font-black uppercase tracking-[0.2em] text-[#d4af37]">Stock Linkage (Optional)</p>
+                    <div class="grid grid-cols-2 gap-4 w-full">
+                        <div class="space-y-1.5">
+                            <label class="lbl">Link to Stock</label>
+                            <select id="menu-stock-id" class="inp appearance-none text-[11px]">
+                                <option value="">No linkage</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="lbl">Deduct per Sale</label>
+                            <input type="number" id="menu-stock-consumption" step="0.01" class="inp" placeholder="1.0">
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="space-y-6">
+                <!-- NEW: Reporting Config -->
+                <div class="glass p-6 rounded-2xl border border-white/5 space-y-4">
+                    <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/40">Reporting Configuration</p>
+                    <div class="grid grid-cols-2 gap-4 w-full">
+                        <div class="space-y-1.5">
+                            <label class="lbl">Report Unit</label>
+                            <select id="menu-report-unit" class="inp appearance-none">
+                                <option value="piece">piece</option>
+                                <option value="kg">kg</option>
+                                <option value="liter">liter</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="lbl">Amount per Sale</label>
+                            <input type="number" id="menu-report-qty" step="0.01" class="inp" placeholder="1.0">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="space-y-1.5">
                     <label class="lbl">Item Image</label>
                     <div id="image-preview-area" class="h-44 rounded-2xl bg-black/40 border-2 border-dashed border-white/8 flex flex-col items-center justify-center cursor-pointer overflow-hidden group hover:border-[#d4af37]/30 transition-colors">
@@ -282,6 +318,13 @@ AdminServices.openMenuModal = (item = {}) => {
     document.getElementById('menu-category').value = item.category || '';
     document.getElementById('menu-desc').value = item.description || '';
     document.getElementById('menu-img-base64').value = item.image || '';
+    document.getElementById('menu-stock-id').value = item.stockItemId || '';
+    document.getElementById('menu-stock-consumption').value = item.stockConsumption || '';
+    document.getElementById('menu-report-unit').value = item.reportUnit || 'piece';
+    document.getElementById('menu-report-qty').value = item.reportQuantity || '';
+
+    // Load available stocks for the dropdown
+    AdminServices.fetchActiveStocks();
 
     const prev = document.getElementById('menu-img-preview');
     if (item.image) { prev.src = item.image; prev.classList.remove('hidden'); }
@@ -305,11 +348,26 @@ AdminServices._saveMenuItem = async (e) => {
         mainCategory: document.getElementById('menu-main-cat').value,
         category: document.getElementById('menu-category').value,
         description: document.getElementById('menu-desc').value,
-        image: document.getElementById('menu-img-base64').value
+        image: document.getElementById('menu-img-base64').value,
+        stockItemId: document.getElementById('menu-stock-id').value,
+        stockConsumption: parseFloat(document.getElementById('menu-stock-consumption').value || 0),
+        reportUnit: document.getElementById('menu-report-unit').value,
+        reportQuantity: parseFloat(document.getElementById('menu-report-qty').value || 1)
     };
     await AdminServices.api(method, url, payload);
     document.getElementById('menu-modal').classList.add('hidden');
     if (mm) { await mm.loadData(); mm.render(); }
+};
+
+AdminServices.fetchActiveStocks = async () => {
+    try {
+        const stocks = await AdminServices.api('GET', 'api/stock.php?availableOnly=true');
+        const sel = document.getElementById('menu-stock-id');
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">No linkage</option>' + 
+            stocks.map(s => `<option value="${s.id}">${s.name} (${s.quantity} ${s.unit})</option>`).join('');
+        if (currentVal) sel.value = currentVal;
+    } catch(e) {}
 };
 
 // ── Image upload (canvas compress) ───────────────────────────────────────────

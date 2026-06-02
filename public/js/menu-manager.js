@@ -107,14 +107,16 @@ class MenuManager {
     async loadData() {
         this.state.loading = true;
         try {
-            const [menuRes, catRes, distRes] = await Promise.all([
+            const [menuRes, catRes, distRes, stockRes] = await Promise.all([
                 this._api('GET', `${this.config.apiBaseUrl}?collection=${this.config.collection}&t=${Date.now()}`),
                 this._api('GET', `api/categories.php?type=${this.config.categoryType}`),
-                this._api('GET', `api/categories.php?type=distribution`)
+                this._api('GET', `api/categories.php?type=distribution`),
+                this._api('GET', `api/stock.php?availableOnly=false`)
             ]);
             this.state.items = menuRes.data || [];
             this.state.categories = Array.isArray(catRes) ? catRes : (catRes.data || []);
             this.state.distributions = Array.isArray(distRes) ? distRes : (distRes.data || []);
+            this.state.stocks = Array.isArray(stockRes) ? stockRes : [];
         } catch(e) { console.error('MenuManager load error', e); }
         this.state.loading = false;
     }
@@ -193,7 +195,23 @@ class MenuManager {
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-sm font-black text-[#f3cf7a] font-mono">${Number(item.price).toLocaleString()} Br</span>
-                        <span class="w-2 h-2 rounded-full ${item.available !== false ? 'bg-emerald-500' : 'bg-red-500'}"></span>
+                        <div class="flex items-center gap-2">
+                            ${(() => {
+                                if (!item.stockItemId) return '';
+                                const st = this.state.stocks.find(s => s.id === item.stockItemId);
+                                if (!st) return '';
+                                const qty = parseFloat(st.quantity || 0);
+                                const status = st.status || 'available';
+                                const color = (status === 'finished' || status === 'out_of_stock' || qty <= 0) ? 'bg-red-500' : (qty < 10 ? 'bg-orange-500' : 'bg-emerald-500');
+                                return `
+                                    <div class="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 rounded-full border border-white/5">
+                                        <span class="w-1.5 h-1.5 rounded-full ${color}"></span>
+                                        <span class="text-[8px] font-black text-white/40 uppercase">${qty} ${st.unit || ''}</span>
+                                    </div>
+                                `;
+                            })()}
+                            <span class="w-2 h-2 rounded-full ${item.available !== false ? 'bg-emerald-500' : 'bg-red-500'}"></span>
+                        </div>
                     </div>
                     <div class="flex gap-2 pt-2 border-t border-white/5 opacity-0 group-hover:opacity-100 transition-all">
                         ${this.state.swapMode ? `

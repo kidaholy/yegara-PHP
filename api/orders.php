@@ -3,6 +3,7 @@
  * API Endpoint for Orders - Handles specific admin actions
  */
 require_once '../includes/auth.php';
+require_once '../includes/stock-logic.php';
 
 function sendJson($data, $status = 200) {
     header('Content-Type: application/json');
@@ -45,27 +46,32 @@ try {
         $newStatus = $input['status'] ?? null;
         if (!$newStatus) sendJson(['message' => 'Status required'], 400);
 
+        $order = db('orders')->findUnique(['where' => ['id' => $id]]);
+        if (!$order) sendJson(['message' => 'Order not found'], 404);
+        $oldStatus = $order['status'] ?? 'unknown';
+
         $updateData = [
             'status' => $newStatus,
             'updatedAt' => date('Y-m-d H:i:s')
         ];
 
-        // If cancelling, also restore stock
-        if ($newStatus === 'cancelled') {
-            $items = db('orderItems')->findMany(['where' => ['orderId' => $id]]);
-            foreach ($items as $item) {
-                $menuItem = db('menuItems')->findUnique(['where' => ['id' => $item['menuItemId'] ?? '']]);
-                if ($menuItem && !empty($menuItem['stockItemId'])) {
-                    $stock = db('stocks')->findUnique(['where' => ['id' => $menuItem['stockItemId']]]);
-                    if ($stock) {
-                        $deduction = (float)$item['quantity'] * ($menuItem['stockConsumption'] ?? 1);
-                        db('stocks')->update([
-                            'where' => ['id' => $stock['id']],
-                            'data' => ['quantity' => (float)$stock['quantity'] + $deduction]
-                        ]);
-                    }
-                }
+        // --- STOCK LOGIC ---
+        $items = db('orderItems')->findMany(['where' => ['orderId' => $id]]);
+        $consumptionMap = calculateStockConsumption($items);
+
+        // Deduct stock on approval (unconfirmed -> pending)
+        if ($newStatus === 'pending' && $oldStatus === 'unconfirmed') {
+            try {
+                validateStockAvailability($consumptionMap);
+                applyStockAdjustment($consumptionMap, -1);
+            } catch (Exception $e) {
+                sendJson(['message' => $e->getMessage()], 400);
             }
+        }
+
+        // Restore stock on cancellation (if it was already deducted)
+        if ($newStatus === 'cancelled' && in_array($oldStatus, ['pending', 'served', 'completed'])) {
+            applyStockAdjustment($consumptionMap, 1);
             $updateData['isDeleted'] = true;
         }
 
@@ -97,21 +103,21 @@ try {
                 ]
             ]);
 
-            // Restore Stock Logic (Simplified)
-            $items = db('orderItems')->findMany(['where' => ['orderId' => $id]]);
-            foreach ($items as $item) {
-                $menuItem = db('menuItems')->findUnique(['where' => ['id' => $item['menuItemId']]]);
-                if ($menuItem && !empty($menuItem['stockItemId'])) {
-                    $stock = db('stocks')->findUnique(['where' => ['id' => $menuItem['stockItemId']]]);
-                    if ($stock) {
-                        $deduction = (float)$item['quantity'] * ($menuItem['stockConsumption'] ?? 1);
-                        db('stocks')->update([
-                            'where' => ['id' => $stock['id']],
-                            'data' => ['quantity' => (float)$stock['quantity'] + $deduction]
-                        ]);
-                    }
-                }
+            $order = db('orders')->findUnique(['where' => ['id' => $id]]);
+            if ($order && !in_array($order['status'], ['cancelled', 'unconfirmed'])) {
+                $items = db('orderItems')->findMany(['where' => ['orderId' => $id]]);
+                $consumptionMap = calculateStockConsumption($items);
+                applyStockAdjustment($consumptionMap, 1); // Restore stock
             }
+
+            $updated = db('orders')->update([
+                'where' => ['id' => $id],
+                'data' => [
+                    'isDeleted' => true,
+                    'status' => 'cancelled',
+                    'updatedAt' => date('Y-m-d H:i:s')
+                ]
+            ]);
             sendJson(['success' => true]);
         }
 
@@ -169,6 +175,57 @@ try {
             }
 
             sendJson(['success' => true, 'count' => count($ids)]);
+        }
+
+        // --- CREATE ORDER (No action provided) ---
+        if (!$action) {
+            $tableNumber = $input['tableNumber'] ?? 'Buy&Go';
+            $paymentMethod = $input['paymentMethod'] ?? 'cash';
+            $totalAmount = (float)($input['totalAmount'] ?? 0);
+            $orderItems = $input['items'] ?? [];
+
+            if (empty($orderItems)) sendJson(['message' => 'Order items required'], 400);
+
+            // Fetch and validate stock
+            $consumptionMap = calculateStockConsumption($orderItems);
+            try {
+                validateStockAvailability($consumptionMap);
+            } catch (Exception $e) {
+                sendJson(['message' => $e->getMessage()], 400);
+            }
+
+            // Create Order
+            $orderNumber = 'ORD-' . strtoupper(substr(uniqid(), -6));
+            $order = db('orders')->create(['data' => [
+                'orderNumber' => $orderNumber,
+                'tableNumber' => $tableNumber,
+                'paymentMethod' => $paymentMethod,
+                'totalAmount' => $totalAmount,
+                'status' => 'pending', 
+                'isDeleted' => false,
+                'createdBy' => ['id' => $user['id'] ?? 'pos', 'name' => $user['name'] ?? 'Cashier'],
+                'createdAt' => date('Y-m-d H:i:s'),
+                'updatedAt' => date('Y-m-d H:i:s'),
+                'type' => 'cashier'
+            ]]);
+
+            // Create Order Items
+            foreach ($orderItems as $it) {
+                db('orderItems')->create(['data' => [
+                    'orderId' => $order['id'],
+                    'menuItemId' => $it['menuItemId'],
+                    'name' => $it['name'],
+                    'quantity' => $it['quantity'],
+                    'price' => $it['price'],
+                    'notes' => $it['notes'] ?? '',
+                    'isDeleted' => false
+                ]]);
+            }
+
+            // Deduct Stock
+            applyStockAdjustment($consumptionMap, -1);
+
+            sendJson(['success' => true, 'orderNumber' => $orderNumber, 'id' => $order['id']], 201);
         }
     }
 

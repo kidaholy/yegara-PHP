@@ -79,9 +79,10 @@ try {
             'preparationTime' => $input['preparationTime'] ?? '',
             'available' => (bool)($input['available'] ?? true),
             'reportUnit' => $input['reportUnit'] ?? 'piece',
-            'reportQuantity' => (float)($input['reportQuantity'] ?? 1),
+            'reportQuantity' => (float)($input['reportQuantity'] ?? $input['stockConsumption'] ?? 1),
             'stockItemId' => $input['stockItemId'] ?? null,
-            'stockConsumption' => (float)($input['stockConsumption'] ?? 0),
+            'stockConsumption' => (float)($input['stockConsumption'] ?? $input['reportQuantity'] ?? 0),
+            'recipe' => $input['recipe'] ?? [],
             'distributions' => $input['distributions'] ?? [],
             'isDeleted' => false
         ]]);
@@ -91,6 +92,13 @@ try {
         $id = $_GET['id'] ?? '';
         $input = json_decode(file_get_contents('php://input'), true);
         if (!$id) throw new Exception("ID required");
+
+        // Auto-sync reportQuantity and stockConsumption if one is provided
+        if (isset($input['stockConsumption']) && !isset($input['reportQuantity'])) {
+            $input['reportQuantity'] = $input['stockConsumption'];
+        } elseif (isset($input['reportQuantity']) && !isset($input['stockConsumption'])) {
+            $input['stockConsumption'] = $input['reportQuantity'];
+        }
 
         $db->update(['where' => ['id' => $id], 'data' => $input]);
         sendJson(['status' => 'success']);
