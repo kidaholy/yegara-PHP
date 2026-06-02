@@ -1,182 +1,167 @@
 <?php
 /**
- * Refined Strategic Reporting Module
+ * Admin Reports Hub — Business Intelligence (6 slides)
+ * Consistent with Next.js Dark Luxury UX
  */
 require_once 'includes/layout.php';
+require_once 'includes/auth.php';
 
-requireAuth(['admin']);
+// Auth & Permissions
+requireAuth(['admin', 'reception', 'store', 'cashier']);
+$user = getCurrentUser();
+$isAdmin = ($user['role'] === 'admin');
 
-$title = "Financial Reports";
-$period = $_GET['period'] ?? 'today';
+// Next.js equivalent permissions (Simplified for PHP/JsonDB context)
+// In a real Laravel/RBAC system, these would be in a DB.
+// Here we simulate the specific permission check mentioned in the prompt.
+$userPermissions = $user['permissions'] ?? [];
 
-// Date range logic
-$startDate = date('Y-m-d 00:00:00');
-switch ($period) {
-    case 'week': $startDate = date('Y-m-d 00:00:00', strtotime('-7 days')); break;
-    case 'month': $startDate = date('Y-m-d 00:00:00', strtotime('-30 days')); break;
-    case 'year': $startDate = date('Y-m-d 00:00:00', strtotime('-365 days')); break;
+$allSlides = [
+    ['id' => "financial", 'label' => "Financial Summary", 'permission' => "reports:financial_summary", 'icon' => 'trending-up'],
+    ['id' => "orders", 'label' => "Order History", 'permission' => "reports:order_history", 'icon' => 'shopping-bag'],
+    ['id' => "inventory", 'label' => "Inventory Investment", 'permission' => "reports:inventory_investment", 'icon' => 'package'],
+    ['id' => "store", 'label' => "Store Investment", 'permission' => "reports:store_investment", 'icon' => 'warehouse'],
+    ['id' => "menu-sales", 'label' => "Menu Item Sales", 'permission' => "reports:menu_item_sales", 'icon' => 'bar-chart-2'],
+    ['id' => "cashier-insights", 'label' => "Cashier Insights", 'permission' => "reports:cashier_insights", 'icon' => 'users'],
+];
+
+$slides = [];
+if ($isAdmin || in_array('reports:view', $userPermissions)) {
+    $slides = $allSlides;
+} else {
+    foreach ($allSlides as $s) {
+        if (in_array($s['permission'], $userPermissions)) {
+            $slides[] = $s;
+        }
+    }
 }
 
-try {
-    $orders = db('orders')->findMany([
-        'where' => [
-            'isDeleted' => false,
-            'createdAt' => ['gte' => $startDate],
-            'status' => 'completed'
-        ]
-    ]);
-
-    // Revenue Segregation
-    $revenueByCat = [];
-    $revenueByStaff = [];
-    $totalRev = 0;
-    
-    // Fetch all order items for these orders
-    $orderIds = array_map(fn($o) => $o['id'], $orders);
-    if (!empty($orderIds)) {
-        $items = db('orderItems')->findMany([
-            'where' => ['orderId' => ['in' => $orderIds], 'isDeleted' => false]
-        ]);
-    } else {
-        $items = [];
-    }
-
-    foreach ($items as $item) {
-        $cat = $item['mainCategory'] ?? 'Uncategorized';
-        $revenueByCat[$cat] = ($revenueByCat[$cat] ?? 0) + ($item['price'] * $item['quantity']);
-    }
-
-    foreach ($orders as $order) {
-        $totalRev += $order['totalAmount'];
-        $staffId = $order['cashierId'] ?? 'unknown';
-        $revenueByStaff[$staffId] = ($revenueByStaff[$staffId] ?? 0) + $order['totalAmount'];
-    }
-
-    // Sort staff by performance
-    arsort($revenueByStaff);
-    
-    // Fetch user names for staff reporting
-    $users = db('users')->findMany(['where' => ['id' => ['in' => array_keys($revenueByStaff)]]]);
-    $userMap = [];
-    foreach ($users as $u) $userMap[$u['id']] = $u['name'];
-
-} catch (Exception $e) {
-    $orders = []; $revenueByCat = []; $revenueByStaff = []; $totalRev = 0;
-}
-
-renderHeader($title);
+renderHeader("Business Intelligence");
 ?>
 
-<div class="space-y-10 max-w-[1400px] mx-auto animate-in">
-    <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div class="space-y-1">
-            <h1 class="text-3xl font-bold font-playfair tracking-tight text-white">Strategic Reports</h1>
-            <p class="text-xs text-muted-foreground font-medium opacity-50">Decision support and performance benchmarking</p>
-        </div>
-        <div class="flex bg-white/5 p-1 rounded-xl border border-white/5 items-center">
-            <?php foreach (['today', 'week', 'month', 'year'] as $p): ?>
-                <a href="?period=<?php echo $p; ?>" 
-                   class="px-5 py-2 rounded-lg text-xs font-bold transition-all <?php echo $period === $p ? 'bg-white text-slate-950 shadow-lg' : 'text-muted-foreground hover:text-white'; ?>">
-                    <?php echo ucfirst($p); ?>
-                </a>
-            <?php endforeach; ?>
-        </div>
-    </div>
+<script>
+  window.reportSlides = <?= json_encode($slides) ?>;
+  window.userPermissions = <?= json_encode($userPermissions) ?>;
+  window.companyName = "Abe Hotel & POS";
+</script>
 
-    <!-- Summary Metrics -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="glass p-8 rounded-[2rem] border border-white/5 relative overflow-hidden group">
-            <div class="absolute -right-4 -top-4 w-20 h-20 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all"></div>
-            <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-50 mb-2">Total Period Revenue</p>
-            <h2 class="text-4xl font-black text-white"><?php echo number_format($totalRev, 2); ?> <span class="text-lg opacity-40 font-bold">Br</span></h2>
-            <div class="mt-6 flex items-center gap-2 text-xs font-bold text-emerald-500">
-                <i data-lucide="trending-up" class="w-4 h-4"></i>
-                Verified Transactions
+<div class="min-h-screen bg-[#0f1110] text-gray-300 font-sans selection:bg-[#d4af37]/30">
+    <div class="max-w-[1600px] mx-auto px-4 lg:px-10 py-10">
+        
+        <!-- HEADER CARD -->
+        <div class="glass p-8 rounded-[2.5rem] border border-white/5 bg-[#151716] shadow-2xl mb-8 relative overflow-hidden group">
+            <div class="absolute -right-10 -top-10 opacity-[0.03] group-hover:rotate-12 transition-transform duration-1000 pointer-events-none">
+                <i data-lucide="bar-chart-3" class="w-64 h-64 text-[#d4af37]"></i>
+            </div>
+
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
+                <div>
+                    <h1 class="text-4xl font-black font-playfair italic text-[#f3cf7a] leading-tight">Business Intelligence</h1>
+                    <p id="slide-subtitle" class="text-[10px] uppercase font-black tracking-[0.3em] text-gray-500 mt-2">Consolidated reports · Financial Summary</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <!-- Range Pills -->
+                    <div class="flex bg-black/40 p-1.5 rounded-2xl border border-white/5">
+                        <?php foreach(['today', 'week', 'month', 'year'] as $r): ?>
+                        <button onclick="ReportHub.setTimeRange('<?= $r ?>')" id="range-btn-<?= $r ?>"
+                            class="range-btn px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all <?= $r==='week' ? 'bg-[#d4af37] text-black shadow-lg shadow-[#d4af37]/20' : 'text-gray-500 hover:text-white' ?>">
+                            <?= $r ?>
+                        </button>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <!-- Custom Date -->
+                    <div class="relative group">
+                        <input type="date" id="custom-date-picker" onchange="ReportHub.setCustomDate(this.value)"
+                            class="bg-[#0f1110] border border-white/10 rounded-2xl px-5 py-2.5 text-[10px] font-black text-white focus:border-[#d4af37]/40 outline-none w-44 transition-all uppercase tracking-widest cursor-pointer">
+                        <i data-lucide="calendar" class="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500 pointer-events-none"></i>
+                    </div>
+
+                    <!-- Print -->
+                    <button onclick="window.print()" class="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all shadow-xl">
+                        <i data-lucide="printer" class="w-5 h-5"></i>
+                    </button>
+                </div>
             </div>
         </div>
 
-        <div class="glass p-8 rounded-[2rem] border border-white/5 md:col-span-2">
-            <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-50 mb-6">Revenue Segregation (By Category)</p>
-            <div class="space-y-6">
-                <?php foreach ($revenueByCat as $cat => $val): 
-                    $perc = ($totalRev > 0) ? ($val / $totalRev) * 100 : 0;
-                ?>
-                <div class="space-y-2">
-                    <div class="flex justify-between text-xs font-bold">
-                        <span class="text-white"><?php echo $cat; ?></span>
-                        <span class="text-muted-foreground"><?php echo number_format($perc, 1); ?>% (<?php echo number_format($val, 2); ?> Br)</span>
+        <div class="flex flex-col md:flex-row gap-10">
+            <!-- SIDE TABS (Desktop) -->
+            <aside class="hidden md:flex flex-col w-64 space-y-2 sticky top-24 h-fit">
+                <?php foreach($slides as $idx => $s): ?>
+                <button onclick="ReportHub.goToSlide(<?= $idx ?>)" data-idx="<?= $idx ?>"
+                    class="report-nav-btn group flex items-center gap-4 px-6 py-5 rounded-[1.5rem] border transition-all text-left <?= $idx === 0 ? 'bg-gradient-to-r from-[#1a1712] to-[#151716] border-[#d4af37]/30 text-[#f3cf7a] shadow-xl' : 'bg-transparent border-transparent text-gray-500 hover:text-gray-300' ?>">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center border transition-all <?= $idx === 0 ? 'bg-[#d4af37] border-[#d4af37] text-black' : 'bg-white/5 border-white/5 group-hover:border-white/10' ?>">
+                        <i data-lucide="<?= $s['icon'] ?>" class="w-4 h-4"></i>
                     </div>
-                    <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
-                        <div class="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-1000" style="width: <?php echo $perc; ?>%"></div>
-                    </div>
-                </div>
+                    <span class="text-[10px] font-black uppercase tracking-widest"><?= $s['label'] ?></span>
+                </button>
                 <?php endforeach; ?>
-                <?php if (empty($revenueByCat)): ?>
-                    <p class="text-sm text-muted-foreground italic opacity-40">No categorical data available for this period.</p>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
 
-    <!-- Performance Benchmarking Table -->
-    <div class="glass rounded-[2.5rem] border border-white/5 overflow-hidden shadow-2xl">
-        <div class="px-8 py-6 border-b border-white/5 bg-white/[0.01] flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500">
-                    <i data-lucide="award" class="w-5 h-5"></i>
-                </div>
-                <h3 class="font-bold text-white tracking-tight text-lg">Cashier Contributions</h3>
+                <?php if (empty($slides)): ?>
+                    <p class="text-[10px] uppercase font-black text-red-400 p-6 text-center border border-red-400/20 rounded-3xl">No report sections available. Please check permissions.</p>
+                <?php endif; ?>
+            </aside>
+
+            <!-- MOBILE TABS -->
+            <div class="md:hidden flex overflow-x-auto no-scrollbar gap-2 pb-4 mb-4">
+                <?php foreach($slides as $idx => $s): ?>
+                <button onclick="ReportHub.goToSlide(<?= $idx ?>)" data-idx-mobile="<?= $idx ?>"
+                    class="report-nav-btn-mobile flex items-center gap-3 px-6 py-4 rounded-3xl border whitespace-nowrap transition-all <?= $idx === 0 ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-white/5 text-gray-500 border-white/5' ?>">
+                    <i data-lucide="<?= $s['icon'] ?>" class="w-3.5 h-3.5"></i>
+                    <span class="text-[9px] font-black uppercase tracking-widest font-sans"><?= $s['label'] ?></span>
+                </button>
+                <?php endforeach; ?>
             </div>
-            <button class="text-[10px] font-bold uppercase tracking-widest text-blue-400 hover:text-blue-300">Download CSV</button>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead>
-                    <tr class="text-[10px] font-bold text-muted-foreground uppercase tracking-widest border-b border-white/5">
-                        <th class="px-8 py-5 text-left opacity-40">Rank</th>
-                        <th class="px-8 py-5 text-left opacity-40">Team Member</th>
-                        <th class="px-8 py-5 text-center opacity-40">Orders</th>
-                        <th class="px-8 py-5 text-right opacity-40">Contribution Value</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-white/[0.03]">
-                    <?php 
-                    $rank = 1;
-                    foreach ($revenueByStaff as $id => $val): 
-                        $orderCount = count(array_filter($orders, fn($o) => ($o['cashierId'] ?? 'unknown') === $id));
-                    ?>
-                    <tr class="text-sm hover:bg-white/[0.02] transition-colors group">
-                        <td class="px-8 py-5">
-                            <div class="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center text-[10px] font-bold text-muted-foreground group-hover:bg-blue-500 group-hover:text-white transition-all">
-                                <?php echo $rank++; ?>
-                            </div>
-                        </td>
-                        <td class="px-8 py-5">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-600/20 border border-white/10 flex items-center justify-center text-[10px] font-bold text-white">
-                                    <?php echo strtoupper(substr($userMap[$id] ?? 'U', 0, 1)); ?>
-                                </div>
-                                <span class="font-bold text-slate-200"><?php echo $userMap[$id] ?? 'Deleted User'; ?></span>
-                            </div>
-                        </td>
-                        <td class="px-8 py-5 text-center font-bold text-muted-foreground">
-                            <?php echo $orderCount; ?>
-                        </td>
-                        <td class="px-8 py-5 text-right">
-                            <span class="text-sm font-bold text-white"><?php echo number_format($val, 2); ?> <span class="opacity-40 italic">Br</span></span>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                    <?php if (empty($revenueByStaff)): ?>
-                    <tr>
-                        <td colspan="4" class="px-8 py-12 text-center text-muted-foreground italic opacity-40 text-sm">No performance data found for this period.</td>
-                    </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+
+            <!-- SLIDE PANEL -->
+            <div class="flex-1 min-w-0 relative">
+                <!-- Loading indicator (thin gold bar) -->
+                <div id="loading-bar" class="absolute top-0 left-0 h-1 bg-gradient-to-r from-transparent via-[#d4af37] to-transparent w-full opacity-0 transition-opacity duration-300 z-50 overflow-hidden">
+                    <div class="h-full bg-[#d4af37] animate-progress-indeterminate w-1/3"></div>
+                </div>
+
+                <div id="slide-panel" class="min-h-[700px]">
+                    <!-- Injected by public/js/admin-reports.js -->
+                     <div class="flex flex-col items-center justify-center py-40 animate-pulse text-gray-700">
+                         <i data-lucide="loader-2" class="w-12 h-12 animate-spin mb-6 stroke-[1px]"></i>
+                         <p class="text-[10px] font-black uppercase tracking-[0.5em]">Initializing BI Hub...</p>
+                     </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<?php renderHeader(); ?>
+<style>
+@keyframes slideInRight {
+    0% { opacity: 0; transform: translateX(30px) scale(0.98); }
+    100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes slideInLeft {
+    0% { opacity: 0; transform: translateX(-30px) scale(0.98); }
+    100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+.slide-enter-right { animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.slide-enter-left { animation: slideInLeft 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+@keyframes progress-indet {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(300%); }
+}
+.animate-progress-indeterminate { animation: progress-indet 1.5s infinite linear; }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+@media print {
+    aside, .no-print, header, footer, .BentoNavbar, .range-btn, #custom-date-picker { display: none !important; }
+    .glass { border: none !important; box-shadow: none !important; background: white !important; color: black !important; }
+    #slide-panel { min-height: auto !important; }
+    body { background: white !important; color: black !important; }
+}
+</style>
+
+<script src="public/js/admin-reports.js"></script>
+<?php renderFooter(); ?>

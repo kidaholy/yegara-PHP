@@ -19,6 +19,65 @@ $user = getCurrentUser();
 $isAdmin = ($user['role'] ?? '') === 'admin';
 
 try {
+    // ── GET: list orders (optionally filtered) ──────────────────────────────
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        $statusFilter = $_GET['status'] ?? null;
+        $where = ['isDeleted' => false];
+        if ($statusFilter) $where['status'] = $statusFilter;
+
+        $orders = db('orders')->findMany(['where' => $where]);
+
+        // Attach items to each order
+        foreach ($orders as &$o) {
+            $o['items'] = db('orderItems')->findMany(['where' => ['orderId' => $o['id']]]);
+        }
+        unset($o);
+
+        sendJson(['status' => 'success', 'data' => $orders]);
+    }
+
+    // ── PUT: update order status (approve/deny from Room Orders tab) ────────
+    if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+        $id = $_GET['id'] ?? null;
+        if (!$id) sendJson(['message' => 'Order ID required'], 400);
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        $newStatus = $input['status'] ?? null;
+        if (!$newStatus) sendJson(['message' => 'Status required'], 400);
+
+        $updateData = [
+            'status' => $newStatus,
+            'updatedAt' => date('Y-m-d H:i:s')
+        ];
+
+        // If cancelling, also restore stock
+        if ($newStatus === 'cancelled') {
+            $items = db('orderItems')->findMany(['where' => ['orderId' => $id]]);
+            foreach ($items as $item) {
+                $menuItem = db('menuItems')->findUnique(['where' => ['id' => $item['menuItemId'] ?? '']]);
+                if ($menuItem && !empty($menuItem['stockItemId'])) {
+                    $stock = db('stocks')->findUnique(['where' => ['id' => $menuItem['stockItemId']]]);
+                    if ($stock) {
+                        $deduction = (float)$item['quantity'] * ($menuItem['stockConsumption'] ?? 1);
+                        db('stocks')->update([
+                            'where' => ['id' => $stock['id']],
+                            'data' => ['quantity' => (float)$stock['quantity'] + $deduction]
+                        ]);
+                    }
+                }
+            }
+            $updateData['isDeleted'] = true;
+        }
+
+        db('orders')->update([
+            'where' => ['id' => $id],
+            'data' => $updateData
+        ]);
+
+        sendJson(['status' => 'success']);
+    }
+
+    // ── POST: admin bulk actions ────────────────────────────────────────────
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $input = json_decode(file_get_contents('php://input'), true);
         $action = $input['action'] ?? null;

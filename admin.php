@@ -111,7 +111,7 @@ renderHeader($title);
                 </div>
             </a>
 
-            <a href="reception.php" class="group h-full">
+            <a href="services.php" class="group h-full">
                 <div class="glass p-10 rounded-[3rem] border border-white/10 bg-[#151716] shadow-2xl hover:shadow-[0_4px_40px_rgba(212,175,55,0.15)] hover:border-[#d4af37]/40 transition-all flex flex-col h-full active:scale-[0.98]">
                     <div class="flex items-start justify-between mb-10">
                         <i data-lucide="key-round" class="w-12 h-12 text-[#d4af37] transition-transform group-hover:scale-110 duration-700 group-hover:rotate-3"></i>

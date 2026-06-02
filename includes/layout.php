@@ -243,10 +243,10 @@ function renderTopNavLinks($role) {
         ['name' => 'Overview',  'url' => 'admin.php',    'roles' => ['admin']],
         ['name' => 'Orders',    'url' => 'orders.php',   'roles' => ['admin', 'cashier']],
         ['name' => 'Users',     'url' => 'staff.php',    'roles' => ['admin']],
-        ['name' => 'Store',     'url' => 'settings.php', 'roles' => ['admin']],
-        ['name' => 'Stock',     'url' => 'reports.php',  'roles' => ['admin']],
+        ['name' => 'Store',     'url' => 'store.php',    'roles' => ['admin', 'store_keeper']],
+        ['name' => 'Stock',     'url' => 'stock.php',    'roles' => ['admin']],
         ['name' => 'Reports',   'url' => 'reports.php',  'roles' => ['admin']],
-        ['name' => 'Services',  'url' => 'reception.php','roles' => ['admin', 'reception']],
+        ['name' => 'Services',  'url' => 'services.php','roles' => ['admin', 'reception']],
         ['name' => 'Settings',  'url' => 'settings.php', 'roles' => ['admin']],
     ];
 
@@ -266,7 +266,7 @@ function renderTopNavLinks($role) {
 function renderSidebarLinks($role) {
     $links = [
         ['name' => __('dashboard'), 'icon' => 'layout-dashboard', 'url' => 'admin.php', 'roles' => ['admin']],
-        ['name' => __('reception'), 'icon' => 'key-round', 'url' => 'reception.php', 'roles' => ['receptionist', 'admin']],
+        ['name' => __('reception'), 'icon' => 'key-round', 'url' => 'services.php', 'roles' => ['receptionist', 'admin']],
         ['name' => __('cashier_pos'), 'icon' => 'shopping-cart', 'url' => 'cashier.php', 'roles' => ['cashier', 'admin']],
         ['name' => __('kitchen'), 'icon' => 'utensils', 'url' => 'chef.php', 'roles' => ['chef', 'admin']],
         ['name' => __('bar_monitor'), 'icon' => 'beer', 'url' => 'bar.php', 'roles' => ['bar', 'admin']],

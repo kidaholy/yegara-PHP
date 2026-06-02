@@ -1,178 +1,143 @@
 <?php
 /**
- * Refined Settings / Menu Management Module
+ * Admin Settings Hub — Branding, Categories, & POS Layout
  */
 require_once 'includes/layout.php';
+require_once 'includes/auth.php';
 
-requireAuth(['admin']);
+// Auth: admin or specifically permitted
+requireAuth(['admin']); // Simple admin check for now, can be expanded to permissions
 
-$title = "System Settings";
+renderHeader("System Settings");
 
-// Handle Menu Management Actions
-$message = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? '';
-    
-    if ($action === 'add-category') {
-        db('menuCategories')->create(['data' => [
-            'id' => bin2hex(random_bytes(16)),
-            'name' => $_POST['name'],
-            'createdAt' => date('Y-m-d H:i:s')
-        ]]);
-        $message = "Category added.";
-    }
-
-    if ($action === 'add-item') {
-        db('menuItems')->create(['data' => [
-            'id' => bin2hex(random_bytes(16)),
-            'name' => $_POST['name'],
-            'price' => (float)$_POST['price'],
-            'categoryId' => $_POST['categoryId'],
-            'mainCategory' => $_POST['mainCategory'],
-            'isDeleted' => false,
-            'createdAt' => date('Y-m-d H:i:s')
-        ]]);
-        $message = "Menu item added.";
-    }
-}
-
+// Fetch initial public settings for the form
+$publicSettings = [];
 try {
-    $categories = db('menuCategories')->findMany(['orderBy' => ['name' => 'asc']]);
-    $items = db('menuItems')->findMany(['where' => ['isDeleted' => false], 'orderBy' => ['name' => 'asc']]);
-} catch (Exception $e) {
-    $categories = []; $items = [];
-}
+    require_once 'includes/JsonDB.php';
+    $all = db('settings')->findMany();
+    foreach ($all as $s) {
+        $publicSettings[$s['key']] = $s['value'];
+    }
+} catch (Exception $e) {}
 
-renderHeader($title);
 ?>
 
-<div class="space-y-10 max-w-[1400px] mx-auto animate-in">
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div class="space-y-1">
-            <h1 class="text-3xl font-bold font-playfair tracking-tight text-white">Configurable Offerings</h1>
-            <p class="text-xs text-muted-foreground font-medium opacity-50">Standardize your service menu and room types</p>
-        </div>
-        <div class="flex gap-4">
-             <button onclick="document.getElementById('add-cat-modal').classList.remove('hidden')" 
-                    class="bg-white/5 border border-white/10 text-white px-6 py-3 rounded-2xl text-xs font-bold hover:bg-white/10 transition-all">
-                New Category
-            </button>
-            <button onclick="document.getElementById('add-item-modal').classList.remove('hidden')" 
-                    class="bg-white text-slate-950 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest shadow-2xl">
-                Add Menu Item
-            </button>
-        </div>
-    </div>
+<script>
+  window.currentSettings = <?= json_encode($publicSettings) ?>;
+</script>
 
-    <?php if ($message): ?>
-    <div class="bg-blue-500/10 border border-blue-500/20 text-blue-500 p-4 rounded-2xl text-xs font-bold flex items-center gap-3">
-        <i data-lucide="info" class="w-4 h-4"></i>
-        <?php echo $message; ?>
-    </div>
-    <?php endif; ?>
+<div class="min-h-screen bg-[#0f1110] text-gray-300 font-sans selection:bg-[#d4af37]/30">
+    <div class="max-w-[1600px] mx-auto px-4 lg:px-10 py-10">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            
+            <!-- LEFT SIDEBAR: Live Preview (lg:col-span-4) -->
+            <aside class="lg:col-span-4 space-y-8 lg:sticky lg:top-24 h-fit order-2 lg:order-1 mt-10 lg:mt-0">
+                <div class="glass p-10 rounded-[3rem] border border-white/5 bg-[#151716] shadow-3xl text-center relative overflow-hidden group">
+                     <!-- Preview Label -->
+                     <div class="absolute top-6 left-6 text-[8px] font-black uppercase tracking-widest text-gray-700">Live Branding Preview</div>
+                     
+                     <!-- Actual Logo Preview -->
+                     <div class="relative z-10 py-6">
+                         <div id="preview-logo-container" class="w-32 h-32 mx-auto mb-6 flex items-center justify-center transition-transform duration-500 group-hover:scale-105">
+                             <img id="preview-logo" src="" alt="Logo" class="max-w-full max-h-full object-contain">
+                         </div>
+                         <h2 id="preview-app-name" class="text-2xl font-black font-playfair italic text-[#f3cf7a] mb-1">...</h2>
+                         <p id="preview-app-tagline" class="text-[10px] uppercase font-black tracking-[0.3em] text-gray-500">...</p>
+                     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        <!-- Categories List -->
-        <div class="lg:col-span-1 space-y-6">
-            <h3 class="font-bold text-white text-lg tracking-tight">Access Points (Categories)</h3>
-            <div class="space-y-3">
-                <?php foreach ($categories as $cat): ?>
-                <div class="glass p-4 rounded-2xl border border-white/5 flex items-center justify-between group">
-                    <span class="text-sm font-semibold text-slate-300"><?php echo $cat['name']; ?></span>
-                    <button class="opacity-0 group-hover:opacity-100 transition-all text-red-500/50 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                     <!-- Mock Navbar Preview -->
+                     <div class="mt-10 pt-10 border-t border-white/5 text-left">
+                         <p class="text-[9px] font-black uppercase tracking-widest text-gray-700 mb-4 px-2">Navigation Preview</p>
+                         <div class="bg-black/40 rounded-2xl p-4 border border-white/5 flex items-center justify-between">
+                             <div class="flex items-center gap-3">
+                                 <img id="preview-nav-logo" src="" class="w-8 h-8 object-contain">
+                                 <span id="preview-nav-name" class="text-xs font-black text-white">...</span>
+                             </div>
+                             <div class="flex gap-2">
+                                 <div class="w-4 h-4 rounded-full bg-white/5"></div>
+                                 <div class="w-4 h-4 rounded-full bg-white/5"></div>
+                             </div>
+                         </div>
+                     </div>
+
+                     <!-- Mock Browser Tab Preview -->
+                     <div class="mt-8 text-left">
+                         <p class="text-[9px] font-black uppercase tracking-widest text-gray-700 mb-4 px-2">Browser Tab</p>
+                         <div class="bg-[#1a1a1a] rounded-t-xl py-2 px-4 border-l border-r border-t border-white/10 flex items-center gap-3 w-48">
+                             <img id="preview-favicon" src="" class="w-3.5 h-3.5 object-contain">
+                             <span id="preview-tab-name" class="text-[10px] font-bold text-gray-400 truncate tracking-tight">...</span>
+                         </div>
+                     </div>
                 </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
 
-        <!-- Menu Items Table -->
-        <div class="lg:col-span-2 glass rounded-[2.5rem] border border-white/5 overflow-hidden shadow-2xl">
-            <div class="px-8 py-6 border-b border-white/5 bg-white/[0.01]">
-                <h3 class="font-bold text-white text-lg tracking-tight">Active Inventory</h3>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead>
-                        <tr class="text-[10px] font-bold text-muted-foreground uppercase tracking-widest border-b border-white/5">
-                            <th class="px-8 py-5 opacity-40">Item Name</th>
-                            <th class="px-8 py-5 opacity-40">Category</th>
-                            <th class="px-8 py-5 opacity-40 text-right">Unit Price</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-white/[0.03]">
-                        <?php foreach ($items as $item): ?>
-                        <tr class="text-sm hover:bg-white/[0.02] transition-colors">
-                            <td class="px-8 py-4 font-bold text-slate-200"><?php echo $item['name']; ?></td>
-                            <td class="px-8 py-4">
-                                <span class="bg-white/5 px-3 py-1 rounded-lg text-[10px] font-bold uppercase text-muted-foreground border border-white/5">
-                                    <?php echo $item['mainCategory']; ?>
-                                </span>
-                            </td>
-                            <td class="px-8 py-4 text-right font-black text-white">
-                                <?php echo number_format($item['price'], 2); ?> <span class="opacity-30">Br</span>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
+                <!-- Branding Tips Card -->
+                <div class="glass p-8 rounded-[2.5rem] border border-white/5 bg-black/20">
+                    <h3 class="flex items-center gap-3 text-xs font-black uppercase tracking-widest text-[#d4af37] mb-6">
+                        <i data-lucide="info" class="w-4 h-4"></i> Logo Design Tips
+                    </h3>
+                    <ul class="space-y-4 text-[10px] font-bold text-gray-500 leading-relaxed">
+                        <li class="flex gap-3"><span class="text-[#d4af37]">01</span> Use square (1:1) aspect ratio for best fit.</li>
+                        <li class="flex gap-3"><span class="text-[#d4af37]">02</span> Minimum resolution of 200x200px recommended.</li>
+                        <li class="flex gap-3"><span class="text-[#d4af37]">03</span> PNG or WEBP with transparent background is ideal.</li>
+                        <li class="flex gap-3"><span class="text-[#d4af37]">04</span> File size limit is 500KB after compression.</li>
+                    </ul>
+                </div>
+            </aside>
+
+            <!-- RIGHT PANEL: Tabs & Forms (lg:col-span-8) -->
+            <main class="lg:col-span-8 space-y-8 order-1 lg:order-2">
+                
+                <!-- Main Card Header & Navigation -->
+                <div class="glass rounded-[2.5rem] border border-white/5 bg-[#151716] shadow-3xl overflow-hidden">
+                    <div class="px-8 pt-8 pb-0 border-b border-white/5">
+                         <h2 class="text-2xl font-black font-playfair italic text-[#f3cf7a] mb-8">Management Hub</h2>
+                         <div class="flex gap-8 overflow-x-auto no-scrollbar">
+                             <button onclick="AdminSettings.setTab('branding')" id="tab-btn-branding"
+                                 class="settings-tab-btn pb-5 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 border-[#d4af37] text-white">Branding & Logic</button>
+                             <button onclick="AdminSettings.setTab('categories')" id="tab-btn-categories"
+                                 class="settings-tab-btn pb-5 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 border-transparent text-gray-500 hover:text-white">Categories</button>
+                             <button onclick="AdminSettings.setTab('tables')" id="tab-btn-tables"
+                                 class="settings-tab-btn pb-5 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 border-transparent text-gray-500 hover:text-white">Floors & Tables</button>
+                         </div>
+                    </div>
+
+                    <div id="settings-content-panel" class="p-8 lg:p-12 min-h-[600px]">
+                        <!-- Injected by public/js/admin-settings.js -->
+                         <div class="flex flex-col items-center justify-center py-40 animate-pulse text-gray-700">
+                             <i data-lucide="loader-2" class="w-12 h-12 animate-spin mb-6 stroke-[1px]"></i>
+                             <p class="text-[10px] font-black uppercase tracking-[0.5em]">Initializing Config...</p>
+                         </div>
+                    </div>
+                </div>
+
+            </main>
+
         </div>
     </div>
 </div>
 
-<!-- Add Category Modal -->
-<div id="add-cat-modal" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="glass w-full max-w-[400px] rounded-[2.5rem] p-10 border border-white/10 shadow-3xl">
-        <h2 class="text-2xl font-bold text-white font-playfair mb-6">New Category</h2>
-        <form method="POST" class="space-y-4">
-            <input type="hidden" name="action" value="add-category">
-            <input type="text" name="name" placeholder="Category Name (e.g. Pasta, Beer)" required 
-                   class="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-sm text-white focus:outline-none focus:border-blue-500/50">
-            <div class="flex gap-3 pt-4">
-                <button type="button" onclick="document.getElementById('add-cat-modal').classList.add('hidden')" class="flex-1 py-4 text-[10px] uppercase font-black text-muted-foreground">Cancel</button>
-                <button type="submit" class="flex-1 py-4 bg-white text-slate-950 rounded-2xl text-[10px] font-black uppercase tracking-widest">Create</button>
-            </div>
-        </form>
-    </div>
-</div>
+<style>
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-<!-- Add Item Modal -->
-<div id="add-item-modal" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="glass w-full max-w-[450px] rounded-[2.5rem] p-10 border border-white/10 shadow-3xl">
-        <h2 class="text-2xl font-bold text-white font-playfair mb-6">New Menu Item</h2>
-        <form method="POST" class="space-y-4">
-            <input type="hidden" name="action" value="add-item">
-            <div class="space-y-1">
-                <label class="text-[10px] font-bold uppercase text-muted-foreground ml-1">Item Name</label>
-                <input type="text" name="name" required class="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-sm text-white focus:outline-none focus:border-blue-500/50">
-            </div>
-            <div class="space-y-1">
-                <label class="text-[10px] font-bold uppercase text-muted-foreground ml-1">Unit Price (Br)</label>
-                <input type="number" step="0.01" name="price" required class="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-sm text-white focus:outline-none focus:border-blue-500/50">
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold uppercase text-muted-foreground ml-1">Category</label>
-                    <select name="categoryId" class="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-sm text-white appearance-none">
-                        <?php foreach ($categories as $cat): ?>
-                        <option value="<?php echo $cat['id']; ?>"><?php echo $cat['name']; ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold uppercase text-muted-foreground ml-1">Main Group</label>
-                    <select name="mainCategory" class="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-sm text-white appearance-none">
-                        <option value="Food">Food (Kitchen)</option>
-                        <option value="Drinks">Drinks (Bar)</option>
-                    </select>
-                </div>
-            </div>
-            <div class="flex gap-3 pt-6">
-                <button type="button" onclick="document.getElementById('add-item-modal').classList.add('hidden')" class="flex-1 py-4 text-[10px] uppercase font-black text-muted-foreground">Cancel</button>
-                <button type="submit" class="flex-1 py-4 bg-white text-slate-950 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-2xl">Confirm Item</button>
-            </div>
-        </form>
-    </div>
-</div>
+/* Custom Toggle Switch for Luxury UI */
+.toggle-pill {
+    @apply relative w-12 h-6 rounded-full transition-all duration-500 cursor-pointer border border-white/10;
+}
+.toggle-pill.active {
+    @apply bg-[#4ade80]/20 border-[#4ade80]/30;
+}
+.toggle-pill .dot {
+    @apply absolute top-1 left-1 w-3.5 h-3.5 rounded-full bg-gray-600 transition-all duration-500;
+}
+.toggle-pill.active .dot {
+    @apply left-7 bg-[#4ade80] shadow-[0_0_10px_rgba(74,222,128,0.4)];
+}
 
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.tab-content-anim { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+</style>
+
+<script src="public/js/admin-settings.js"></script>
 <?php renderFooter(); ?>
