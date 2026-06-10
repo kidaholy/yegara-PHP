@@ -1,0 +1,40 @@
+{
+    "floors": [
+        {
+            "id": "69c6a7e2140cb91738d34fe3",
+            "floorNumber": "GROUND",
+            "order": 0,
+            "created_at": "2026-03-27T15:53:06.786Z"
+        },
+        {
+            "id": "69c6a7f5140cb91738d34fe7",
+            "floorNumber": "01",
+            "order": 0,
+            "created_at": "2026-03-27T15:53:25.696Z"
+        },
+        {
+            "id": "69c6a7fe140cb91738d34fea",
+            "floorNumber": "02",
+            "order": 0,
+            "created_at": "2026-03-27T15:53:34.543Z"
+        },
+        {
+            "id": "69c6a807140cb91738d34fed",
+            "floorNumber": "03 Rooms",
+            "order": 0,
+            "created_at": "2026-03-27T15:53:43.276Z"
+        },
+        {
+            "id": "69c6a80d140cb91738d34ff0",
+            "floorNumber": "04 Rooms",
+            "order": 0,
+            "created_at": "2026-03-27T15:53:49.266Z"
+        },
+        {
+            "id": "69c6a813140cb91738d34ff3",
+            "floorNumber": "05",
+            "order": 0,
+            "created_at": "2026-03-27T15:53:55.765Z"
+        }
+    ]
+}

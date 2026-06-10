@@ -1,5 +1,5 @@
 <?php
-// api/admin/floors.php
+// api/admin/categories.php
 
 header('Content-Type: application/json');
 require_once __DIR__ . '/../../includes/SettingsManager.php';
@@ -15,46 +15,47 @@ try {
     }
 
     $method = $_SERVER['REQUEST_METHOD'];
+    $type = $_GET['type'] ?? 'menu';
     $id = $_GET['id'] ?? null;
     $input = json_decode(file_get_contents('php://input'), true);
 
-    // GET: Fetch all floors
+    // GET: Fetch categories by type
     if ($method === 'GET') {
-        $floors = $manager->getFloors();
-        echo json_encode($floors);
+        $categories = $manager->getCategories($type);
+        echo json_encode($categories);
     }
     
-    // POST: Add floor
+    // POST: Add category
     else if ($method === 'POST') {
-        $floorNumber = $input['floorNumber'] ?? null;
-        $order = $input['order'] ?? 0;
-
-        if (!$floorNumber) {
+        $name = $input['name'] ?? null;
+        $description = $input['description'] ?? '';
+        
+        if (!$name) {
             http_response_code(400);
-            echo json_encode(['message' => 'Floor number is required']);
+            echo json_encode(['message' => 'Name is required']);
             exit;
         }
 
-        $floor = $manager->addFloor($floorNumber, (int)$order);
-        echo json_encode($floor);
+        $category = $manager->addCategory($type, $name, $description);
+        echo json_encode($category);
     }
     
-    // PUT: Update floor
+    // PUT: Update category
     else if ($method === 'PUT') {
-        $floorNumber = $input['floorNumber'] ?? null;
-        $order = $input['order'] ?? 0;
-
-        if (!$id || !$floorNumber) {
+        $name = $input['name'] ?? null;
+        $description = $input['description'] ?? '';
+        
+        if (!$id || !$name) {
             http_response_code(400);
-            echo json_encode(['message' => 'ID and floor number are required']);
+            echo json_encode(['message' => 'ID and name are required']);
             exit;
         }
 
-        $manager->updateFloor($id, $floorNumber, (int)$order);
+        $manager->updateCategory($type, $id, $name, $description);
         echo json_encode(['success' => true]);
     }
     
-    // DELETE: Remove floor
+    // DELETE: Remove category
     else if ($method === 'DELETE') {
         if (!$id) {
             http_response_code(400);
@@ -62,7 +63,7 @@ try {
             exit;
         }
 
-        $manager->deleteFloor($id);
+        $manager->deleteCategory($type, $id);
         echo json_encode(['success' => true]);
     }
     

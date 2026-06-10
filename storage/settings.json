@@ -1,0 +1,16 @@
+{
+    "branding": {
+        "logo_url": "",
+        "favicon_url": "",
+        "app_name": "ABE HOTEL",
+        "app_tagline": "hotel internal management only",
+        "updated_at": "2026-06-02T22:50:09+03:00"
+    },
+    "configuration": {
+        "vat_rate": 0,
+        "enable_cashier_printing": true,
+        "enable_cashier_today_revenue": true,
+        "updated_at": "2026-06-02T22:50:57+03:00"
+    },
+    "version": "1.0.0"
+}

@@ -1,56 +1,78 @@
 <?php
+// api/admin/tables.php
+
 header('Content-Type: application/json');
-require_once '../../includes/auth.php';
-require_once '../../includes/JsonDB.php';
+require_once __DIR__ . '/../../includes/SettingsManager.php';
+require_once __DIR__ . '/../../includes/auth.php';
 
-require_once '../../includes/auth.php';
-require_once '../../includes/JsonDB.php';
-
-requireAuth(['admin']);
-
-$method = $_SERVER['REQUEST_METHOD'];
+$manager = new SettingsManager();
 
 try {
-    $db = db('tables');
-    
+    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+        http_response_code(403);
+        echo json_encode(['message' => 'Forbidden']);
+        exit;
+    }
+
+    $method = $_SERVER['REQUEST_METHOD'];
+    $id = $_GET['id'] ?? null;
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    // GET: Fetch all tables
     if ($method === 'GET') {
-        $tables = $db->findMany(['orderBy' => ['tableNumber' => 'asc']]);
-        echo json_encode(['status' => 'success', 'data' => $tables]);
-    } 
-    elseif ($method === 'POST') {
-        $input = json_decode(file_get_contents('php://input'), true);
-        if (!$input || !isset($input['tableNumber'])) throw new Exception("tableNumber is required");
-        
-        $id = bin2hex(random_bytes(16));
-        $db->create(['data' => [
-            'id' => $id,
-            'tableNumber' => (string)$input['tableNumber'],
-            'capacity' => (int)($input['capacity'] ?? 2),
-            'createdAt' => date('Y-m-d H:i:s')
-        ]]);
-        echo json_encode(['status' => 'success', 'data' => ['id' => $id]]);
+        $tables = $manager->getTables();
+        echo json_encode($tables);
     }
-    elseif ($method === 'PUT') {
-        $input = json_decode(file_get_contents('php://input'), true);
-        if (!$input || !isset($input['id'])) throw new Exception("id is required");
-        
-        $db->update(['id' => $input['id'], 'data' => [
-            'tableNumber' => (string)$input['tableNumber'],
-            'capacity' => (int)($input['capacity'] ?? 2)
-        ]]);
-        echo json_encode(['status' => 'success']);
+    
+    // POST: Add table
+    else if ($method === 'POST') {
+        $tableNumber = $input['tableNumber'] ?? null;
+        $capacity = $input['capacity'] ?? null;
+        $floor_id = $input['floor_id'] ?? null;
+
+        if (!$tableNumber || !$capacity) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Table number and capacity are required']);
+            exit;
+        }
+
+        $table = $manager->addTable($tableNumber, $capacity, $floor_id);
+        echo json_encode($table);
     }
-    elseif ($method === 'DELETE') {
-        $id = $_GET['id'] ?? '';
-        if (!$id) throw new Exception("id is required");
-        $db->delete(['id' => $id]);
-        echo json_encode(['status' => 'success']);
+    
+    // PUT: Update table
+    else if ($method === 'PUT') {
+        $tableNumber = $input['tableNumber'] ?? null;
+        $capacity = $input['capacity'] ?? null;
+
+        if (!$id || !$tableNumber || !$capacity) {
+            http_response_code(400);
+            echo json_encode(['message' => 'ID, table number, and capacity are required']);
+            exit;
+        }
+
+        $manager->updateTable($id, $tableNumber, $capacity);
+        echo json_encode(['success' => true]);
     }
+    
+    // DELETE: Remove table
+    else if ($method === 'DELETE') {
+        if (!$id) {
+            http_response_code(400);
+            echo json_encode(['message' => 'ID is required']);
+            exit;
+        }
+
+        $manager->deleteTable($id);
+        echo json_encode(['success' => true]);
+    }
+    
     else {
         http_response_code(405);
+        echo json_encode(['message' => 'Method not allowed']);
     }
 
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    echo json_encode(['message' => $e->getMessage()]);
 }
