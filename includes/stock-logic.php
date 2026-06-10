@@ -44,7 +44,7 @@ function calculateStockConsumption($items) {
 
         // Priority 2: Legacy Fallback
         $legacyStockId = $menuData['stockItemId'] ?? null;
-        $reportQty = (float)($menuData['reportQuantity'] ?? 0);
+        $reportQty = (float)($menuData['reportQuantity'] ?? $menuData['stockConsumption'] ?? 0);
         if ($legacyStockId && $reportQty > 0) {
             $totalAmount = $reportQty * $orderQty;
             $consumptionMap[$legacyStockId] = ($consumptionMap[$legacyStockId] ?? 0) + $totalAmount;

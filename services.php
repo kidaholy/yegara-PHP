@@ -8,25 +8,24 @@ renderHeader($title);
 <style>
     @keyframes slideInUp { from { transform: translateY(18px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .tab-content-anim { animation: slideInUp .45s cubic-bezier(.4,0,.2,1) both; }
-    .gold-pill { background: linear-gradient(135deg, #d4af37 0%, #f3cf7a 100%); }
 
     /* Tab active state */
-    .services-tab-btn { transition: all .25s; }
-    .services-tab-btn.active-tab { color: #fff; background: rgba(212,175,55,.12); border-color: rgba(212,175,55,.35); }
-    .services-tab-btn:not(.active-tab) { color: #6b7280; border-color: transparent; }
-    .services-tab-btn:not(.active-tab):hover { color: #fff; background: rgba(255,255,255,.04); }
+    .services-tab-btn { transition: all .25s; border-bottom-width: 2px; }
+    .services-tab-btn.active-tab { color: #c5a059; border-bottom-color: #c5a059; }
+    .services-tab-btn:not(.active-tab) { color: #9ca3af; border-bottom-color: transparent; }
+    .services-tab-btn:not(.active-tab):hover { color: #f3f4f6; }
 </style>
 
-<div class="flex-1 flex flex-col h-screen overflow-hidden">
+<div class="max-w-screen-2xl w-full flex flex-col h-[calc(100vh-theme(space.4))] overflow-hidden bg-gray-900 border border-gray-700/50 rounded-2xl shadow-xl mt-2 mb-2 lg:ml-2">
     <!-- Header / Tab Bar -->
-    <header class="px-8 pt-8 pb-0 border-b border-white/5 bg-[#111413]/60 backdrop-blur-xl shrink-0">
+    <header class="px-8 pt-8 pb-0 border-b border-gray-700/50 bg-gray-800/80 backdrop-blur-xl shrink-0">
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-0">
             <div>
-                <h1 class="text-3xl font-black font-playfair italic text-white tracking-tight gold-glow">Services Hub</h1>
-                <p class="text-[9px] uppercase font-black tracking-[0.4em] text-[#d4af37]/40 mt-0.5">Operations &amp; Logistics</p>
+                <h1 class="text-2xl font-bold text-gray-200 tracking-tight">Services Hub</h1>
+                <p class="text-xs uppercase font-semibold tracking-wider text-gray-500 mt-1">Operations & Logistics</p>
             </div>
             <!-- Tabs -->
-            <nav class="flex items-end gap-1 overflow-x-auto pb-0">
+            <nav class="flex items-end gap-2 overflow-x-auto pb-0">
                 <?php
                 $tabs = [
                     ['key'=>'rooms',        'label'=>'Rooms',         'icon'=>'building'],
@@ -38,11 +37,11 @@ renderHeader($title);
                 foreach ($tabs as $t): ?>
                 <button onclick="AdminServices.setTab('<?php echo $t['key']; ?>')"
                     data-tab="<?php echo $t['key']; ?>"
-                    class="services-tab-btn flex items-center gap-2 px-5 py-3 rounded-t-xl border border-b-0 text-[10px] font-black uppercase tracking-widest whitespace-nowrap relative">
-                    <i data-lucide="<?php echo $t['icon']; ?>" class="w-3.5 h-3.5"></i>
+                    class="services-tab-btn flex items-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-wider whitespace-nowrap relative">
+                    <i data-lucide="<?php echo $t['icon']; ?>" class="w-4 h-4"></i>
                     <?php echo $t['label']; ?>
                     <?php if ($t['key'] === 'room-orders'): ?>
-                    <span id="tab-badge-orders" class="hidden w-4 h-4 bg-red-500 text-[8px] font-black text-white rounded-full flex items-center justify-center border-2 border-[#111413]">0</span>
+                    <span id="tab-badge-orders" class="hidden w-5 h-5 bg-red-500 text-[10px] font-bold text-white rounded-full flex items-center justify-center border border-gray-900 shadow-sm ml-1">0</span>
                     <?php endif; ?>
                 </button>
                 <?php endforeach; ?>
@@ -51,7 +50,7 @@ renderHeader($title);
     </header>
 
     <!-- Content -->
-    <div id="services-content-panel" class="flex-1 overflow-y-auto p-8 bg-[#0f1110]">
+    <div id="services-content-panel" class="flex-1 overflow-y-auto p-8">
         <!-- Populated by admin-services.js -->
     </div>
 </div>
@@ -59,10 +58,10 @@ renderHeader($title);
 <!-- ═══════════════════════════════════════════════════════ MODALS ═══ -->
 
 <!-- Room Modal -->
-<div id="room-modal" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-6">
-    <div class="glass w-full max-w-2xl rounded-[3rem] p-12 border border-white/10 animate-in">
-        <h2 id="room-modal-title" class="text-3xl font-black text-white italic font-playfair mb-10 gold-glow">Add New Room</h2>
-        <form onsubmit="AdminServices._saveRoom(event)" class="space-y-6 text-white">
+<div id="room-modal" class="hidden fixed inset-0 z-[100] bg-gray-900/80 backdrop-blur-sm flex items-center justify-center p-6">
+    <div class="bg-gray-800 w-full max-w-2xl rounded-2xl p-8 border border-gray-700 shadow-2xl animate-in">
+        <h2 id="room-modal-title" class="text-xl font-bold text-gray-200 mb-6 border-b border-gray-700/50 pb-4">Add New Room</h2>
+        <form onsubmit="AdminServices._saveRoom(event)" class="space-y-5 text-gray-300">
             <input type="hidden" id="room-id">
             <div class="grid grid-cols-2 gap-6">
                 <div class="space-y-1.5">
@@ -106,32 +105,32 @@ renderHeader($title);
                     </select>
                 </div>
             </div>
-            <div class="space-y-1.5">
+            <div class="space-y-1.5 pt-2">
                 <label class="lbl">Room Service Menu Tier</label>
                 <div class="flex gap-4">
                     <?php foreach (['standard','vip1','vip2'] as $tier): ?>
                     <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="room-tier" value="<?php echo $tier; ?>" <?php echo $tier==='standard'?'checked':''; ?> class="accent-[#d4af37]">
-                        <span class="text-xs font-bold uppercase"><?php echo strtoupper($tier); ?></span>
+                        <input type="radio" name="room-tier" value="<?php echo $tier; ?>" <?php echo $tier==='standard'?'checked':''; ?> class="accent-[#c5a059]">
+                        <span class="text-sm font-bold uppercase text-gray-400"><?php echo strtoupper($tier); ?></span>
                     </label>
                     <?php endforeach; ?>
                 </div>
             </div>
-            <div class="flex gap-4 pt-4">
-                <button type="button" onclick="document.getElementById('room-modal').classList.add('hidden')" class="flex-1 py-4 text-[10px] font-black uppercase text-white/30 hover:text-white">Cancel</button>
-                <button type="submit" class="flex-1 gold-pill py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-black shadow-xl">Save Room</button>
+            <div class="flex justify-end gap-3 pt-6 border-t border-gray-700/50 mt-4">
+                <button type="button" onclick="document.getElementById('room-modal').classList.add('hidden')" class="px-5 py-2.5 rounded-lg text-sm font-bold text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 transition-colors border border-gray-700 hover:border-gray-600">Cancel</button>
+                <button type="submit" class="px-5 py-2.5 rounded-lg text-sm font-bold bg-[#c5a059] text-gray-900 border border-[#c5a059] hover:bg-[#b59048] transition-colors shadow-sm">Save Room</button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Menu Item Modal -->
-<div id="menu-modal" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-6 overflow-y-auto">
-    <div class="glass w-full max-w-4xl rounded-[3rem] p-12 border border-white/10 my-auto animate-in text-white">
-        <h2 id="menu-modal-title" class="text-3xl font-black italic font-playfair mb-10 gold-glow">Add Menu Item</h2>
-        <form onsubmit="AdminServices._saveMenuItem(event)" class="grid grid-cols-1 md:grid-cols-2 gap-10">
+<div id="menu-modal" class="hidden fixed inset-0 z-[100] bg-gray-900/80 backdrop-blur-sm flex items-center justify-center p-6 overflow-y-auto">
+    <div class="bg-gray-800 w-full max-w-4xl rounded-2xl p-8 border border-gray-700 shadow-2xl my-auto animate-in text-gray-300">
+        <h2 id="menu-modal-title" class="text-xl font-bold text-gray-200 mb-6 border-b border-gray-700/50 pb-4">Add Menu Item</h2>
+        <form onsubmit="AdminServices._saveMenuItem(event)" class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <input type="hidden" id="menu-item-id">
-            <div class="space-y-6">
+            <div class="space-y-5">
                 <div class="space-y-1.5"><label class="lbl">Name *</label><input type="text" id="menu-name" required class="inp"></div>
                 <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-1.5"><label class="lbl">Price (Br) *</label><input type="number" id="menu-price" required class="inp"></div>
@@ -150,12 +149,12 @@ renderHeader($title);
                 <div class="space-y-1.5"><label class="lbl">Description</label><textarea id="menu-desc" rows="3" class="inp resize-none"></textarea></div>
 
                 <!-- NEW: Stock Linkage -->
-                <div class="glass p-6 rounded-2xl border border-[#d4af37]/10 bg-[#d4af37]/5 space-y-4 items-start">
-                    <p class="text-[9px] font-black uppercase tracking-[0.2em] text-[#d4af37]">Stock Linkage (Optional)</p>
+                <div class="p-5 rounded-xl border border-gray-700 bg-gray-900 space-y-4 items-start">
+                    <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Stock Linkage (Optional)</p>
                     <div class="grid grid-cols-2 gap-4 w-full">
                         <div class="space-y-1.5">
                             <label class="lbl">Link to Stock</label>
-                            <select id="menu-stock-id" class="inp appearance-none text-[11px]">
+                            <select id="menu-stock-id" class="inp appearance-none text-sm">
                                 <option value="">No linkage</option>
                             </select>
                         </div>
@@ -166,10 +165,10 @@ renderHeader($title);
                     </div>
                 </div>
             </div>
-            <div class="space-y-6">
+            <div class="space-y-5">
                 <!-- NEW: Reporting Config -->
-                <div class="glass p-6 rounded-2xl border border-white/5 space-y-4">
-                    <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/40">Reporting Configuration</p>
+                <div class="p-5 rounded-xl border border-gray-700 bg-gray-900 space-y-4">
+                    <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Reporting Configuration</p>
                     <div class="grid grid-cols-2 gap-4 w-full">
                         <div class="space-y-1.5">
                             <label class="lbl">Report Unit</label>
@@ -188,17 +187,17 @@ renderHeader($title);
 
                 <div class="space-y-1.5">
                     <label class="lbl">Item Image</label>
-                    <div id="image-preview-area" class="h-44 rounded-2xl bg-black/40 border-2 border-dashed border-white/8 flex flex-col items-center justify-center cursor-pointer overflow-hidden group hover:border-[#d4af37]/30 transition-colors">
-                        <i data-lucide="camera" class="w-8 h-8 text-white/20 group-hover:text-[#d4af37]/40 transition-colors mb-2"></i>
-                        <span class="text-[9px] font-black uppercase text-white/20 group-hover:text-[#d4af37]/40">Click to upload</span>
-                        <img id="menu-img-preview" class="hidden absolute inset-0 w-full h-full object-cover rounded-2xl">
+                    <div id="image-preview-area" class="h-44 rounded-xl bg-gray-900 border border-dashed border-gray-600 flex flex-col items-center justify-center cursor-pointer overflow-hidden group hover:border-[#c5a059] transition-colors">
+                        <i data-lucide="camera" class="w-8 h-8 text-gray-500 group-hover:text-[#c5a059] transition-colors mb-2"></i>
+                        <span class="text-xs font-bold uppercase text-gray-500 group-hover:text-[#c5a059]">Click to upload</span>
+                        <img id="menu-img-preview" class="hidden absolute inset-0 w-full h-full object-cover rounded-xl">
                     </div>
                     <input type="file" id="menu-img-upload" hidden accept="image/*">
                     <input type="hidden" id="menu-img-base64">
                 </div>
-                <div class="flex gap-4 pt-4">
-                    <button type="button" onclick="document.getElementById('menu-modal').classList.add('hidden')" class="flex-1 py-4 text-[10px] font-black uppercase text-white/30 hover:text-white">Cancel</button>
-                    <button type="submit" class="flex-1 gold-pill py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-black shadow-xl">Publish</button>
+                <div class="flex justify-end gap-3 pt-6 border-t border-gray-700/50 mt-4">
+                    <button type="button" onclick="document.getElementById('menu-modal').classList.add('hidden')" class="px-5 py-2.5 rounded-lg text-sm font-bold text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 transition-colors border border-gray-700 hover:border-gray-600">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-lg text-sm font-bold bg-[#c5a059] text-gray-900 border border-[#c5a059] hover:bg-[#b59048] transition-colors shadow-sm">Publish</button>
                 </div>
             </div>
         </form>
@@ -206,40 +205,42 @@ renderHeader($title);
 </div>
 
 <!-- Reception Detail Modal -->
-<div id="rec-detail-modal" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-6">
-    <div class="glass w-full max-w-2xl rounded-[3rem] p-12 border border-white/10 overflow-y-auto max-h-[90vh]">
+<div id="rec-detail-modal" class="hidden fixed inset-0 z-[100] bg-gray-900/80 backdrop-blur-sm flex items-center justify-center p-6">
+    <div class="bg-gray-800 w-full max-w-2xl rounded-2xl p-8 border border-gray-700 shadow-2xl overflow-y-auto max-h-[90vh]">
         <input type="hidden" id="rec-detail-id-hidden">
-        <div class="flex justify-between items-start mb-8">
+        <div class="flex justify-between items-start mb-6 border-b border-gray-700/50 pb-4">
             <div>
-                <h3 id="rec-detail-name" class="text-2xl font-black text-white italic font-playfair gold-glow">Guest Name</h3>
-                <span id="rec-detail-status" class="text-[9px] font-black uppercase tracking-widest text-gray-500"></span>
+                <h3 id="rec-detail-name" class="text-xl font-bold text-gray-200">Guest Name</h3>
+                <span id="rec-detail-status" class="text-xs font-bold uppercase tracking-wider text-gray-500"></span>
             </div>
-            <button onclick="document.getElementById('rec-detail-modal').classList.add('hidden')" class="text-gray-500 hover:text-white">
-                <i data-lucide="x" class="w-6 h-6"></i>
+            <button onclick="document.getElementById('rec-detail-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-200">
+                <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
-        <div id="rec-detail-body" class="text-white space-y-4"></div>
+        <div id="rec-detail-body" class="text-gray-300 space-y-4"></div>
     </div>
 </div>
 
 <!-- QR Modal -->
-<div id="qr-modal" class="hidden fixed inset-0 z-[110] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 text-white text-center">
-    <div class="glass p-12 rounded-[3.5rem] border border-white/10 space-y-8 max-w-sm mx-auto">
-        <h3 id="qr-room-title" class="text-2xl font-black italic font-playfair uppercase text-white">Room QR Code</h3>
-        <div id="qr-content" class="bg-white p-4 rounded-3xl mx-auto shadow-2xl w-[232px] h-[232px] flex items-center justify-center"></div>
-        <p class="text-[9px] font-black uppercase tracking-[0.3em] text-[#d4af37]/50">Scan for Digital Room Service</p>
-        <div class="flex gap-4">
-            <button onclick="document.getElementById('qr-modal').classList.add('hidden')" class="flex-1 py-4 text-[10px] font-black uppercase text-white/30">Close</button>
-            <button onclick="window.print()" class="flex-1 gold-pill py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-black">Print</button>
+<div id="qr-modal" class="hidden fixed inset-0 z-[110] bg-gray-900/90 backdrop-blur-sm flex items-center justify-center p-6 text-gray-300 text-center">
+    <div class="bg-gray-800 p-8 rounded-2xl border border-gray-700 shadow-2xl space-y-6 max-w-sm mx-auto">
+        <h3 id="qr-room-title" class="text-xl font-bold uppercase text-gray-200">Room QR Code</h3>
+        <div id="qr-content" class="bg-white p-4 rounded-xl mx-auto shadow-sm w-[232px] h-[232px] flex items-center justify-center"></div>
+        <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Scan for Digital Room Service</p>
+        <div class="flex gap-3 pt-4 border-t border-gray-700/50">
+            <button onclick="document.getElementById('qr-modal').classList.add('hidden')" class="flex-1 py-3 text-sm font-bold bg-transparent border border-gray-600 rounded-lg text-gray-400 hover:text-white transition-colors">Close</button>
+            <button onclick="window.print()" class="flex-1 py-3 rounded-lg text-sm font-bold bg-[#c5a059] text-gray-900 transition-colors shadow-sm">Print</button>
         </div>
     </div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════ SHARED CSS ═══ -->
 <style>
-    .lbl { display:block; font-size:9px; font-weight:900; text-transform:uppercase; letter-spacing:.15em; color:rgba(212,175,55,.5); margin-left:.375rem; margin-bottom:.25rem; }
-    .inp { width:100%; background:rgba(0,0,0,.4); border:1px solid rgba(255,255,255,.05); border-radius:1rem; padding:.875rem 1.25rem; font-size:.875rem; color:#fff; outline:none; }
-    .inp:focus { border-color:rgba(212,175,55,.3); }
+<style>
+    .lbl { display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#9ca3af; margin-bottom:0.375rem; }
+    .inp { width:100%; background:rgb(31 41 55 / 0.5); border:1px solid rgb(55 65 81); border-radius:0.5rem; padding:0.625rem 0.875rem; font-size:0.875rem; color:#f3f4f6; outline:none; transition: all 0.2s; }
+    .inp:focus { border-color:#c5a059; background:rgb(31 41 55); }
+    #image-preview-area { position: relative; }
     #image-preview-area { position: relative; }
 </style>
 

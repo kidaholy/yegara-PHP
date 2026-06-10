@@ -1,22 +1,34 @@
 <?php
 require_once '../../includes/auth.php';
 require_once '../../includes/JsonDB.php';
+require_once '../../includes/report-dates.php';
 
-// Authenticate
-requireAuth();
+requireApiAuth(['admin', 'reception', 'store', 'cashier']);
 
-header('Content-Type: application/json');
-
+$period = $_GET['period'] ?? null;
 $startDate = $_GET['startDate'] ?? null;
 $endDate = $_GET['endDate'] ?? null;
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 1000;
 $includeDeleted = ($_GET['includeDeleted'] ?? 'false') === 'true';
 
 try {
-    $orders = db('orders')->get();
-    $users = db('users')->get();
+    if ($period || ($startDate && $endDate)) {
+        $range = resolveReportDateRange($period ?? 'week', $startDate, $endDate);
+        $start = $range['start'];
+        $end = $range['end'];
+    } elseif ($startDate) {
+        $start = new DateTime($startDate);
+        $end = new DateTime();
+        $end->setTime(23, 59, 59);
+    } else {
+        $range = resolveReportDateRange('month');
+        $start = $range['start'];
+        $end = $range['end'];
+    }
+
+    $orders = db('orders')->findMany();
+    $users = db('users')->findMany();
     
-    // Create user map
     $userMap = [];
     foreach ($users as $u) {
         $userMap[$u['id']] = [
@@ -28,33 +40,21 @@ try {
 
     $filtered = [];
     foreach ($orders as $o) {
-        // Soft delete filter
         if (!$includeDeleted && ($o['isDeleted'] ?? false)) continue;
-        
-        // Date filter
-        if ($startDate || $endDate) {
-            $created = strtotime($o['createdAt']);
-            if ($startDate && $created < strtotime($startDate)) continue;
-            // End of day for endDate if only Y-m-d provided
-            $endMax = (strlen($endDate) === 10) ? strtotime($endDate . ' 23:59:59') : strtotime($endDate);
-            if ($endDate && $created > $endMax) continue;
-        }
+        if (!isWithinReportRange($o['createdAt'] ?? null, $start, $end)) continue;
 
-        // Attach user info if missing or needed for reports
         if (isset($o['createdById']) && isset($userMap[$o['createdById']])) {
             $o['createdBy'] = $userMap[$o['createdById']];
+        } elseif (!isset($o['createdBy']) && isset($o['createdById'])) {
+            $o['createdBy'] = ['name' => 'Unknown Cashier'];
         }
 
         $filtered[] = $o;
-        if (count($filtered) >= $limit) break;
     }
 
-    // Sort by createdAt desc
-    usort($filtered, function($a, $b) {
-        return strtotime($b['createdAt']) <=> strtotime($a['createdAt']);
-    });
+    usort($filtered, fn($a, $b) => strtotime($b['createdAt'] ?? 0) <=> strtotime($a['createdAt'] ?? 0));
 
-    echo json_encode($filtered);
+    echo json_encode(array_slice($filtered, 0, $limit));
 
 } catch (Exception $e) {
     http_response_code(500);

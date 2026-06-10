@@ -12,7 +12,7 @@ const setText = (id, text) => {
 
 const ReportHub = {
     // ─── STATE ───────────────────────────────────────────────────────────────────
-    timeRange: 'week',
+    timeRange: 'month',
     activeSlide: 0,
     animating: false,
     direction: 'right',
@@ -60,27 +60,24 @@ const ReportHub = {
         const query = this.getQueryString();
 
         try {
-            // Stage 1: Critical (blocking ~1.5s visual floor per spec)
             const startTime = Date.now();
             const [salesRes, ordersRes, receptionRes] = await Promise.all([
                 this.api('GET', `api/reports/sales.php${query}`),
-                this.api('GET', `api/reports/orders.php${this.getOrdersQuery()}`),
-                this.api('GET', `api/reports/bedroom-revenue.php${query}`)
+                this.api('GET', `api/reports/orders.php${query}&limit=1000&includeDeleted=true`),
+                this.api('GET', `api/reports/bedroom-revenue.php${query}`, { optional: true })
             ]);
 
             this.periodData = salesRes?.data || null;
             this.orders = Array.isArray(ordersRes) ? ordersRes : (ordersRes?.data || []);
             this.receptionRevenue = receptionRes?.data?.totalRevenue || 0;
 
-            // Ensure 1.5s visual floor as per spec
             const elapsed = Date.now() - startTime;
             if (elapsed < 1500) await new Promise(r => setTimeout(r, 1500 - elapsed));
             
             this.setLoading(false);
             this.renderActiveSlide();
 
-            // Stage 2: Secondary (Background, non-blocking)
-            this.fetchSecondaryData(query);
+            await this.fetchSecondaryData(query);
 
         } catch (e) {
             console.error('Core data fetch failed:', e);
@@ -91,16 +88,14 @@ const ReportHub = {
 
     async fetchSecondaryData(query) {
         try {
-            const [stockRes, usageRes, menuRes] = await Promise.all([
-                this.api('GET', 'api/stock.php'),
-                this.api('GET', `api/reports/stock-usage.php${query}`),
-                this.api('GET', 'api/categories.php?all=true')
+            const [stockRes, usageRes] = await Promise.all([
+                this.api('GET', 'api/stock.php', { optional: true }),
+                this.api('GET', `api/reports/stock-usage.php${query}`)
             ]);
             this.stockItems = stockRes || [];
-            this.stockUsageData = usageRes.data;
-            this.menuItems = menuRes || [];
+            this.stockUsageData = usageRes?.data || null;
             
-            if ([2, 3, 4].includes(this.activeSlide)) this.renderActiveSlide();
+            this.renderActiveSlide();
         } catch (e) { console.warn('Secondary data load failed:', e); }
     },
 
@@ -182,23 +177,34 @@ const ReportHub = {
     updateNavUI(idx) {
         document.querySelectorAll('.report-nav-btn').forEach((b, i) => {
             const act = i === idx;
-            b.classList.toggle('bg-gradient-to-r', act);
-            b.classList.toggle('from-[#1a1712]', act);
-            b.classList.toggle('to-[#151716]', act);
-            b.classList.toggle('border-[#d4af37]/30', act);
-            b.classList.toggle('text-[#f3cf7a]', act);
-            b.classList.toggle('shadow-xl', act);
+            b.classList.toggle('bg-gray-800', act);
+            b.classList.toggle('border-gray-700', act);
+            b.classList.toggle('text-gray-200', act);
+            b.classList.toggle('shadow-sm', act);
+            
+            b.classList.toggle('bg-transparent', !act);
+            b.classList.toggle('border-transparent', !act);
             b.classList.toggle('text-gray-500', !act);
-            b.querySelector('.w-10')?.classList.toggle('bg-[#d4af37]', act);
-            b.querySelector('.w-10')?.classList.toggle('text-black', act);
-            b.querySelector('.w-10')?.classList.toggle('bg-white/5', !act);
+            b.classList.toggle('hover:text-gray-300', !act);
+            b.classList.toggle('hover:bg-gray-800/30', !act);
+            
+            const iconBox = b.querySelector('.w-8');
+            if (iconBox) {
+                iconBox.classList.toggle('bg-[#c5a059]', act);
+                iconBox.classList.toggle('text-gray-900', act);
+                iconBox.classList.toggle('bg-gray-800', !act);
+                iconBox.classList.toggle('text-gray-500', !act);
+                iconBox.classList.toggle('group-hover:text-gray-400', !act);
+            }
         });
         document.querySelectorAll('.report-nav-btn-mobile').forEach((b, i) => {
             const act = i === idx;
-            b.classList.toggle('bg-[#d4af37]', act);
-            b.classList.toggle('text-black', act);
-            b.classList.toggle('border-[#d4af37]', act);
-            b.classList.toggle('bg-white/5', !act);
+            b.classList.toggle('bg-[#c5a059]', act);
+            b.classList.toggle('text-gray-900', act);
+            b.classList.toggle('border-[#c5a059]', act);
+            
+            b.classList.toggle('bg-gray-800', !act);
+            b.classList.toggle('border-gray-700', !act);
             b.classList.toggle('text-gray-500', !act);
         });
         const labels = window.reportSlides.map(s => s.label);
@@ -250,23 +256,23 @@ const ReportHub = {
                     ${this.mobileStatCard('Expenses', stats.totalOperationalExpenses + stats.periodInvestment, 'red')}
                     ${this.mobileStatCard('Profit', stats.periodProfit, stats.periodProfit >= 0 ? 'emerald' : 'red')}
                 </div>
-                <div class="hidden md:block glass rounded-[2.5rem] border border-white/5 overflow-hidden">
-                    <div class="px-8 py-5 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-                        <h3 class="text-[10px] uppercase font-black tracking-widest text-[#f3cf7a]">Statement of Accounts</h3>
-                        <button onclick="ReportHub.exportFinancial()" class="text-[9px] font-black uppercase text-gray-500 hover:text-white transition-all flex items-center gap-2 outline-none">
-                             <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Export Word
+                <div class="hidden md:block rounded-xl border border-gray-700/50 bg-gray-800/20 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-700/50 flex justify-between items-center bg-gray-800/50">
+                        <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-200">Statement of Accounts</h3>
+                        <button onclick="ReportHub.exportFinancial()" class="text-xs font-semibold uppercase text-gray-400 hover:text-white transition-colors flex items-center gap-2 outline-none">
+                             <i data-lucide="file-text" class="w-4 h-4"></i> Export Word
                         </button>
                     </div>
                     <table class="w-full text-left">
-                        <thead><tr class="text-[9px] uppercase font-black tracking-widest text-gray-600 border-b border-white/5"><th class="px-8 py-5">Metric</th><th class="px-8 py-5">Type</th><th class="px-8 py-5 text-right">Amount</th></tr></thead>
-                        <tbody class="divide-y divide-white/5">
+                        <thead><tr class="text-xs font-semibold uppercase tracking-wider text-gray-500 bg-gray-800/20 border-b border-gray-700/50"><th class="px-6 py-4">Metric</th><th class="px-6 py-4">Type</th><th class="px-6 py-4 text-right">Amount</th></tr></thead>
+                        <tbody class="divide-y divide-gray-700/30">
                             ${rows.map(r => {
                                 const cls = { emerald:'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', 
                                               red:'text-red-400 bg-red-500/10 border-red-500/20',
                                               blue:'text-blue-400 bg-blue-500/10 border-blue-500/20',
-                                              gold:'text-[#d4af37] bg-[#d4af37]/10 border-[#d4af37]/20',
-                                              gray:'text-gray-400 bg-white/5 border-white/5' }[r.c];
-                                return `<tr class="hover:bg-white/[0.01] transition-all group"><td class="px-8 py-6"><p class="text-sm font-black text-white">${r.m}</p><p class="text-[9px] text-gray-600 mt-1">${r.d}</p></td><td class="px-8 py-6"><span class="px-3 py-1 rounded-full border text-[8px] font-black tracking-tighter ${cls}">${r.t}</span></td><td class="px-8 py-6 text-right font-mono font-bold text-base ${r.v >= 0 ? 'text-white' : 'text-red-400'}">${r.v < 0 ? '-' : '+'}${this.fmt(Math.abs(r.v))}</td></tr>`;
+                                              gold:'text-[#c5a059] bg-[#c5a059]/10 border-[#c5a059]/20',
+                                              gray:'text-gray-400 bg-gray-700 border-gray-600' }[r.c];
+                                return `<tr class="hover:bg-gray-800/50 transition-colors group"><td class="px-6 py-4"><p class="text-sm font-bold text-gray-200">${r.m}</p><p class="text-xs text-gray-500 font-semibold mt-1">${r.d}</p></td><td class="px-6 py-4"><span class="px-2 py-1 rounded-md border text-xs font-bold ${cls}">${r.t}</span></td><td class="px-6 py-4 text-right font-bold text-base ${r.v >= 0 ? 'text-gray-200' : 'text-red-400'}">${r.v < 0 ? '-' : '+'}${this.fmt(Math.abs(r.v))}</td></tr>`;
                             }).join('')}
                         </tbody>
                     </table>
@@ -284,21 +290,21 @@ const ReportHub = {
 
         return `
             <div class="space-y-6">
-                <div class="flex items-center justify-between pb-2 border-b border-white/5">
+                <div class="flex items-center justify-between pb-4 border-b border-gray-700/50">
                     <div class="flex gap-4">
-                        ${['All','Food','Drinks'].map(t => `<button onclick="ReportHub.setOrderTab('${t}')" class="text-[10px] font-black uppercase tracking-widest pb-3 border-b-2 transition-all ${this.orderHistoryTab === t ? 'text-[#d4af37] border-[#d4af37]' : 'text-gray-500 border-transparent hover:text-white'}">${t} Orders</button>`).join('')}
+                        ${['All','Food','Drinks'].map(t => `<button onclick="ReportHub.setOrderTab('${t}')" class="text-xs font-bold uppercase tracking-wider pb-4 -mb-[17px] border-b-2 transition-colors ${this.orderHistoryTab === t ? 'text-[#c5a059] border-[#c5a059]' : 'text-gray-500 border-transparent hover:text-white'}">${t} Orders</button>`).join('')}
                     </div>
                     <div class="flex gap-3">
-                        <button onclick="ReportHub.exportOrdersCSV('${this.orderHistoryTab}')" class="text-[9px] font-black uppercase text-gray-500 hover:text-[#d4af37] transition-all flex items-center gap-2 outline-none">
-                             <i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV
+                        <button onclick="ReportHub.exportOrdersCSV('${this.orderHistoryTab}')" class="text-xs font-semibold uppercase text-gray-500 hover:text-[#c5a059] transition-colors flex items-center gap-2 outline-none">
+                             <i data-lucide="download" class="w-4 h-4"></i> Export CSV
                         </button>
                     </div>
                 </div>
-                <div class="glass rounded-[2rem] border border-white/5 overflow-hidden max-h-[600px] overflow-y-auto custom-scrollbar">
+                <div class="rounded-xl border border-gray-700/50 bg-gray-800/20 overflow-hidden max-h-[600px] overflow-y-auto">
                     <table class="w-full text-left">
-                        <thead class="sticky top-0 bg-[#151716] z-20"><tr class="text-[9px] uppercase font-black tracking-widest text-gray-600 border-b border-white/5"><th class="px-6 py-4">Order# | Table</th><th class="px-6 py-4">Items Breakdown</th><th class="px-6 py-4 text-right">Payment</th><th class="px-6 py-4 text-center">Status</th></tr></thead>
-                        <tbody class="divide-y divide-white/5 text-[11px]">
-                            ${filtered.map(o => {
+                        <thead class="sticky top-0 bg-gray-800 z-20"><tr class="text-xs font-semibold uppercase tracking-wider text-gray-500 border-b border-gray-700/50"><th class="px-6 py-4">Order# | Table</th><th class="px-6 py-4">Items Breakdown</th><th class="px-6 py-4 text-right">Payment</th><th class="px-6 py-4 text-center">Status</th></tr></thead>
+                        <tbody class="divide-y divide-gray-700/30 text-sm">
+                            ${filtered.length ? filtered.map(o => {
                                 // Spec: row total = sum of matching items only
                                 let tabTotal = 0;
                                 (o.items||[]).forEach(i => {
@@ -306,8 +312,8 @@ const ReportHub = {
                                         tabTotal += (i.price * i.quantity);
                                     }
                                 });
-                                return `<tr class="hover:bg-white/[0.02]"><td class="px-6 py-5"><p class="font-black text-white text-sm">#${o.orderNumber}</p><p class="uppercase text-gray-500 font-bold mt-1 tracking-tighter">${o.tableNumber || 'Walking'} · ${new Date(o.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p></td><td class="px-6 py-5"><div class="max-w-[300px] text-gray-400 space-y-0.5">${(o.items||[]).map(i => `<p class="truncate"><span class="text-white font-bold">${i.quantity}</span> x ${i.name}</p>`).join('')}</div></td><td class="px-6 py-5 text-right"><p class="font-black text-[#f3cf7a] text-sm">${this.fmt(tabTotal)}</p><p class="uppercase text-[9px] text-gray-600 font-bold mt-0.5">${o.paymentMethod || 'cash'}</p></td><td class="px-6 py-5 text-center"><span class="px-2.5 py-1 rounded-full border text-[8px] font-black uppercase ${o.status==='cancelled'?'bg-red-500/10 text-red-400 border-red-500/20':'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}">${o.status}</span></td></tr>`;
-                            }).join('')}
+                                return `<tr class="hover:bg-gray-800/50"><td class="px-6 py-4"><p class="font-bold text-gray-200 text-sm">#${o.orderNumber}</p><p class="text-xs text-gray-500 font-semibold mt-1">${o.tableNumber || 'Walking'} · ${new Date(o.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p></td><td class="px-6 py-4"><div class="max-w-[300px] text-gray-400 space-y-1">${(o.items||[]).map(i => `<p class="truncate"><span class="text-gray-200 font-bold">${i.quantity}</span> x ${i.name}</p>`).join('')}</div></td><td class="px-6 py-4 text-right"><p class="font-bold text-[#c5a059] text-sm">${this.fmt(tabTotal)}</p><p class="uppercase text-xs text-gray-500 font-semibold mt-1">${o.paymentMethod || 'cash'}</p></td><td class="px-6 py-4 text-center"><span class="px-2.5 py-1 rounded-md border text-xs font-bold uppercase ${o.status==='cancelled'?'bg-red-500/10 text-red-400 border-red-500/20':'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}">${o.status}</span></td></tr>`;
+                            }).join('') : `<tr><td colspan="4" class="px-6 py-16 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">No orders in this period</td></tr>`}
                         </tbody>
                     </table>
                 </div>
@@ -319,24 +325,24 @@ const ReportHub = {
         const lowCount = u.filter(i => i.isLowStock).length;
         return `
             <div class="space-y-6">
-                ${lowCount > 0 ? `<div class="flex items-center gap-4 p-5 rounded-3xl bg-red-500/[0.03] border border-red-500/10 text-red-400/80"><i data-lucide="alert-triangle" class="w-4 h-4"></i><p class="text-[9px] uppercase font-black tracking-widest">${lowCount} Low Stock items alert.</p></div>` : ''}
+                ${lowCount > 0 ? `<div class="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400"><i data-lucide="alert-triangle" class="w-4 h-4"></i><p class="text-xs font-bold uppercase tracking-wider">${lowCount} Low Stock items alert.</p></div>` : ''}
                 <div class="flex justify-between items-center px-2">
-                    <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600">Inventory Turnover · ${u.length} Items</h3>
-                    <button onclick="ReportHub.exportInventoryCSV()" class="text-[9px] font-black uppercase text-gray-500 hover:text-white transition-all flex items-center gap-2 outline-none"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV</button>
+                    <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Inventory Turnover · ${u.length} Items</h3>
+                    <button onclick="ReportHub.exportInventoryCSV()" class="text-xs font-semibold uppercase text-gray-400 hover:text-white transition-colors flex items-center gap-2 outline-none"><i data-lucide="download" class="w-4 h-4"></i> Export CSV</button>
                 </div>
-                <div class="hidden lg:block glass rounded-[2rem] border border-white/5 overflow-hidden">
-                    <table class="w-full text-left text-[11px]">
-                        <thead><tr class="text-[9px] uppercase font-black tracking-widest text-gray-600 bg-white/[0.03] border-b border-white/5"><th class="px-6 py-5">Item Name</th><th class="px-6 py-5 text-right">Sell Price</th><th class="px-6 py-5 text-right">Remains</th><th class="px-6 py-5 text-right">Investment (@avg)</th><th class="px-6 py-5 text-right">Usage</th><th class="px-6 py-5 text-right">Potential Value</th><th class="px-6 py-5 text-center">Status</th></tr></thead>
-                        <tbody class="divide-y divide-white/5">
+                <div class="hidden lg:block rounded-xl border border-gray-700/50 bg-gray-800/20 overflow-hidden">
+                    <table class="w-full text-left text-sm">
+                        <thead><tr class="text-xs font-semibold uppercase tracking-wider text-gray-500 bg-gray-800/50 border-b border-gray-700/50"><th class="px-6 py-4">Item Name</th><th class="px-6 py-4 text-right">Sell Price</th><th class="px-6 py-4 text-right">Remains</th><th class="px-6 py-4 text-right">Investment (@avg)</th><th class="px-6 py-4 text-right">Usage</th><th class="px-6 py-4 text-right">Potential Value</th><th class="px-6 py-4 text-center">Status</th></tr></thead>
+                        <tbody class="divide-y divide-gray-700/30">
                             ${u.filter(i => (i.openingStock||0) > 0 || (i.closingStock||0) > 0 || (i.consumed||0) > 0).map(i => `
-                                <tr class="${i.isLowStock ? 'bg-red-500/[0.01]' : ''} hover:bg-white/[0.02]">
-                                    <td class="px-6 py-5"><p class="font-black text-white">${i.name}</p><p class="text-[9px] text-gray-600 uppercase mt-0.5">${i.category}</p></td>
-                                    <td class="px-6 py-5 text-right font-mono">${this.fmt(i.currentUnitCost)}</td>
-                                    <td class="px-6 py-5 text-right font-bold text-white">${i.closingStock} ${i.unit}</td>
-                                    <td class="px-6 py-5 text-right font-mono text-[#f3cf7a]">${this.fmt(i.weightedAvgCost * i.closingStock)}</td>
-                                    <td class="px-6 py-5 text-right text-emerald-400 font-bold">-${i.consumed}</td>
-                                    <td class="px-6 py-5 text-right font-mono text-white">${this.fmt(i.currentUnitCost * i.closingStock)}</td>
-                                    <td class="px-6 py-5 text-center"><span class="px-2 py-0.5 rounded-full border text-[8px] font-black ${i.isLowStock ? 'text-red-400 border-red-400/20 bg-red-400/10' : 'text-emerald-400 border-emerald-400/20 bg-emerald-400/10'}">${i.isLowStock ? 'LOW' : 'OK'}</span></td>
+                                <tr class="${i.isLowStock ? 'bg-red-500/5' : ''} hover:bg-gray-800/50 transition-colors">
+                                    <td class="px-6 py-4"><p class="font-bold text-gray-200">${i.name}</p><p class="text-xs text-gray-500 font-semibold mt-1">${i.category}</p></td>
+                                    <td class="px-6 py-4 text-right font-bold text-gray-300">${this.fmt(i.currentUnitCost)}</td>
+                                    <td class="px-6 py-4 text-right font-bold text-gray-200">${i.closingStock} ${i.unit}</td>
+                                    <td class="px-6 py-4 text-right font-bold text-[#c5a059]">${this.fmt(i.weightedAvgCost * i.closingStock)}</td>
+                                    <td class="px-6 py-4 text-right text-emerald-400 font-bold">-${i.consumed}</td>
+                                    <td class="px-6 py-4 text-right font-bold text-gray-200">${this.fmt(i.currentUnitCost * i.closingStock)}</td>
+                                    <td class="px-6 py-4 text-center"><span class="px-2 py-1 rounded-md border text-xs font-bold ${i.isLowStock ? 'text-red-400 border-red-500/20 bg-red-500/10' : 'text-emerald-400 border-emerald-500/20 bg-emerald-500/10'}">${i.isLowStock ? 'LOW' : 'OK'}</span></td>
                                 </tr>`).join('')}
                         </tbody>
                     </table>
@@ -348,13 +354,13 @@ const ReportHub = {
         const u = this.stockUsageData?.stockAnalysis || [];
         return `
             <div class="space-y-6">
-                <div class="flex justify-between items-center px-2"><h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600">Store Investment Analytics</h3></div>
-                <div class="hidden lg:block glass rounded-[2rem] border border-white/5 overflow-hidden">
-                    <table class="w-full text-left text-[11px]">
-                        <thead><tr class="text-[9px] uppercase font-black tracking-widest text-gray-600 bg-white/[0.03] border-b border-white/5"><th class="px-6 py-5">Item Name</th><th class="px-6 py-5 text-right">Unit Cost</th><th class="px-6 py-5 text-right">In Store</th><th class="px-6 py-5 text-right">Total Inv.</th><th class="px-6 py-5 text-right">Transferred</th><th class="px-6 py-5 text-center">Status</th></tr></thead>
-                        <tbody class="divide-y divide-white/5">
+                <div class="flex justify-between items-center px-2"><h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Store Investment Analytics</h3></div>
+                <div class="hidden lg:block rounded-xl border border-gray-700/50 bg-gray-800/20 overflow-hidden">
+                    <table class="w-full text-left text-sm">
+                        <thead><tr class="text-xs font-semibold uppercase tracking-wider text-gray-500 bg-gray-800/50 border-b border-gray-700/50"><th class="px-6 py-4">Item Name</th><th class="px-6 py-4 text-right">Unit Cost</th><th class="px-6 py-4 text-right">In Store</th><th class="px-6 py-4 text-right">Total Inv.</th><th class="px-6 py-4 text-right">Transferred</th><th class="px-6 py-4 text-center">Status</th></tr></thead>
+                        <tbody class="divide-y divide-gray-700/30">
                             ${u.filter(i => (i.storeQuantity||0) > 0 || (i.transferred||0) > 0).map(i => `
-                                <tr class="hover:bg-white/[0.02] transition-colors"><td class="px-6 py-5"><p class="font-black text-white">${i.name}</p><p class="text-[9px] text-gray-600 uppercase mt-0.5">${i.category}</p></td><td class="px-6 py-5 text-right font-mono">${this.fmt(i.weightedAvgCost).replace(' Br','')}</td><td class="px-6 py-5 text-right font-black text-white text-base">${i.storeQuantity} ${i.unit}</td><td class="px-6 py-5 text-right font-mono font-bold text-[#f3cf7a]">${this.fmt(i.storeClosingValue)}</td><td class="px-6 py-5 text-right text-gray-500 font-bold">${i.transferred} ${i.unit}</td><td class="px-6 py-5 text-center"><span class="px-2 py-0.5 rounded-full border border-white/5 text-[8px] font-black uppercase text-gray-600">STORE_OK</span></td></tr>`).join('')}
+                                <tr class="hover:bg-gray-800/50 transition-colors"><td class="px-6 py-4"><p class="font-bold text-gray-200">${i.name}</p><p class="text-xs text-gray-500 font-semibold mt-1">${i.category}</p></td><td class="px-6 py-4 text-right font-bold text-gray-300">${this.fmt(i.weightedAvgCost).replace(' Br','')}</td><td class="px-6 py-4 text-right font-bold text-gray-200">${i.storeQuantity} ${i.unit}</td><td class="px-6 py-4 text-right font-bold text-[#c5a059]">${this.fmt(i.storeClosingValue)}</td><td class="px-6 py-4 text-right text-gray-400 font-bold">${i.transferred} ${i.unit}</td><td class="px-6 py-4 text-center"><span class="px-2 py-1 rounded-md border border-gray-600 bg-gray-700/50 text-[10px] font-bold uppercase text-gray-400">STORE_OK</span></td></tr>`).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -373,21 +379,21 @@ const ReportHub = {
 
         return `
             <div class="space-y-6">
-                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-4 border-b border-white/5">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-4 border-b border-gray-700/50">
                     <div class="flex gap-4">
-                        ${['Food','Drinks'].map(t => `<button onclick="ReportHub.setMenuTab('${t}')" class="text-[10px] font-black uppercase tracking-widest pb-3 border-b-2 transition-all ${this.menuSalesTab === t ? 'text-[#d4af37] border-[#d4af37]' : 'text-gray-500 border-transparent hover:text-white'}">${t} Sales</button>`).join('')}
+                        ${['Food','Drinks'].map(t => `<button onclick="ReportHub.setMenuTab('${t}')" class="text-xs font-bold uppercase tracking-wider pb-4 -mb-[17px] border-b-2 transition-colors ${this.menuSalesTab === t ? 'text-[#c5a059] border-[#c5a059]' : 'text-gray-500 border-transparent hover:text-white'}">${t} Sales</button>`).join('')}
                     </div>
                     <div class="flex flex-wrap items-center gap-3">
-                         <div class="relative group"><i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-600"></i><input type="text" oninput="ReportHub.setMenuSearch(this.value)" placeholder="Search item..." class="bg-white/5 border border-white/10 rounded-2xl pl-10 pr-5 py-2.5 text-[10px] font-black text-white outline-none w-52 focus:border-[#d4af37]/30"></div>
-                         <select onchange="ReportHub.setMenuCashier(this.value)" class="bg-[#0f1110] border border-white/10 rounded-2xl px-5 py-2.5 text-[10px] font-black text-gray-400 outline-none w-48">${cashiers.map(c => `<option value="${c}" ${this.menuCashierFilter === c ? 'selected' : ''}>${c}</option>`).join('')}</select>
-                         <button onclick="ReportHub.exportMenuCSV()" class="w-11 h-11 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 hover:text-white outline-none"><i data-lucide="download" class="w-4 h-4"></i></button>
+                         <div class="relative group"><i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i><input type="text" oninput="ReportHub.setMenuSearch(this.value)" placeholder="Search item..." class="bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-sm text-gray-200 outline-none w-52 focus:border-[#c5a059]"></div>
+                         <select onchange="ReportHub.setMenuCashier(this.value)" class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm font-semibold text-gray-300 outline-none w-48">${cashiers.map(c => `<option value="${c}" ${this.menuCashierFilter === c ? 'selected' : ''}>${c}</option>`).join('')}</select>
+                         <button onclick="ReportHub.exportMenuCSV()" class="w-10 h-10 rounded-lg bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 outline-none"><i data-lucide="download" class="w-4 h-4"></i></button>
                     </div>
                 </div>
-                <div class="glass rounded-[2rem] border border-white/5 overflow-hidden">
-                    <table class="w-full text-left text-[11px]">
-                        <thead><tr class="text-[9px] uppercase font-black tracking-widest text-gray-600 bg-white/[0.03] border-b border-white/5"><th class="px-8 py-5">Menu Item</th><th class="px-8 py-5">Aggregated Cashier</th><th class="px-8 py-5 text-right">Quantity Sold</th><th class="px-8 py-5 text-right">Revenue Generated</th></tr></thead>
-                        <tbody class="divide-y divide-white/5">
-                            ${filtered.sort((a,b)=>b.revenue-a.revenue).map(s => `<tr class="hover:bg-white/[0.02] transition-colors"><td class="px-8 py-5"><p class="font-black text-white">${s.name}</p><p class="text-[9px] text-gray-600 font-bold uppercase mt-0.5">${s.category}</p></td><td class="px-8 py-5 text-gray-400 font-bold">${s.cashier}</td><td class="px-8 py-5 text-right font-black text-white text-base">${s.quantity}</td><td class="px-8 py-5 text-right font-mono font-bold text-[#f3cf7a]">${this.fmt(s.revenue)}</td></tr>`).join('')}
+                <div class="rounded-xl border border-gray-700/50 bg-gray-800/20 overflow-hidden">
+                    <table class="w-full text-left text-sm">
+                        <thead><tr class="text-xs font-semibold uppercase tracking-wider text-gray-500 bg-gray-800/50 border-b border-gray-700/50"><th class="px-6 py-4">Menu Item</th><th class="px-6 py-4">Aggregated Cashier</th><th class="px-6 py-4 text-right">Quantity Sold</th><th class="px-6 py-4 text-right">Revenue Generated</th></tr></thead>
+                        <tbody class="divide-y divide-gray-700/30">
+                            ${filtered.sort((a,b)=>b.revenue-a.revenue).map(s => `<tr class="hover:bg-gray-800/50 transition-colors"><td class="px-6 py-4"><p class="font-bold text-gray-200">${s.name}</p><p class="text-xs text-gray-500 font-semibold mt-1">${s.category}</p></td><td class="px-6 py-4 text-gray-400 font-bold">${s.cashier}</td><td class="px-6 py-4 text-right font-bold text-gray-200">${s.quantity}</td><td class="px-6 py-4 text-right font-bold text-[#c5a059]">${this.fmt(s.revenue)}</td></tr>`).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -406,22 +412,22 @@ const ReportHub = {
         const pct = stats.orderRevenue > 0 ? ((active.amount/stats.orderRevenue)*100).toFixed(1) : 0;
 
         return `
-            <div class="space-y-8">
+            <div class="space-y-6">
                 <div class="flex items-center justify-between px-2">
-                    <button onclick="ReportHub.navCashier(-1)" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-500 hover:text-[#d4af37] transition-all outline-none"><i data-lucide="chevron-left"></i></button>
-                    <p class="text-[10px] font-black uppercase tracking-widest text-gray-500">${this.activeCashierIdx + 1} / ${cashiers.length} Staff Members</p>
-                    <button onclick="ReportHub.navCashier(1)" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-500 hover:text-[#d4af37] transition-all outline-none"><i data-lucide="chevron-right"></i></button>
+                    <button onclick="ReportHub.navCashier(-1)" class="w-10 h-10 rounded-lg bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-colors outline-none"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">${this.activeCashierIdx + 1} / ${cashiers.length} Staff Members</p>
+                    <button onclick="ReportHub.navCashier(1)" class="w-10 h-10 rounded-lg bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-colors outline-none"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="glass p-8 rounded-[3rem] border border-white/5 text-center"><div class="w-20 h-20 rounded-full bg-[#d4af37]/10 border border-[#d4af37]/20 flex items-center justify-center mx-auto mb-6 text-[#d4af37]"><i data-lucide="user" class="w-10 h-10"></i></div><h4 class="text-2xl font-black font-playfair italic text-[#f3cf7a] mb-1 line-clamp-1">${active.name}</h4><p class="text-[9px] uppercase font-black tracking-widest text-[#d4af37]/60">Active this period</p></div>
-                    <div class="glass p-8 rounded-[3rem] bg-[#d4af37]/5 border border-[#d4af37]/10 text-center"><p class="text-[9px] uppercase font-black tracking-widest text-[#d4af37] mb-6">Total Contribution</p><h4 class="text-3xl font-black text-white mb-2 underline decoration-[#d4af37] underline-offset-8">${this.fmt(active.amount)}</h4><p class="text-[10px] font-bold text-[#d4af37]/60">${pct}% of order revenue</p></div>
-                    <div class="glass p-8 rounded-[3rem] border border-white/5 text-center"><p class="text-[9px] uppercase font-black tracking-widest text-gray-600 mb-6">Orders Handled</p><h4 class="text-4xl font-black text-white">${active.count}</h4><p class="text-[10px] font-bold text-gray-600 mt-2">Closed Transactions</p></div>
+                    <div class="p-8 rounded-2xl border border-gray-700/50 bg-gray-800/80 text-center"><div class="w-16 h-16 rounded-full bg-gray-700 border border-gray-600 flex items-center justify-center mx-auto mb-6 text-gray-300"><i data-lucide="user" class="w-8 h-8"></i></div><h4 class="text-xl font-bold text-gray-200 mb-1 line-clamp-1">${active.name}</h4><p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Active this period</p></div>
+                    <div class="p-8 rounded-2xl bg-[#c5a059]/10 border border-[#c5a059]/20 text-center"><p class="text-xs font-semibold uppercase tracking-wider text-[#c5a059] mb-4">Total Contribution</p><h4 class="text-3xl font-bold text-gray-200 mb-2">${this.fmt(active.amount)}</h4><p class="text-sm font-semibold text-[#c5a059]/80">${pct}% of order revenue</p></div>
+                    <div class="p-8 rounded-2xl border border-gray-700/50 bg-gray-800/80 text-center"><p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-4">Orders Handled</p><h4 class="text-3xl font-bold text-gray-200">${active.count}</h4><p class="text-sm font-semibold text-gray-500 mt-2">Closed Transactions</p></div>
                 </div>
-                <div class="glass p-8 rounded-[3rem] border border-white/5">
-                    <h5 class="text-[10px] uppercase font-black tracking-widest text-gray-500 mb-6">Items Sold by Staff</h5>
+                <div class="p-8 rounded-2xl border border-gray-700/50 bg-gray-800/50">
+                    <h5 class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-6 border-b border-gray-700/50 pb-4">Items Sold by Staff</h5>
                     <div class="space-y-4">
                         ${(active.items || []).sort((a,b)=>b.revenue-a.revenue).slice(0,10).map(i => `
-                            <div class="flex items-center justify-between pb-4 border-b border-white/5"><div><p class="font-black text-white text-sm">${i.name}</p><p class="text-[8px] uppercase font-black text-gray-600 tracking-tighter">${i.category}</p></div><div class="text-right"><p class="text-[#f3cf7a] font-mono font-bold">${this.fmt(i.revenue)}</p><p class="text-[10px] text-gray-600 font-bold">${i.quantity} units</p></div></div>`).join('')}
+                            <div class="flex items-center justify-between pb-4 border-b border-gray-700/30"><div><p class="font-bold text-gray-200 text-sm">${i.name}</p><p class="text-xs font-semibold text-gray-500 mt-1">${i.category}</p></div><div class="text-right"><p class="text-[#c5a059] font-bold">${this.fmt(i.revenue)}</p><p class="text-xs text-gray-400 font-semibold mt-1">${i.quantity} units</p></div></div>`).join('')}
                     </div>
                 </div>
             </div>`;
@@ -429,47 +435,41 @@ const ReportHub = {
 
     // ─── HELPERS & SUB-LOGIC ───────────────────────────────────────────────────
     setLoading(s) { document.getElementById('loading-bar')?.classList.toggle('opacity-100', s); },
-    showError(m) { /* Silenced JS Alert as requested */ console.error(m); },
-    api(method, url) { return fetch(url, { method }).then(r => r.json()); },
+    showError(m) { console.error(m); },
+    async api(method, url, opts = {}) {
+        const res = await fetch(url, { method, credentials: 'same-origin' });
+        const text = await res.text();
+        let json;
+        try { json = JSON.parse(text); } catch { json = null; }
+        if (!res.ok || (json?.status === 'error')) {
+            if (opts.optional) return null;
+            throw new Error(json?.message || `Request failed: ${url}`);
+        }
+        return json;
+    },
     fmt(n) { return Number(n||0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' Br'; },
     
     getQueryString() {
-        const url = new URLSearchParams();
-        url.append('period', this.timeRange);
+        const params = new URLSearchParams();
+        params.append('period', this.timeRange);
         if (this.timeRange === 'custom') {
-            url.append('startDate', this.selectedDate.toISOString().split('T')[0]);
-            url.append('endDate', this.selectedDate.toISOString().split('T')[0]);
+            const d = this.selectedDate.toISOString().split('T')[0];
+            params.append('startDate', d);
+            params.append('endDate', d);
         }
-        return `?${url.toString()}`;
-    },
-
-    getOrdersQuery() {
-        const url = new URLSearchParams();
-        url.append('limit', 1000);
-        url.append('includeDeleted', 'true');
-        const now = new Date();
-        const start = new Date();
-        if (this.timeRange === 'week') start.setDate(now.getDate() - 7);
-        else if (this.timeRange === 'month') start.setDate(now.getDate() - 30);
-        else if (this.timeRange === 'year') start.setDate(now.getDate() - 365);
-        else if (this.timeRange === 'custom') {
-            start.setTime(this.selectedDate.getTime());
-            now.setTime(this.selectedDate.getTime());
-            now.setHours(23,59,59);
-        }
-        url.append('startDate', start.toISOString());
-        return `?${url.toString()}`;
+        return `?${params.toString()}`;
     },
 
     setTimeRange(r) {
         this.timeRange = r;
         document.querySelectorAll('.range-btn').forEach(b => {
              const act = b.id === `range-btn-${r}`;
-             b.classList.toggle('bg-[#d4af37]', act);
-             b.classList.toggle('text-black', act);
-             b.classList.toggle('shadow-[#d4af37]/20', act);
+             b.classList.toggle('bg-[#c5a059]', act);
+             b.classList.toggle('text-gray-900', act);
+             
              b.classList.toggle('text-gray-500', !act);
-             b.classList.toggle('cursor-pointer', true);
+             b.classList.toggle('hover:text-white', !act);
+             b.classList.toggle('hover:bg-gray-800', !act);
         });
         this.fetchAllData();
     },
@@ -479,8 +479,8 @@ const ReportHub = {
         this.selectedDate = new Date(v);
         this.timeRange = 'custom';
         document.querySelectorAll('.range-btn').forEach(b => {
-             b.classList.remove('bg-[#d4af37]', 'text-black', 'shadow-[#d4af37]/20');
-             b.classList.add('text-gray-500');
+             b.classList.remove('bg-[#c5a059]', 'text-gray-900');
+             b.classList.add('text-gray-500', 'hover:text-white', 'hover:bg-gray-800');
         });
         this.fetchAllData();
     },
@@ -497,8 +497,8 @@ const ReportHub = {
     },
 
     mobileStatCard(l, v, c) {
-        const cls = { emerald:'text-emerald-400 decoration-emerald-500/30', red:'text-red-400 decoration-red-500/30' }[c] || 'text-white';
-        return `<div class="glass p-6 rounded-[2rem] border border-white/5"><p class="text-[9px] uppercase font-black tracking-widest text-gray-600 mb-2">${l}</p><h4 class="text-2xl font-black font-mono underline decoration-4 underline-offset-8 ${cls}">${this.fmt(v)}</h4></div>`;
+        const cls = { emerald:'text-emerald-400', red:'text-red-400' }[c] || 'text-gray-200';
+        return `<div class="p-5 rounded-xl border border-gray-700/50 bg-gray-800/40"><p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">${l}</p><h4 class="text-xl font-bold ${cls}">${this.fmt(v)}</h4></div>`;
     },
 
     // ─── EXPORT LOGIC ────────────────────────────────────────────────────────────

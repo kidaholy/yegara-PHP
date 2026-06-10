@@ -55,6 +55,42 @@ function requireAuth($roles = []) {
 }
 
 /**
+ * Require authentication for JSON API endpoints (returns JSON instead of redirecting)
+ */
+function requireApiAuth($roles = []) {
+    header('Content-Type: application/json');
+
+    if (!isAuthenticated()) {
+        http_response_code(401);
+        echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
+        exit;
+    }
+
+    if (!empty($roles)) {
+        if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], $roles)) {
+            http_response_code(403);
+            echo json_encode(['status' => 'error', 'message' => 'Forbidden']);
+            exit;
+        }
+    }
+
+    try {
+        $user = db('users')->findUnique([
+            'where' => ['id' => $_SESSION['user_id']]
+        ]);
+
+        if (!$user || (isset($user['isActive']) && $user['isActive'] === false)) {
+            logout();
+            http_response_code(401);
+            echo json_encode(['status' => 'error', 'message' => 'Account deactivated']);
+            exit;
+        }
+    } catch (Exception $e) {
+        error_log("Auth DB check failed: " . $e->getMessage());
+    }
+}
+
+/**
  * Attempt to log in a user
  */
 function login($email, $password) {

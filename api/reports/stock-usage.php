@@ -1,83 +1,100 @@
 <?php
 require_once '../../includes/auth.php';
 require_once '../../includes/JsonDB.php';
+require_once '../../includes/report-dates.php';
+require_once '../../includes/stock-logic.php';
 
-// Authenticate and check for admin/store role
-requireAuth(['admin', 'store']);
-
-header('Content-Type: application/json');
-
-$startDate = $_GET['startDate'] ?? date('Y-m-d');
-$endDate = $_GET['endDate'] ?? date('Y-m-d');
+requireApiAuth(['admin', 'reception', 'store', 'cashier']);
 
 try {
-    $orderItems = db('orderItems')->findMany();
+    $period = $_GET['period'] ?? 'week';
+    $range = resolveReportDateRange($period, $_GET['startDate'] ?? null, $_GET['endDate'] ?? null);
+    $start = $range['start'];
+    $end = $range['end'];
+    $startDate = $range['startDate'];
+    $endDate = $range['endDate'];
+
     $stocks = db('stocks')->findMany();
-    
-    // Create stock lookup map for faster access
+    $orders = db('orders')->findMany();
+    $storeLogs = db('storeLogs')->findMany();
+
     $stockMap = [];
     foreach ($stocks as $stock) {
+        if ($stock['isDeleted'] ?? false) continue;
         $stockMap[$stock['id']] = $stock;
     }
 
-    $usageByItem = [];
+    // Period consumption from order line items
+    $periodConsumption = [];
     $totalConsumptionValue = 0;
     $totalItemsConsumed = 0;
 
-    foreach ($orderItems as $item) {
-        if ($item['isDeleted'] ?? false) continue;
-        
-        $itemDateStr = $item['createdAt'] ?? date('Y-m-d');
-        $itemDate = date('Y-m-d', strtotime($itemDateStr));
-        
-        if ($itemDate >= $startDate && $itemDate <= $endDate) {
-            $menuItemId = $item['menuItemId'] ?? null;
-            
-            // In this specific system, stocks often share ID with menuItem for active stock
-            $stockId = $menuItemId; 
-            
-            if ($stockId && isset($stockMap[$stockId])) {
-                $stockUnit = $stockMap[$stockId];
-                $name = $stockUnit['name'];
-                $qty = floatval($item['quantity']);
-                $cost = floatval($stockUnit['price'] ?? 0); 
-                
-                if (!isset($usageByItem[$stockId])) {
-                    $usageByItem[$stockId] = [
-                        'name' => $name,
-                        'id' => $stockId,
-                        'quantity' => 0,
-                        'totalValue' => 0,
-                        'category' => $stockUnit['category'] ?? 'General',
-                        'unit' => $stockUnit['unit'] ?? 'pcs',
-                        'openingStock' => floatval($stockUnit['quantity'] ?? 0) + 10, // Mock history for demo if needed
-                        'closingStock' => floatval($stockUnit['quantity'] ?? 0),
-                        'consumed' => 0,
-                        'weightedAvgCost' => floatval($stockUnit['price'] ?? 0),
-                        'currentUnitCost' => floatval($stockUnit['price'] ?? 0),
-                        'storeQuantity' => floatval($stockUnit['storeQuantity'] ?? 0),
-                        'storeClosingValue' => floatval($stockUnit['storeQuantity'] ?? 0) * floatval($stockUnit['price'] ?? 0),
-                        'isLowStock' => floatval($stockUnit['quantity'] ?? 0) < 5
-                    ];
-                }
-                
-                $usageByItem[$stockId]['quantity'] += $qty;
-                $usageByItem[$stockId]['consumed'] += $qty;
-                $usageByItem[$stockId]['totalValue'] += ($qty * $cost);
-                
-                $totalConsumptionValue += ($qty * $cost);
-                $totalItemsConsumed += $qty;
-            }
+    foreach ($orders as $order) {
+        if ($order['isDeleted'] ?? false) continue;
+        if (($order['status'] ?? '') === 'cancelled') continue;
+        if (!isWithinReportRange($order['createdAt'] ?? null, $start, $end)) continue;
+
+        $lineItems = [];
+        foreach ($order['items'] ?? [] as $item) {
+            if ($item['isDeleted'] ?? false) continue;
+            $lineItems[] = [
+                'menuItemId' => $item['menuItemId'] ?? null,
+                'quantity' => $item['quantity'] ?? 0,
+            ];
+        }
+
+        $consumption = calculateStockConsumption($lineItems);
+        foreach ($consumption as $stockId => $qty) {
+            if (!isset($stockMap[$stockId])) continue;
+            $periodConsumption[$stockId] = ($periodConsumption[$stockId] ?? 0) + $qty;
+            $unitCost = (float)($stockMap[$stockId]['unitCost'] ?? $stockMap[$stockId]['averagePurchasePrice'] ?? 0);
+            $totalConsumptionValue += $qty * $unitCost;
+            $totalItemsConsumed += $qty;
         }
     }
 
-    // Sort usage by quantity descending
-    uasort($usageByItem, function($a, $b) {
-        return $b['quantity'] <=> $a['quantity'];
-    });
+    // Store transfers in period
+    $transferredByStock = [];
+    foreach ($storeLogs as $log) {
+        $logDate = $log['date'] ?? $log['createdAt'] ?? null;
+        if (!isWithinReportRange($logDate, $start, $end)) continue;
+        if (($log['type'] ?? '') !== 'TRANSFER_OUT') continue;
+        $stockId = $log['stockId'] ?? null;
+        if (!$stockId) continue;
+        $transferredByStock[$stockId] = ($transferredByStock[$stockId] ?? 0) + (float)($log['quantity'] ?? 0);
+    }
 
-    // Final result structure for JS consumption
-    $analysis = array_values($usageByItem);
+    $analysis = [];
+    foreach ($stockMap as $stockId => $stock) {
+        $closingStock = (float)($stock['quantity'] ?? 0);
+        $consumed = (float)($periodConsumption[$stockId] ?? 0);
+        $openingStock = $closingStock + $consumed;
+        $weightedAvgCost = (float)($stock['averagePurchasePrice'] ?? $stock['unitCost'] ?? 0);
+        $currentUnitCost = (float)($stock['unitCost'] ?? $weightedAvgCost);
+        $storeQuantity = (float)($stock['storeQuantity'] ?? 0);
+        $minLimit = (float)($stock['minLimit'] ?? 0);
+        $transferred = (float)($transferredByStock[$stockId] ?? 0);
+
+        $analysis[] = [
+            'id' => $stockId,
+            'name' => $stock['name'] ?? 'Unknown',
+            'category' => $stock['category'] ?? 'General',
+            'unit' => $stock['unit'] ?? 'pcs',
+            'openingStock' => $openingStock,
+            'closingStock' => $closingStock,
+            'consumed' => $consumed,
+            'weightedAvgCost' => $weightedAvgCost,
+            'currentUnitCost' => $currentUnitCost,
+            'storeQuantity' => $storeQuantity,
+            'storeClosingValue' => $storeQuantity * $weightedAvgCost,
+            'transferred' => $transferred,
+            'isLowStock' => $minLimit > 0 ? $closingStock <= $minLimit : $closingStock < 5,
+            'quantity' => $consumed,
+            'totalValue' => $consumed * $weightedAvgCost,
+        ];
+    }
+
+    usort($analysis, fn($a, $b) => $b['consumed'] <=> $a['consumed']);
 
     echo json_encode([
         'status' => 'success',
