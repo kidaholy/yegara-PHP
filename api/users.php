@@ -1,11 +1,10 @@
 <?php
 /**
- * API for User/Staff listing (Required for assignments)
+ * API for User/Staff listing
  */
 header('Content-Type: application/json');
 require_once '../includes/auth.php';
 require_once '../includes/JsonDB.php';
-
 
 function sendJson($data, $status = 200) {
     http_response_code($status);
@@ -13,22 +12,89 @@ function sendJson($data, $status = 200) {
     exit;
 }
 
-requireAuth(['admin', 'cashier', 'receptionist']);
+$method = $_SERVER['REQUEST_METHOD'];
+requireAuth(['admin', 'cashier', 'receptionist', 'reception']);
 
 try {
     $db = db('users');
-    $users = $db->findMany(['where' => ['isDeleted' => false]]);
-    
-    // Return only necessary fields for assignment
-    $minimal = array_map(function($u) {
-        return [
-            'id' => $u['id'],
-            'name' => $u['name'],
-            'role' => $u['role']
-        ];
-    }, $users);
 
-    sendJson(['status' => 'success', 'data' => $minimal]);
+    if ($method === 'GET') {
+        $fullMode = isset($_GET['full']) && $_GET['full'] === '1';
+        $users = $db->findMany(['where' => ['isDeleted' => false]]);
+
+        if ($fullMode) {
+            // Full data for the staff admin grid — exclude hashed password
+            $result = array_map(function($u) {
+                unset($u['password']);
+                return $u;
+            }, $users);
+            sendJson($result);
+        } else {
+            // Minimal data for assignment dropdowns
+            $minimal = array_map(function($u) {
+                return ['id' => $u['id'], 'name' => $u['name'], 'role' => $u['role']];
+            }, $users);
+            sendJson(['status' => 'success', 'data' => $minimal]);
+        }
+    }
+
+    if ($method === 'POST') {
+        requireAuth(['admin']);
+        $data = json_decode(file_get_contents('php://input'), true);
+        $password = $data['password'] ?? '';
+        $hashed = !empty($password) ? password_hash($password, PASSWORD_BCRYPT) : '';
+
+        $db->create(['data' => [
+            'name'               => $data['name'],
+            'email'              => $data['email'],
+            'password'           => $hashed,
+            'plainPassword'      => $password,
+            'role'               => $data['role'] ?? 'cashier',
+            'isActive'           => true,
+            'floorId'            => $data['floorId'] ?? null,
+            'assignedCategories' => $data['assignedCategories'] ?? [],
+            'permissions'        => $data['permissions'] ?? [],
+        ]]);
+
+        sendJson(['message' => 'User created', 'credentials' => ['email' => $data['email'], 'password' => $password]], 201);
+    }
+
+    if ($method === 'PUT') {
+        requireAuth(['admin']);
+        $id = $_GET['id'] ?? null;
+        if (!$id) sendJson(['message' => 'ID required'], 400);
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        // If just toggling active status
+        if (isset($data['isActive']) && count($data) === 1) {
+            $db->update(['where' => ['id' => $id], 'data' => ['isActive' => $data['isActive']]]);
+            sendJson(['message' => 'Status updated']);
+        }
+
+        $update = [];
+        if (!empty($data['name']))    $update['name']               = $data['name'];
+        if (!empty($data['email']))   $update['email']              = $data['email'];
+        if (!empty($data['role']))    $update['role']               = $data['role'];
+        if (array_key_exists('floorId', $data)) $update['floorId']  = $data['floorId'];
+        if (isset($data['assignedCategories'])) $update['assignedCategories'] = $data['assignedCategories'];
+        if (isset($data['permissions']))        $update['permissions']        = $data['permissions'];
+
+        if (!empty($data['password'])) {
+            $update['password']      = password_hash($data['password'], PASSWORD_BCRYPT);
+            $update['plainPassword'] = $data['password'];
+        }
+
+        $db->update(['where' => ['id' => $id], 'data' => $update]);
+        sendJson(['message' => 'User updated']);
+    }
+
+    if ($method === 'DELETE') {
+        requireAuth(['admin']);
+        $id = $_GET['id'] ?? null;
+        if (!$id) sendJson(['message' => 'ID required'], 400);
+        $db->update(['where' => ['id' => $id], 'data' => ['isDeleted' => true]]);
+        sendJson(['message' => 'User deleted']);
+    }
 
 } catch (Exception $e) {
     sendJson(['status' => 'error', 'message' => $e->getMessage()], 500);

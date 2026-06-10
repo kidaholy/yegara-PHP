@@ -85,13 +85,13 @@ function renderHeader($title = "Management System") {
             }
 
             .sidebar-link:hover {
-                background-color: rgba(255, 255, 255, 0.05);
-                color: #ffffff;
+                background-color: rgba(197, 160, 89, 0.05);
+                color: #c5a059;
             }
 
             .sidebar-link.active {
-                background-color: rgba(255, 255, 255, 0.1);
-                color: #ffffff;
+                background-color: rgba(197, 160, 89, 0.1);
+                color: #c5a059;
                 font-weight: 600;
             }
 
@@ -226,8 +226,8 @@ function renderTopNavLinks($role) {
         if (in_array($role, $link['roles'])) {
             $active = ($currentUrl === $link['url']);
             $cls = $active
-                ? 'px-4 py-2 text-sm font-semibold text-white bg-white/10 rounded-md transition-colors'
-                : 'px-4 py-2 text-sm font-medium text-white/60 hover:text-white hover:bg-white/5 rounded-md transition-colors';
+                ? 'px-4 py-2 text-sm font-semibold text-[#c5a059] bg-[#c5a059]/10 rounded-md transition-colors'
+                : 'px-4 py-2 text-sm font-medium text-white/60 hover:text-[#c5a059] hover:bg-[#c5a059]/5 rounded-md transition-colors';
             echo "<a href='{$link['url']}' class='{$cls}'>{$link['name']}</a>";
         }
     }

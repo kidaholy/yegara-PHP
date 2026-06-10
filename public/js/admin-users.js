@@ -44,14 +44,14 @@ const ROLE_ICONS = {
 };
 
 const ROLE_COLORS = {
-    admin: 'text-[#d4af37] bg-[#1a1712] border-[#d4af37]/20',
-    chef: 'text-orange-400 bg-orange-400/10 border-orange-400/20',
-    bar: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
-    display: 'text-purple-400 bg-purple-400/10 border-purple-400/20',
-    store_keeper: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
-    reception: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
-    custom: 'text-pink-400 bg-pink-400/10 border-pink-400/20',
-    cashier: 'text-[#d4af37] bg-[#1a1712] border-[#d4af37]/20'
+    admin: 'text-[#c5a059] bg-[#c5a059]/10 border-[#c5a059]/20',
+    chef: 'text-orange-400 bg-orange-500/10 border-orange-500/20',
+    bar: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+    display: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
+    store_keeper: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+    reception: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+    custom: 'text-pink-400 bg-pink-500/10 border-pink-500/20',
+    cashier: 'text-[#c5a059] bg-[#c5a059]/10 border-[#c5a059]/20'
 };
 
 /**
@@ -63,7 +63,7 @@ async function fetchAll() {
     
     try {
         const [users, floors, categories] = await Promise.all([
-            fetch('api/users.php').then(r => r.json()),
+            fetch('api/users.php?full=1').then(r => r.json()),
             fetch('api/floors.php').then(r => r.json()),
             fetch('api/categories.php').then(r => r.json())
         ]);
@@ -111,37 +111,37 @@ function renderUserCard(u) {
     const isRevealed = state.revealedPasswords[u.id];
 
     return `
-        <div class="glass p-6 md:p-8 rounded-[2.5rem] border border-white/5 transition-all duration-500 hover:border-[#d4af37]/30 group relative ${isDeactivated ? 'opacity-50 grayscale dashed border-white/10' : ''}">
+        <div class="bg-gray-800/60 p-6 rounded-2xl border border-gray-700/50 hover:bg-gray-800 hover:border-[#c5a059]/30 transition-colors group relative ${isDeactivated ? 'opacity-50 grayscale border-dashed border-gray-600' : ''}">
             <!-- Badges -->
             <div class="absolute top-6 right-6 flex items-center gap-2">
-                ${isMe ? '<span class="px-2.5 py-1 rounded-full bg-[#1a1712] text-[#d4af37] border border-[#d4af37]/20 text-[8px] font-black uppercase tracking-widest">You</span>' : ''}
-                <span class="px-2.5 py-1 rounded-full ${isActive ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'} border border-current/20 text-[8px] font-black uppercase tracking-widest">
+                ${isMe ? '<span class="px-2.5 py-1 rounded-md bg-[#1a1712] text-[#c5a059] border border-[#c5a059]/20 text-xs font-bold uppercase tracking-wider">You</span>' : ''}
+                <span class="px-2.5 py-1 rounded-md ${isActive ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'} border text-xs font-bold uppercase tracking-wider">
                     ${isActive ? 'Active' : 'Deactivated'}
                 </span>
             </div>
 
             <!-- Header -->
-            <div class="flex items-center gap-5 mb-8">
-                <div class="w-14 h-14 rounded-2xl ${roleColor} flex items-center justify-center border shadow-lg group-hover:scale-110 transition-transform">
-                    <i data-lucide="${roleIcon}" class="w-6 h-6"></i>
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 rounded-xl ${roleColor} flex items-center justify-center border">
+                    <i data-lucide="${roleIcon}" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <h3 class="text-xl font-black font-playfair italic text-[#f3cf7a] ${isDeactivated ? 'line-through opacity-40' : ''}">${u.name}</h3>
-                    <p class="text-[9px] uppercase font-black tracking-widest text-gray-500 truncate max-w-[120px]">${u.email}</p>
+                    <h3 class="text-lg font-bold text-gray-200 ${isDeactivated ? 'line-through opacity-40' : ''}">${u.name}</h3>
+                    <p class="text-xs font-semibold text-gray-500 truncate max-w-[200px]">${u.email}</p>
                 </div>
             </div>
 
             <!-- Role Tags / Specific Info -->
-            <div class="space-y-3 mb-8">
+            <div class="space-y-3 mb-6">
                 <div class="flex flex-wrap gap-2">
                     ${u.floorId ? `
-                        <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/5 text-[9px] font-bold text-gray-400">
+                        <div class="flex items-center gap-1.5 px-3 py-1 rounded-md bg-gray-900 border border-gray-700 text-xs font-bold text-gray-400">
                             <i data-lucide="map-pin" class="w-3 h-3 text-red-400"></i>
                             Floor #${state.floors.find(f => f.id == u.floorId)?.number || u.floorId}
                         </div>
                     ` : ''}
                     ${(u.assignedCategories || []).map(cat => `
-                        <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-400/5 border border-orange-400/10 text-[9px] font-bold text-orange-400">
+                        <div class="flex items-center gap-1.5 px-3 py-1 rounded-md bg-orange-500/10 border border-orange-500/20 text-xs font-bold text-orange-400">
                             <i data-lucide="utensils-crossed" class="w-3 h-3"></i>
                             ${cat}
                         </div>
@@ -151,49 +151,49 @@ function renderUserCard(u) {
                 <!-- Last Activity -->
                 <div class="grid grid-cols-2 gap-2 mt-2">
                     ${u.lastLoginAt ? `
-                        <div class="p-2 rounded-xl bg-emerald-500/[0.03] border border-emerald-500/5 flex items-center gap-2">
-                            <i data-lucide="log-in" class="w-3 h-3 text-emerald-500 opacity-50"></i>
-                            <span class="text-[9px] font-bold text-gray-500">${new Date(u.lastLoginAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                        <div class="p-2 rounded-lg bg-emerald-500/5 border border-emerald-500/10 flex items-center gap-2">
+                            <i data-lucide="log-in" class="w-3 h-3 text-emerald-500"></i>
+                            <span class="text-xs font-semibold text-gray-400">${new Date(u.lastLoginAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                         </div>
                     ` : ''}
                     ${u.lastLogoutAt ? `
-                        <div class="p-2 rounded-xl bg-red-500/[0.03] border border-red-500/5 flex items-center gap-2">
-                            <i data-lucide="log-out" class="w-3 h-3 text-red-500 opacity-50"></i>
-                            <span class="text-[9px] font-bold text-gray-500">${new Date(u.lastLogoutAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                        <div class="p-2 rounded-lg bg-red-500/5 border border-red-500/10 flex items-center gap-2">
+                            <i data-lucide="log-out" class="w-3 h-3 text-red-500"></i>
+                            <span class="text-xs font-semibold text-gray-400">${new Date(u.lastLogoutAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                         </div>
                     ` : ''}
                 </div>
             </div>
 
             <!-- Password Reveal Section -->
-            <div class="p-2 rounded-2xl bg-[#0f1110] border border-white/5 flex items-center justify-between mb-8">
-                <div class="pl-4">
-                    <p class="text-[8px] uppercase font-black tracking-widest text-gray-600 mb-0.5">Password</p>
-                    <p class="text-xs font-mono font-bold text-white/40 tracking-widest overflow-hidden">
+            <div class="p-2.5 rounded-xl bg-gray-900 border border-gray-700 flex items-center justify-between mb-6">
+                <div class="pl-2">
+                    <p class="text-[10px] uppercase font-bold tracking-wider text-gray-500 mb-0.5">Password</p>
+                    <p class="text-sm font-mono font-bold text-gray-300 tracking-widest overflow-hidden">
                         ${isRevealed ? (u.plainPassword || '••••••••') : '••••••••'}
                     </p>
                 </div>
-                <button onclick="togglePassword('${u.id}')" class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
-                    <i data-lucide="${isRevealed ? 'eye-off' : 'eye'}" class="w-4 h-4 text-[#d4af37]"></i>
+                <button onclick="togglePassword('${u.id}')" class="w-9 h-9 rounded-lg border border-gray-700 bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors">
+                    <i data-lucide="${isRevealed ? 'eye-off' : 'eye'}" class="w-4 h-4 text-[#c5a059]"></i>
                 </button>
             </div>
 
             <!-- Actions Footer -->
-            <div class="flex items-center justify-between pt-6 border-t border-white/5">
-                <span class="px-3 py-1 rounded-full ${roleColor} text-[8px] font-black uppercase tracking-widest border">
+            <div class="flex items-center justify-between pt-5 border-t border-gray-700/50">
+                <span class="px-2.5 py-1 rounded-md ${roleColor} text-[10px] font-bold uppercase tracking-wider border">
                     ${u.role}
                 </span>
                 <div class="flex items-center gap-2">
                     ${!isMe ? `
-                        <button onclick="toggleActive('${u.id}', ${!u.isActive})" class="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all ${isDeactivated ? 'text-emerald-500' : 'text-red-500'}">
+                        <button onclick="toggleActive('${u.id}', ${!u.isActive})" class="w-9 h-9 rounded-lg bg-gray-800 border border-gray-700 hover:bg-gray-700 flex items-center justify-center transition-colors ${isDeactivated ? 'text-emerald-500' : 'text-red-500'}">
                             <i data-lucide="${isDeactivated ? 'eye' : 'eye-off'}" class="w-4 h-4"></i>
                         </button>
                     ` : ''}
-                    <button onclick="editUser('${u.id}')" class="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all text-blue-400">
+                    <button onclick="editUser('${u.id}')" class="w-9 h-9 rounded-lg bg-gray-800 border border-gray-700 hover:bg-gray-700 flex items-center justify-center transition-colors text-blue-400">
                         <i data-lucide="pencil" class="w-4 h-4"></i>
                     </button>
                     ${!isMe ? `
-                        <button onclick="deleteUser('${u.id}')" class="w-9 h-9 rounded-xl bg-white/5 hover:bg-red-500/20 flex items-center justify-center transition-all text-red-500">
+                        <button onclick="deleteUser('${u.id}')" class="w-9 h-9 rounded-lg bg-gray-800 border border-gray-700 hover:bg-red-600 hover:text-white hover:border-red-500 flex items-center justify-center transition-colors text-gray-400">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
                     ` : ''}
@@ -271,7 +271,7 @@ function renderForm() {
     roleContainer.innerHTML = [
         'cashier', 'chef', 'bar', 'admin', 'display', 'store_keeper', 'reception', 'custom'
     ].map(r => `
-        <button type="button" onclick="setRole('${r}')" class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${role === r ? 'bg-[#d4af37] text-black border-[#d4af37] shadow-[0_0_20px_rgba(212,175,55,0.3)]' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20'}">
+        <button type="button" onclick="setRole('${r}')" class="px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border transition-colors ${role === r ? 'bg-[#c5a059] text-gray-900 border-[#c5a059]' : 'bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700'}">
             ${r}
         </button>
     `).join('');
@@ -289,7 +289,7 @@ function renderForm() {
     // Categories
     const catList = document.getElementById('category-list');
     catList.innerHTML = state.categories.map(c => `
-        <button type="button" onclick="toggleCategory('${c.name}')" class="p-3 rounded-xl border text-[10px] font-bold text-left transition-all ${state.formData.assignedCategories.includes(c.name) ? 'bg-orange-400/10 border-orange-400 text-orange-400' : 'bg-white/5 border-white/5 text-gray-500'}">
+        <button type="button" onclick="toggleCategory('${c.name}')" class="p-2.5 rounded-lg border text-xs font-bold text-left transition-colors ${state.formData.assignedCategories.includes(c.name) ? 'bg-orange-500/10 border-orange-500/30 text-orange-400' : 'bg-gray-800 border-gray-700 text-gray-400 hover:bg-gray-700'}">
             ${c.name}
         </button>
     `).join('');
@@ -299,14 +299,14 @@ function renderForm() {
     permGrid.innerHTML = Object.entries(PERMISSION_GROUPS).map(([cat, ps]) => {
         const allSelected = ps.every(p => state.formData.permissions.includes(p));
         return `
-            <div class="col-span-full border-b border-white/5 pb-2 mt-4 mb-2 flex justify-between items-center">
-                <span class="text-[9px] font-black uppercase tracking-[2px] text-gray-500">${cat}</span>
-                <button type="button" onclick="togglePermGroup('${cat}')" class="text-[8px] font-black uppercase text-[#d4af37]/60 hover:text-[#d4af37]">${allSelected ? 'None' : 'All'}</button>
+            <div class="col-span-full border-b border-gray-700/50 pb-2 mt-3 mb-1 flex justify-between items-center">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500">${cat}</span>
+                <button type="button" onclick="togglePermGroup('${cat}')" class="text-[10px] font-bold uppercase text-[#c5a059] hover:underline">${allSelected ? 'None' : 'All'}</button>
             </div>
             ${ps.map(p => `
-                <button type="button" onclick="togglePerm('${p}')" class="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 group transition-all ${state.formData.permissions.includes(p) ? 'border-[#d4af37]/30 bg-[#1a1712]' : ''}">
-                    <span class="text-[10px] font-bold ${state.formData.permissions.includes(p) ? 'text-[#f3cf7a]' : 'text-gray-500'}">${p.replace(':',' ')}</span>
-                    ${state.formData.permissions.includes(p) ? '<i data-lucide="check" class="w-3 h-3 text-[#d4af37]"></i>' : ''}
+                <button type="button" onclick="togglePerm('${p}')" class="flex items-center justify-between p-2.5 rounded-lg border transition-colors ${state.formData.permissions.includes(p) ? 'border-[#c5a059]/30 bg-[#c5a059]/10' : 'bg-gray-800 border-gray-700 hover:bg-gray-700'}">
+                    <span class="text-xs font-semibold ${state.formData.permissions.includes(p) ? 'text-[#c5a059]' : 'text-gray-400'}">${p.replace(':',' ')}</span>
+                    ${state.formData.permissions.includes(p) ? '<i data-lucide="check" class="w-4 h-4 text-[#c5a059]"></i>' : ''}
                 </button>
             `).join('')}
         `;

@@ -60,10 +60,10 @@ function renderTable() {
 
     if (!filtered.length) {
         tbody.innerHTML = `
-        <tr><td colspan="5" class="py-24 text-center">
-          <p class="text-5xl mb-4">🛒</p>
-          <p class="text-[10px] uppercase font-black tracking-widest text-gray-600 mb-6">Your active stock is empty.<br>Transfer items from the Store to start selling.</p>
-          <a href="store.php" class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#1a1712] text-[#d4af37] border border-[#d4af37]/20 text-[10px] font-black uppercase tracking-widest hover:bg-[#d4af37] hover:text-black transition-all">
+        <tr><td colspan="5" class="py-20 text-center">
+          <p class="text-4xl mb-4">🛒</p>
+          <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-5">Your active stock is empty.<br>Transfer items from the Store to start selling.</p>
+          <a href="store.php" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-gray-800 border border-gray-700 text-xs font-bold uppercase tracking-wider text-[#c5a059] hover:bg-gray-700 transition-colors">
             <i data-lucide="warehouse" class="w-4 h-4"></i> Go to Store
           </a>
         </td></tr>`;
@@ -75,38 +75,38 @@ function renderTable() {
         const qty  = i.quantity || 0;
         const min  = i.minLimit || 0;
         let qtyColor = 'text-emerald-400';
-        let badge    = `<span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[8px] font-black uppercase">Ready</span>`;
+        let badge    = `<span class="px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold uppercase">Ready</span>`;
 
         if (qty <= 0) {
             qtyColor = 'text-red-400';
-            badge    = `<span class="px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 text-[8px] font-black uppercase">Empty</span>`;
+            badge    = `<span class="px-2.5 py-1 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-bold uppercase">Empty</span>`;
         } else if (i.trackQuantity && qty <= min) {
-            qtyColor = 'text-[#d4af37]';
-            badge    = `<span class="px-2.5 py-1 rounded-full bg-[#d4af37]/10 text-[#d4af37] border border-[#d4af37]/20 text-[8px] font-black uppercase">Low Stock</span>`;
+            qtyColor = 'text-amber-400';
+            badge    = `<span class="px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-500 border border-amber-500/20 text-xs font-bold uppercase">Low Stock</span>`;
         }
 
         return `
-        <tr class="hover:bg-[#1a1c1b] border-b border-white/5 group transition-colors">
-          <td class="p-5">
-            <p class="text-base font-black font-playfair italic text-[#f3cf7a]">${esc(i.name)}</p>
-            <p class="text-[9px] text-gray-600 uppercase font-bold mt-0.5">${i.totalPurchased||0} total purchased</p>
+        <tr class="hover:bg-gray-800/50 border-b border-gray-700/30 group transition-colors">
+          <td class="p-4">
+            <p class="text-sm font-bold text-gray-200">${esc(i.name)}</p>
+            <p class="text-xs text-gray-500 font-semibold mt-0.5">${i.totalPurchased||0} total purchased</p>
           </td>
-          <td class="p-5">
-            <span class="text-[9px] px-2 py-1 rounded-full bg-white/5 border border-white/5 font-black uppercase tracking-widest text-gray-500">${esc(i.category||'')}</span>
+          <td class="p-4">
+            <span class="text-xs px-2 py-1 rounded-md bg-gray-800 border border-gray-700 font-semibold text-gray-400">${esc(i.category||'')}</span>
           </td>
-          <td class="p-5">
-            <span class="text-xl font-bold ${qtyColor}">${qty}</span>
-            <span class="text-[10px] text-gray-600 ml-1">${i.unit||''}</span>
+          <td class="p-4">
+            <span class="text-lg font-bold ${qtyColor}">${qty}</span>
+            <span class="text-xs text-gray-500 ml-1">${i.unit||''}</span>
           </td>
-          <td class="p-5">${badge}</td>
-          <td class="p-5">
+          <td class="p-4">${badge}</td>
+          <td class="p-4">
             <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <button onclick="openEdit('${i.id}')" title="Edit"
-                class="w-9 h-9 rounded-xl bg-white/5 border border-white/5 text-gray-500 flex items-center justify-center hover:text-white transition-all">
+                class="w-8 h-8 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 flex items-center justify-center hover:text-white transition-colors">
                 <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
               </button>
               <button onclick="deleteStock('${i.id}')" title="Remove from POS"
-                class="w-9 h-9 rounded-xl bg-white/5 border border-white/5 text-red-500 flex items-center justify-center hover:bg-red-500/10 transition-all">
+                class="w-8 h-8 rounded-lg bg-gray-800 border border-gray-700 text-red-500 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors">
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
               </button>
             </div>

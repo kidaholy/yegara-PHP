@@ -54,7 +54,7 @@ try {
     $processMetrics($allOrders);
     $processMetrics($deletedOrders);
 
-    usort($allOrders, fn($a, $b) => intval($b['orderNumber'] ?? 0) - intval($a['orderNumber'] ?? 0));
+    usort($allOrders, fn($a, $b) => strtotime($a['createdAt'] ?? 'now') - strtotime($b['createdAt'] ?? 'now'));
 
     // --- Multi-bucket Sidebar Stats ---
     $preparingBucket = array_filter($allOrders, fn($o) => in_array(strtolower($o['status'] ?? ''), ['preparing', 'pending', 'unconfirmed']));
@@ -146,23 +146,23 @@ try {
 renderHeader($title);
 ?>
 
-<div class="min-h-screen bg-[#0f1110] text-[#c5a059] flex flex-col pt-20">
+<div class="h-screen w-full bg-[#0f1110] flex flex-col overflow-hidden">
     
     <!-- Delay Alert Banner -->
     <?php if (!empty($delayedOrders)): ?>
-    <div id="delay-alert-banner" class="bg-red-500/10 border-y border-red-500/20 px-8 py-3 flex items-center gap-4 sticky top-20 z-40 backdrop-blur-md">
-        <div class="flex items-center gap-2 text-white bg-red-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-600/20">
-            <i data-lucide="alert-triangle" class="w-3 h-3"></i> PREPARATION DELAY!
+    <div id="delay-alert-banner" class="bg-red-950/20 border-y border-red-900/50 px-8 py-3 flex items-center gap-4 flex-shrink-0 z-40">
+        <div class="flex items-center gap-2 text-red-100 bg-red-600 px-3 py-1.5 rounded-lg text-xs font-bold shrink-0">
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i> PREPARATION DELAY!
         </div>
         <div class="flex-1 flex gap-3 overflow-x-auto whitespace-nowrap custom-scrollbar pb-1">
             <?php foreach ($delayedOrders as $do): ?>
-            <div class="glass px-3 py-1.5 rounded-xl border border-red-500/20 flex items-center gap-2.5">
-                <span class="text-white font-bold text-[10px] italic font-playfair">#<?php echo substr($do['orderNumber'], -4); ?></span>
-                <span class="text-red-400 font-bold text-[10px]"><?php echo $do['computedDelay']; ?>m Delay</span>
-                <div class="flex items-center gap-1.5">
-                    <span class="text-white/30 text-[9px] uppercase tracking-widest font-black"><?php echo $do['tableNumber']; ?></span>
+            <div class="glass px-3 py-1.5 rounded-lg border border-red-900/30 flex items-center gap-3 shrink-0">
+                <span class="text-white font-semibold text-sm">#<?php echo substr($do['orderNumber'], -4); ?></span>
+                <span class="text-red-400 font-medium text-xs"><?php echo $do['computedDelay']; ?>m Delay</span>
+                <div class="flex items-center gap-2">
+                    <span class="text-gray-400 text-xs font-semibold"><?php echo $do['tableNumber']; ?></span>
                     <?php if(!empty($do['distributions'])): foreach($do['distributions'] as $d): ?>
-                    <span class="text-[8px] bg-red-500/10 text-red-400 px-1.5 rounded-md font-black">🚚 <?php echo $d; ?></span>
+                    <span class="text-xs bg-red-500/10 text-red-400 px-1.5 rounded-md font-medium">🚚 <?php echo $d; ?></span>
                     <?php endforeach; endif; ?>
                 </div>
             </div>
@@ -171,13 +171,13 @@ renderHeader($title);
     </div>
     <?php endif; ?>
 
-    <div class="grid lg:grid-cols-12 gap-8 px-8 py-8 flex-1">
+    <div class="w-full max-w-[1600px] mx-auto grid lg:grid-cols-12 gap-6 px-6 py-6 flex-1 overflow-hidden">
         
         <!-- SIDEBAR -->
-        <aside class="lg:col-span-3 space-y-6 sticky top-28 h-fit">
-            <div class="glass rounded-[30px] border border-white/5 overflow-hidden shadow-2xl">
-                <h2 class="px-7 py-6 text-[10px] font-black uppercase tracking-[0.4em] text-white/20 border-b border-white/5">FILTER BUCKETS</h2>
-                <div class="divide-y divide-white/[0.04]">
+        <aside class="lg:col-span-3 flex flex-col gap-6 h-full overflow-y-auto custom-scrollbar pb-6 pr-2">
+            <div class="glass rounded-2xl border border-gray-700/50 bg-gray-800/80 overflow-hidden">
+                <h2 class="px-6 py-4 text-xs font-semibold text-gray-400 border-b border-gray-700/50 uppercase tracking-wider">FILTER BUCKETS</h2>
+                <div class="divide-y divide-gray-700/30">
                     <?php
                     $tabs = [
                         ['id'=>'all',       'label'=>__('admin_orders.all_orders'), 'icon'=>'clipboard-list', 'data'=>$stats['all'],       'color'=>'orange'],
@@ -190,24 +190,24 @@ renderHeader($title);
                     foreach ($tabs as $tab):
                         $isActive = $filter_status === $tab['id'];
                         $href = "?status={$tab['id']}&time=$filter_time&category=$filter_category";
-                        $cls = $isActive ? "bg-white/[0.05] border-l-[6px] border-[#c5a059]" : "hover:bg-white/[0.02] border-l-[6px] border-transparent";
+                        $cls = $isActive ? "bg-white/[0.05] border-l-4 border-[#c5a059]" : "hover:bg-white/[0.02] border-l-4 border-transparent";
                         $tColor = $tab['color'];
                     ?>
-                    <a href="<?php echo $href; ?>" class="flex items-center gap-5 px-7 py-5 transition-all group <?php echo $cls; ?>">
-                        <div class="w-11 h-11 rounded-2xl bg-<?php echo $tColor; ?>-500/10 flex items-center justify-center flex-shrink-0 text-<?php echo $tColor; ?>-400 group-hover:scale-110 transition-transform">
+                    <a href="<?php echo $href; ?>" class="flex items-center gap-4 px-6 py-4 transition-colors group <?php echo $cls; ?>">
+                        <div class="w-10 h-10 rounded-lg bg-<?php echo $tColor; ?>-500/10 flex items-center justify-center flex-shrink-0 text-<?php echo $tColor; ?>-400">
                             <i data-lucide="<?php echo $tab['icon']; ?>" class="w-5 h-5"></i>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-[11px] font-black tracking-[0.1em] text-white/90 uppercase"><?php echo $tab['label']; ?></p>
+                            <p class="text-sm font-semibold text-gray-200"><?php echo $tab['label']; ?></p>
                             <?php if (isset($tab['data']['avgPrep'])): ?>
-                            <div class="flex items-center gap-2 mt-1.5 opacity-40">
-                                <span class="text-[9px] font-bold"><?php echo $tab['data']['avgPrep']; ?>M AVG</span>
-                                <span class="w-1 h-1 rounded-full bg-white/20"></span>
-                                <span class="text-[9px] font-bold text-emerald-400"><?php echo number_format($tab['data']['foodRev'] + $tab['data']['drinkRev'], 0); ?> Br</span>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-xs text-gray-500 font-medium"><?php echo $tab['data']['avgPrep']; ?>m avg</span>
+                                <span class="w-1 h-1 rounded-full bg-gray-600"></span>
+                                <span class="text-xs font-semibold text-emerald-400"><?php echo number_format($tab['data']['foodRev'] + $tab['data']['drinkRev'], 0); ?> Br</span>
                             </div>
                             <?php endif; ?>
                         </div>
-                        <span class="text-[10px] font-black w-8 h-8 rounded-full <?php echo $isActive ? 'bg-[#c5a059] text-black shadow-lg shadow-gold/20' : 'bg-white/5 text-white/20'; ?> flex items-center justify-center">
+                        <span class="text-xs font-bold w-7 h-7 rounded-full <?php echo $isActive ? 'bg-[#c5a059] text-gray-900' : 'bg-gray-700 text-gray-400'; ?> flex items-center justify-center">
                             <?php echo $tab['data']['count'] ?? 0; ?>
                         </span>
                     </a>
@@ -215,41 +215,40 @@ renderHeader($title);
                 </div>
             </div>
 
-            <div class="glass p-8 rounded-[35px] border border-[#c5a059]/10 bg-gradient-to-br from-[#c5a059]/5 to-transparent relative overflow-hidden group">
-                <i data-lucide="zap" class="absolute -right-4 -top-4 w-24 h-24 text-[#c5a059]/5 rotate-12 transition-transform group-hover:rotate-45 duration-700"></i>
-                <h3 class="text-white font-black text-[12px] uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <div class="glass p-6 rounded-2xl border border-gray-700/50 bg-gray-800/80">
+                <h3 class="text-white font-semibold text-sm mb-2 flex items-center gap-2">
+                    <i data-lucide="zap" class="w-4 h-4 text-emerald-400"></i>
                     <?php echo __('admin_orders.need_insights'); ?>
                 </h3>
-                <p class="text-[11px] text-[#c5a059]/60 leading-relaxed italic mb-4"><?php echo __('admin_orders.check_reports'); ?></p>
-                <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                    <div class="bg-gradient-to-r from-emerald-500 to-emerald-300 h-full w-[94%]" id="efficiency-bar"></div>
+                <p class="text-xs text-gray-400 mb-4"><?php echo __('admin_orders.check_reports'); ?></p>
+                <div class="w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                    <div class="bg-emerald-500 h-full w-[94%]"></div>
                 </div>
             </div>
         </aside>
 
         <!-- MAIN PANEL -->
-        <main class="lg:col-span-9 flex flex-col space-y-6">
+        <main class="lg:col-span-9 flex flex-col h-full overflow-hidden">
             
-            <div class="glass rounded-[40px] border border-white/5 bg-[#0f1110]/50 shadow-2xl flex flex-col">
+            <div class="glass rounded-2xl border border-gray-700/50 bg-gray-900/40 flex flex-col h-full overflow-hidden">
                 <!-- Header Controls -->
-                <div class="px-10 py-7 border-b border-white/5 bg-white/[0.02] flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div class="px-8 py-6 border-b border-gray-700/50 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
-                        <h1 class="text-4xl font-black font-playfair italic text-[#c5a059] tracking-tight leading-none"><?php echo __('admin_orders.order_management'); ?></h1>
+                        <h1 class="text-3xl font-bold text-white tracking-tight leading-none"><?php echo __('admin_orders.order_management'); ?></h1>
                         <div class="flex items-center gap-4 mt-4">
-                            <span class="text-[10px] font-black uppercase tracking-[0.3em] text-white/20"><?php echo count($filteredOrders); ?> <?php echo __('admin_orders.orders_count'); ?></span>
-                            <div class="flex items-center gap-1.5 p-1 bg-white/5 rounded-full">
+                            <span class="text-xs font-semibold text-gray-500 uppercase tracking-widest"><?php echo count($filteredOrders); ?> <?php echo __('admin_orders.orders_count'); ?></span>
+                            <div class="flex items-center gap-1.5 p-1 bg-gray-800 rounded-lg">
                                 <?php foreach(['today','week','month','year'] as $t): ?>
-                                <a href="?time=<?php echo $t; ?>&status=<?php echo $filter_status; ?>&category=<?php echo $filter_category; ?>" class="px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest <?php echo $filter_time === $t ? 'bg-[#c5a059] text-black' : 'text-white/20 hover:text-white/40'; ?> transition-all">
-                                    <?php echo $t; ?>
+                                <a href="?time=<?php echo $t; ?>&status=<?php echo $filter_status; ?>&category=<?php echo $filter_category; ?>" class="px-3 py-1.5 rounded-md text-xs font-medium <?php echo $filter_time === $t ? 'bg-[#c5a059] text-gray-900' : 'text-gray-400 hover:text-gray-200'; ?> transition-colors">
+                                    <?php echo ucfirst($t); ?>
                                 </a>
                                 <?php endforeach; ?>
                             </div>
                         </div>
                     </div>
-                    <div class="flex p-1 bg-white/5 rounded-2xl border border-white/5 self-end md:self-auto">
-                        <?php foreach(['all'=>'ALL','food'=>'FOOD','drinks'=>'DRINKS'] as $k=>$v): ?>
-                        <a href="?category=<?php echo $k; ?>&time=<?php echo $filter_time; ?>&status=<?php echo $filter_status; ?>" class="px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest <?php echo $filter_category===$k ? 'bg-[#151817] text-white shadow-xl ring-1 ring-white/5' : 'text-white/30 hover:text-white/50'; ?> transition-all">
+                    <div class="flex p-1 bg-gray-800 rounded-lg border border-gray-700 self-end md:self-auto">
+                        <?php foreach(['all'=>'All','food'=>'Food','drinks'=>'Drinks'] as $k=>$v): ?>
+                        <a href="?category=<?php echo $k; ?>&time=<?php echo $filter_time; ?>&status=<?php echo $filter_status; ?>" class="px-4 py-2 rounded-md text-sm font-semibold <?php echo $filter_category===$k ? 'bg-gray-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'; ?> transition-colors">
                             <?php echo $v; ?>
                         </a>
                         <?php endforeach; ?>
@@ -257,70 +256,68 @@ renderHeader($title);
                 </div>
 
                 <!-- Search + Action Bar -->
-                <div class="px-10 py-6 border-b border-white/5 flex items-center gap-6 bg-white/[0.01]">
+                <div class="px-8 py-4 border-b border-gray-700/50 flex items-center gap-6 bg-gray-800/30">
                     <div class="relative flex-1 max-w-sm">
-                        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#c5a059]/30"></i>
-                        <input type="text" id="order-search" value="<?php echo htmlspecialchars($search); ?>" placeholder="Search floor, table, order..." class="w-full bg-[#1a1d1c]/50 border border-white/5 rounded-2xl py-3.5 pl-12 pr-5 text-sm text-white/70 placeholder:text-white/10 focus:outline-none focus:ring-2 focus:ring-[#c5a059]/20 transition-all">
+                        <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                        <input type="text" id="order-search" value="<?php echo htmlspecialchars($search); ?>" placeholder="Search floor, table, order..." class="w-full bg-gray-900 border border-gray-700 rounded-lg py-2.5 pl-10 pr-4 text-sm text-gray-200 placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-[#c5a059] transition-all">
                     </div>
 
                     <?php if ($filter_status !== 'cashier'): ?>
-                    <div class="flex items-center gap-4 ml-auto">
-                        <button onclick="handleBulkAction('bulk-serve')" class="flex items-center gap-2.5 px-7 py-3.5 bg-gradient-to-br from-[#c5a059] to-[#d4af37] text-black text-[10px] font-black uppercase tracking-widest rounded-2xl hover:scale-[1.03] active:scale-95 transition-all shadow-xl shadow-gold/10">
+                    <div class="flex items-center gap-3 ml-auto">
+                        <button onclick="handleBulkAction('bulk-serve')" class="flex items-center gap-2 px-5 py-2.5 bg-[#c5a059] text-gray-900 text-sm font-bold rounded-lg hover:bg-[#b08d4a] active:scale-95 transition-all">
                             <i data-lucide="check-check" class="w-4 h-4"></i> Mark All as Served
                         </button>
-                        <button onclick="handleBulkAction('<?php echo $filter_status==='deleted'?'empty-trash':'bulk-delete'; ?>')" class="px-4 py-3.5 bg-white/5 border border-white/10 text-white/30 text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-red-600 hover:text-white hover:border-red-500 transition-all group">
+                        <button onclick="handleBulkAction('<?php echo $filter_status==='deleted'?'empty-trash':'bulk-delete'; ?>')" class="px-3 py-2.5 bg-gray-800 border border-gray-700 text-gray-400 text-sm rounded-lg hover:bg-red-600 hover:text-white hover:border-red-500 transition-colors">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
                     </div>
                     <?php endif; ?>
                 </div>
 
-                <div class="p-10 custom-scrollbar min-h-[600px] bg-[#0f1110]">
+                <div class="p-8 custom-scrollbar flex-1 overflow-y-auto bg-[#0f1110]">
                     <?php if ($filter_status === 'cashier'): ?>
                         <!-- Cashier Carousel Header -->
-                        <div class="space-y-10 animate-in fade-in duration-700">
+                        <div class="space-y-8 animate-in fade-in">
                             <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-5">
-                                    <div class="w-16 h-16 rounded-full bg-gradient-to-br from-[#c5a059] to-transparent p-[1px]">
-                                        <div class="w-full h-full rounded-full bg-[#0f1110] flex items-center justify-center text-gold">
-                                            <i data-lucide="user-round" class="w-7 h-7"></i>
-                                        </div>
+                                <div class="flex items-center gap-4">
+                                    <div class="w-14 h-14 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-[#c5a059]">
+                                        <i data-lucide="user-round" class="w-6 h-6"></i>
                                     </div>
                                     <div>
-                                        <h3 class="text-3xl font-black text-white italic font-playfair"><?php echo $activeCashierName; ?></h3>
-                                        <p class="text-[10px] text-white/20 font-black uppercase tracking-[0.3em] mt-1">PRIMARY FLOOR CASHIER</p>
+                                        <h3 class="text-2xl font-bold text-white"><?php echo $activeCashierName; ?></h3>
+                                        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mt-1">PRIMARY FLOOR CASHIER</p>
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-4 bg-white/5 p-3 rounded-[2rem] border border-white/10 shadow-2xl">
-                                    <a href="?status=cashier&cashierIdx=<?php echo $activeCashierIdx - 1; ?>&time=<?php echo $filter_time; ?>" class="w-12 h-12 rounded-full hover:bg-white/10 flex items-center justify-center text-white/30 hover:text-white transition-all"><i data-lucide="chevron-left"></i></a>
-                                    <span class="text-xs font-black text-gold px-4 tracking-widest"><?php echo $activeCashierIdx + 1; ?> &mdash; <?php echo count($cashierNames); ?></span>
-                                    <a href="?status=cashier&cashierIdx=<?php echo $activeCashierIdx + 1; ?>&time=<?php echo $filter_time; ?>" class="w-12 h-12 rounded-full hover:bg-white/10 flex items-center justify-center text-white/30 hover:text-white transition-all"><i data-lucide="chevron-right"></i></a>
+                                <div class="flex items-center gap-2 bg-gray-800 p-2 rounded-xl border border-gray-700">
+                                    <a href="?status=cashier&cashierIdx=<?php echo $activeCashierIdx - 1; ?>&time=<?php echo $filter_time; ?>" class="w-10 h-10 rounded-lg hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-white transition-colors"><i data-lucide="chevron-left"></i></a>
+                                    <span class="text-sm font-bold text-[#c5a059] px-3"><?php echo $activeCashierIdx + 1; ?> &mdash; <?php echo count($cashierNames); ?></span>
+                                    <a href="?status=cashier&cashierIdx=<?php echo $activeCashierIdx + 1; ?>&time=<?php echo $filter_time; ?>" class="w-10 h-10 rounded-lg hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-white transition-colors"><i data-lucide="chevron-right"></i></a>
                                 </div>
                             </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div class="glass p-8 rounded-[2.5rem] border border-white/5">
-                                    <p class="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-2">COLLECTED REVENUE</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="glass p-6 rounded-xl border border-gray-700">
+                                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">COLLECTED REVENUE</p>
                                     <div class="flex items-baseline gap-2">
-                                        <h4 class="text-5xl font-black text-emerald-400"><?php echo number_format($cashierGroups[$activeCashierName]['revenue'] ?? 0, 0); ?></h4>
-                                        <span class="text-emerald-400/40 font-bold text-sm">ETB</span>
+                                        <h4 class="text-4xl font-bold text-emerald-400"><?php echo number_format($cashierGroups[$activeCashierName]['revenue'] ?? 0, 0); ?></h4>
+                                        <span class="text-emerald-400/60 font-medium text-sm">ETB</span>
                                     </div>
                                 </div>
-                                <div class="glass p-8 rounded-[2.5rem] border border-white/5">
-                                    <p class="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-2">TICKET COUNT</p>
-                                    <h4 class="text-5xl font-black text-white"><?php echo count($cashierOrders); ?></h4>
+                                <div class="glass p-6 rounded-xl border border-gray-700">
+                                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">TICKET COUNT</p>
+                                    <h4 class="text-4xl font-bold text-white"><?php echo count($cashierOrders); ?></h4>
                                 </div>
                             </div>
-                            <div class="space-y-4">
+                            <div class="space-y-3">
                                 <?php foreach ($cashierOrders as $co): ?>
-                                <div class="glass px-8 py-5 rounded-[1.5rem] border border-white/5 hover:border-gold/10 transition-all flex items-center justify-between group">
-                                    <div class="flex items-center gap-6">
-                                        <span class="text-[10px] font-black text-white/20 uppercase tracking-widest"><?php echo date('H:i', strtotime($co['createdAt'])); ?></span>
-                                        <span class="text-xl font-bold font-playfair italic text-[#c5a059]">#<?php echo substr($co['orderNumber'], -4); ?></span>
-                                        <span class="text-[10px] font-black bg-white/5 px-3 py-1 rounded-full text-white/60"><?php echo $co['tableNumber']; ?></span>
+                                <div class="glass px-6 py-4 rounded-xl border border-gray-700 hover:border-[#c5a059]/30 transition-colors flex items-center justify-between group">
+                                    <div class="flex items-center gap-5">
+                                        <span class="text-xs font-medium text-gray-500"><?php echo date('H:i', strtotime($co['createdAt'])); ?></span>
+                                        <span class="text-lg font-bold text-[#c5a059]">#<?php echo substr($co['orderNumber'], -4); ?></span>
+                                        <span class="text-xs font-semibold bg-gray-800 px-2.5 py-1 rounded-md text-gray-300 border border-gray-700"><?php echo $co['tableNumber']; ?></span>
                                     </div>
                                     <div class="flex items-center gap-4">
-                                        <span class="text-lg font-black text-white group-hover:text-emerald-400 transition-colors"><?php echo number_format($co['totalAmount'], 0); ?> Br</span>
-                                        <i data-lucide="chevron-right" class="w-4 h-4 text-white/10 group-hover:text-gold transition-colors"></i>
+                                        <span class="text-md font-bold text-white group-hover:text-emerald-400 transition-colors"><?php echo number_format($co['totalAmount'], 0); ?> Br</span>
+                                        <i data-lucide="chevron-right" class="w-4 h-4 text-gray-500 group-hover:text-[#c5a059] transition-colors"></i>
                                     </div>
                                 </div>
                                 <?php endforeach; ?>
@@ -331,8 +328,8 @@ renderHeader($title);
                         <div class="flex flex-col items-center justify-center h-full py-32 opacity-10 space-y-8">
                             <span class="text-[180px] leading-none">🍃</span>
                             <div class="text-center">
-                                <h3 class="text-4xl italic font-playfair text-[#c5a059] mb-3"><?php echo __('admin_orders.quiet_for_now'); ?></h3>
-                                <p class="text-[12px] font-black uppercase tracking-[0.8em]"><?php echo __('admin_orders.no_orders_found'); ?></p>
+                                <h3 class="text-3xl font-bold text-gray-400 mb-2"><?php echo __('admin_orders.quiet_for_now'); ?></h3>
+                                <p class="text-sm font-medium text-gray-600 uppercase tracking-widest"><?php echo __('admin_orders.no_orders_found'); ?></p>
                             </div>
                         </div>
                     <?php else: ?>
@@ -342,66 +339,65 @@ renderHeader($title);
                                 $tColor = $o['delayColor'];
                                 $metrics = ['totalTaken'=>$o['computedTaken'], 'delay'=>$o['computedDelay'], 'threshold'=>$o['thresholdMinutes'] ?? 20];
                             ?>
-                            <div class="lg:h-36 bg-[#151817] border border-white/[0.04] rounded-[3rem] px-10 py-6 hover:border-[#c5a059]/30 hover:bg-[#181c1a] transition-all group relative overflow-hidden flex flex-col lg:flex-row lg:items-center gap-10">
+                            <div class="bg-gray-800/60 border border-gray-700/50 rounded-2xl px-8 py-5 hover:border-[#c5a059]/30 hover:bg-gray-800 transition-colors group relative flex flex-col lg:flex-row lg:items-center gap-8">
                                 
                                 <!-- LEFT SECTION -->
-                                <div class="lg:w-60 flex-shrink-0">
-                                    <p class="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-2"><?php echo date('M d — h:i A', strtotime($o['createdAt'])); ?></p>
-                                    <h4 class="text-4xl font-black font-playfair italic text-[#c5a059] leading-none">#<?php echo substr($o['orderNumber'], -4); ?></h4>
-                                    <div class="flex flex-wrap gap-2 mt-4">
-                                        <span class="text-[9px] font-black text-white/50 bg-white/5 px-2.5 py-1 rounded-lg uppercase tracking-widest border border-white/5"><?php echo $o['floorNumber'] ?? 'GF'; ?></span>
-                                        <span class="text-[9px] font-black text-[#c5a059] bg-[#c5a059]/10 px-2.5 py-1 rounded-lg uppercase tracking-widest border border-[#c5a059]/10"><?php echo $o['tableNumber']; ?></span>
+                                <div class="lg:w-48 flex-shrink-0">
+                                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2"><?php echo date('M d — h:i A', strtotime($o['createdAt'])); ?></p>
+                                    <h4 class="text-2xl font-bold text-[#c5a059] leading-none mb-3">#<?php echo substr($o['orderNumber'], -4); ?></h4>
+                                    <div class="flex flex-wrap gap-2 text-xs">
+                                        <span class="font-semibold text-gray-400 bg-gray-900 border border-gray-700 px-2 py-0.5 rounded-md uppercase"><?php echo $o['floorNumber'] ?? 'GF'; ?></span>
+                                        <span class="font-semibold text-[#c5a059] bg-[#c5a059]/10 border border-[#c5a059]/20 px-2 py-0.5 rounded-md uppercase"><?php echo $o['tableNumber']; ?></span>
                                         <?php if(!empty($o['distributions'])): foreach($o['distributions'] as $d): ?>
-                                        <span class="text-[9px] font-black text-orange-400 bg-orange-500/10 px-2.5 py-1 rounded-lg uppercase tracking-widest border border-orange-500/10">🚚 <?php echo $d; ?></span>
+                                        <span class="font-semibold text-orange-400 bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded-md uppercase">🚚 <?php echo $d; ?></span>
                                         <?php endforeach; endif; ?>
                                     </div>
                                 </div>
 
                                 <!-- MIDDLE SECTION -->
                                 <div class="flex-1 min-w-0">
-                                    <div class="flex items-center gap-3 mb-4">
-                                        <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-<?php echo $tColor; ?>-500/10 text-<?php echo $tColor; ?>-400 border border-<?php echo $tColor; ?>-500/20">
-                                            <i data-lucide="<?php echo match($status){'ready'=>'check','preparing'=>'flame','served'=>'package-check',default=>'clock'}; ?>" class="w-3 h-3 inline mr-1 mb-0.5"></i>
+                                    <div class="flex items-center gap-3 mb-3">
+                                        <span class="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-<?php echo $tColor; ?>-500/10 text-<?php echo $tColor; ?>-400 border border-<?php echo $tColor; ?>-500/20">
+                                            <i data-lucide="<?php echo match($status){'ready'=>'check','preparing'=>'flame','served'=>'package-check',default=>'clock'}; ?>" class="w-3.5 h-3.5 inline mr-1 mb-0.5"></i>
                                             <?php echo ucfirst($status); ?>
                                         </span>
-                                        <span class="w-1.5 h-1.5 rounded-full bg-white/5"></span>
-                                        <span class="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]"><?php echo count($o['items']); ?> Items Total</span>
+                                        <span class="w-1.5 h-1.5 rounded-full bg-gray-700"></span>
+                                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider"><?php echo count($o['items']); ?> Items</span>
                                     </div>
-                                    <div class="flex flex-wrap gap-x-6 gap-y-3">
+                                    <div class="flex flex-wrap gap-x-5 gap-y-2">
                                         <?php foreach ($o['items'] as $item): $isVIP = strpos(strtolower($item['menuTier'] ?? ''), 'vip') !== false; ?>
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-[11px] font-black text-white/40"><?php echo $item['quantity']; ?></div>
-                                            <div class="relative">
-                                                <span class="text-[14px] font-bold text-white/80"><?php echo $item['name']; ?></span>
-                                                <?php if($isVIP): ?><span class="absolute -right-6 -top-1 text-[7px] bg-gold text-black px-1 rounded font-black">VIP</span><?php endif; ?>
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-6 h-6 rounded-md bg-gray-900 border border-gray-700 flex items-center justify-center text-xs font-bold text-gray-400"><?php echo $item['quantity']; ?></div>
+                                            <div class="relative flex items-center gap-2">
+                                                <span class="text-sm font-semibold text-gray-200"><?php echo $item['name']; ?></span>
+                                                <?php if($isVIP): ?><span class="text-[9px] bg-[#c5a059] text-gray-900 px-1 py-0.5 rounded font-bold">VIP</span><?php endif; ?>
                                             </div>
-                                            <span class="text-[10px] text-white/10 font-medium italic"><?php echo $item['preparationTime'] ?? 0; ?>m</span>
+                                            <span class="text-xs text-gray-500 font-medium"><?php echo $item['preparationTime'] ?? 0; ?>m</span>
                                         </div>
                                         <?php endforeach; ?>
                                     </div>
                                 </div>
 
                                 <!-- RIGHT SECTION -->
-                                <div class="lg:w-72 flex-shrink-0 flex items-center justify-between lg:justify-end gap-8">
+                                <div class="lg:w-48 flex-shrink-0 flex justify-between lg:justify-end items-center gap-6">
                                     <div class="text-right flex flex-col items-end">
-                                        <div class="flex items-center gap-3 bg-<?php echo $tColor; ?>-500/5 px-4 py-2 rounded-2xl border border-<?php echo $tColor; ?>-500/10 mb-2">
+                                        <div class="flex items-center justify-end gap-2 bg-<?php echo $tColor; ?>-500/10 px-3 py-1.5 rounded-lg border border-<?php echo $tColor; ?>-500/20 mb-2">
                                             <div class="text-right">
-                                                <p class="text-[13px] font-black text-<?php echo $tColor; ?>-400 leading-none">
-                                                    <?php echo $o['computedDelay'] > 0 ? "+{$o['computedDelay']}m Delay" : (strtolower($status)==='ready' ? 'READY' : 'ON TIME'); ?>
+                                                <p class="text-xs font-bold text-<?php echo $tColor; ?>-400 leading-none">
+                                                    <?php echo $o['computedDelay'] > 0 ? "+{$o['computedDelay']}m" : (strtolower($status)==='ready' ? 'READY' : 'ON TIME'); ?>
                                                 </p>
-                                                <p class="text-[8px] font-black text-white/20 uppercase tracking-[0.2em] mt-1.5">vs <?php echo $metrics['threshold']; ?>m limit</p>
                                             </div>
-                                            <i data-lucide="<?php echo $o['computedDelay']>0 ? 'alert-circle' : 'check-circle-2'; ?>" class="w-6 h-6 text-<?php echo $tColor; ?>-400"></i>
+                                            <i data-lucide="<?php echo $o['computedDelay']>0 ? 'alert-circle' : 'check-circle-2'; ?>" class="w-4 h-4 text-<?php echo $tColor; ?>-400"></i>
                                         </div>
-                                        <div class="flex items-baseline gap-2">
-                                            <h4 class="text-4xl font-black font-playfair italic text-white tracking-tighter"><?php echo number_format($o['totalAmount'], 0); ?></h4>
-                                            <span class="text-[#c5a059]/40 font-black text-[10px] uppercase">Br</span>
+                                        <div class="flex items-baseline justify-end gap-1.5">
+                                            <h4 class="text-2xl font-bold text-white tracking-tight"><?php echo number_format($o['totalAmount'], 0); ?></h4>
+                                            <span class="text-gray-500 font-bold text-xs uppercase">Br</span>
                                         </div>
                                     </div>
 
                                     <?php if(!$o['isDeleted']): ?>
-                                    <button onclick="handleDeleteOrder('<?php echo $o['id']; ?>', '<?php echo substr($o['orderNumber'], -4); ?>')" class="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-white/10 hover:bg-red-600 hover:text-white hover:border-red-500 transition-all opacity-0 group-hover:opacity-100 shadow-2xl scale-90 group-hover:scale-100">
-                                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                    <button onclick="handleDeleteOrder('<?php echo $o['id']; ?>', '<?php echo substr($o['orderNumber'], -4); ?>')" class="w-10 h-10 rounded-lg border border-gray-700 bg-gray-800 flex items-center justify-center text-gray-500 hover:bg-red-600 hover:text-white hover:border-red-500 transition-colors lg:opacity-0 group-hover:opacity-100">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
                                     </button>
                                     <?php endif; ?>
                                 </div>
@@ -471,12 +467,12 @@ document.getElementById('order-search')?.addEventListener('keypress', function(e
 </script>
 
 <style>
-.glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); }
+.glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); }
 .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(197, 160, 89, 0.1); border-radius: 20px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(197, 160, 89, 0.3); }
-#efficiency-bar { transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 20px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+#efficiency-bar { transition: width 1s ease-out; }
 </style>
 
 <?php renderFooter(); ?>

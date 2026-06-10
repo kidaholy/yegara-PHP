@@ -37,21 +37,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function fetchAll() {
     showLoader(true);
     try {
-        const [items, expenses, assets, transfers, cats] = await Promise.all([
+        const [items, expenses, assets, transfers, stockCats, assetCats, expenseCats] = await Promise.all([
             api('GET', 'api/stock.php'),
             api('GET', 'api/operational-expenses.php'),
             api('GET', 'api/fixed-assets.php'),
             api('GET', 'api/inventory-transfers.php'),
-            api('GET', 'api/categories.php'),
+            api('GET', 'api/categories.php?type=stock'),
+            api('GET', 'api/categories.php?type=fixed-asset'),
+            api('GET', 'api/categories.php?type=expense'),
         ]);
-        S.items     = items     || [];
-        S.expenses  = expenses  || [];
-        S.assets    = assets    || [];
-        S.transfers = transfers || [];
-        const allCats = cats || [];
-        S.stockCats   = allCats.filter(c => !c.type || c.type === 'stock');
-        S.assetCats   = allCats.filter(c => c.type === 'fixed-asset');
-        S.expenseCats = allCats.filter(c => c.type === 'expense');
+        S.items      = items      || [];
+        S.expenses   = expenses   || [];
+        S.assets     = assets     || [];
+        S.transfers  = transfers  || [];
+        S.stockCats  = stockCats  || [];
+        S.assetCats  = assetCats  || [];
+        S.expenseCats= expenseCats|| [];
     } catch(e) { console.error(e); }
     finally { showLoader(false); }
     renderSidebar();
@@ -87,10 +88,9 @@ window.switchTab = function(tab) {
     S.activeTab = tab;
     document.querySelectorAll('.store-tab-btn').forEach(b => {
         const active = b.dataset.tab === tab;
-        b.classList.toggle('text-[#d4af37]',     active);
-        b.classList.toggle('border-[#d4af37]',   active);
-        b.classList.toggle('text-gray-500',      !active);
-        b.classList.toggle('border-transparent', !active);
+        b.classList.toggle('active', active);
+        b.classList.toggle('text-[#c5a059]', active);
+        b.classList.toggle('text-gray-400', !active);
     });
     renderTab();
 };
@@ -116,39 +116,39 @@ function renderInventory() {
         const posQty   = i.quantity || 0;
         const lowStore = i.storeMinLimit && storeQty <= i.storeMinLimit;
         return `
-        <tr class="hover:bg-white/[0.02] transition-colors group border-b border-white/5">
-          <td class="p-5">
-            <p class="text-base font-black font-playfair italic text-[#f3cf7a] leading-tight">${esc(i.name)}</p>
-            <p class="text-[9px] uppercase font-black tracking-wider text-gray-600 mt-1">${esc(i.category)} • ${i.unit}</p>
+        <tr class="hover:bg-gray-800/50 transition-colors group border-b border-gray-700/30">
+          <td class="p-4">
+            <p class="text-sm font-bold text-gray-200 leading-tight">${esc(i.name)}</p>
+            <p class="text-xs font-semibold text-gray-500 mt-0.5">${esc(i.category)} · ${i.unit}</p>
           </td>
-          <td class="p-5">
-            <span class="text-2xl font-bold ${lowStore ? 'text-amber-400' : 'text-white'}">${storeQty}</span>
-            <span class="text-[10px] text-gray-500 ml-1">${i.unit}</span>
-            ${lowStore ? '<span class="ml-2 px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-400 text-[8px] font-black border border-amber-400/20">LOW</span>' : ''}
+          <td class="p-4">
+            <span class="text-xl font-bold ${lowStore ? 'text-amber-400' : 'text-white'}">${storeQty}</span>
+            <span class="text-xs text-gray-500 ml-1">${i.unit}</span>
+            ${lowStore ? '<span class="ml-2 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 text-xs font-bold border border-amber-500/20">LOW</span>' : ''}
           </td>
-          <td class="p-5">
+          <td class="p-4">
             ${posQty > 0
-              ? `<span class="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-black uppercase">${posQty} ${i.unit} Active</span>`
-              : `<span class="px-3 py-1.5 rounded-xl bg-white/5 text-gray-600 border border-white/5 text-[9px] font-black uppercase">Inactive in POS</span>`
+              ? `<span class="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold">${posQty} ${i.unit} Active</span>`
+              : `<span class="px-2.5 py-1 rounded-lg bg-gray-800 text-gray-500 border border-gray-700 text-xs font-semibold">Inactive in POS</span>`
             }
           </td>
-          <td class="p-5">
+          <td class="p-4">
             <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <button onclick="openTransfer('${i.id}')" ${storeQty <= 0 ? 'disabled' : ''} title="Transfer to POS"
-                class="w-9 h-9 rounded-xl flex items-center justify-center border transition-all
-                ${storeQty > 0 ? 'bg-[#1a1712] border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37] hover:text-black' : 'bg-white/5 border-white/5 text-gray-700 cursor-not-allowed'}">
+                class="w-8 h-8 rounded-lg flex items-center justify-center border transition-colors
+                ${storeQty > 0 ? 'bg-[#c5a059]/10 border-[#c5a059]/30 text-[#c5a059] hover:bg-[#c5a059] hover:text-gray-900' : 'bg-gray-800 border-gray-700 text-gray-600 cursor-not-allowed'}">
                 <i data-lucide="arrow-right-left" class="w-3.5 h-3.5"></i>
               </button>
               <button onclick="openRestock('${i.id}')" title="Restock Bulk"
-                class="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center hover:bg-blue-500 hover:text-white transition-all">
+                class="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center hover:bg-blue-500 hover:text-white transition-colors">
                 <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
               </button>
               <button onclick="openEditItem('${i.id}')" title="Edit"
-                class="w-9 h-9 rounded-xl bg-white/5 border border-white/5 text-gray-500 flex items-center justify-center hover:text-white transition-all">
+                class="w-8 h-8 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 flex items-center justify-center hover:text-white transition-colors">
                 <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
               </button>
               <button onclick="deleteItem('${i.id}')" title="Remove from Store"
-                class="w-9 h-9 rounded-xl bg-white/5 border border-white/5 text-red-500 flex items-center justify-center hover:bg-red-500/10 transition-all">
+                class="w-8 h-8 rounded-lg bg-gray-800 border border-gray-700 text-red-500 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors">
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
               </button>
             </div>
@@ -159,23 +159,23 @@ function renderInventory() {
     if (!rows.length) return empty('No inventory items found. Add your first bulk item above.');
 
     return `
-    <div class="glass rounded-[2rem] border border-white/5 overflow-hidden shadow-2xl">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-white/5">
-        <h3 class="text-xs font-black uppercase tracking-widest text-gray-500">
+    <div class="rounded-xl border border-gray-700/50 overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-700/50 bg-gray-800/50">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400">
           ${S.items.length} Items &nbsp;·&nbsp; ${S.items.filter(i=>(i.storeQuantity||0)>0).length} in Bulk Storage
         </h3>
-        <button onclick="exportCSV('inventory')" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition-all">
+        <button onclick="exportCSV('inventory')" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-xs font-semibold text-gray-400 hover:text-white transition-colors">
           <i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV
         </button>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-left">
-          <thead class="bg-white/[0.03] border-b border-white/5">
+          <thead class="bg-gray-800/50 border-b border-gray-700/50">
             <tr>
-              <th class="p-5 text-[9px] uppercase font-black tracking-widest text-gray-600">Item Details</th>
-              <th class="p-5 text-[9px] uppercase font-black tracking-widest text-gray-600">In Store</th>
-              <th class="p-5 text-[9px] uppercase font-black tracking-widest text-gray-600">POS Active</th>
-              <th class="p-5 text-[9px] uppercase font-black tracking-widest text-gray-600">Actions</th>
+              <th class="p-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Item Details</th>
+              <th class="p-4 text-xs font-semibold uppercase tracking-wider text-gray-500">In Store</th>
+              <th class="p-4 text-xs font-semibold uppercase tracking-wider text-gray-500">POS Active</th>
+              <th class="p-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Actions</th>
             </tr>
           </thead>
           <tbody>${rows.join('')}</tbody>
@@ -197,52 +197,52 @@ function renderAssets() {
         const totalVal = a.totalValue || (a.quantity * a.unitPrice) || 0;
         const valueLost = history.reduce((sum, d) => sum + (d.valueLost||0), 0);
         return `
-        <div class="glass p-6 rounded-[2rem] border border-white/5 shadow-xl hover:border-white/10 transition-all">
+        <div class="bg-gray-800/60 p-5 rounded-2xl border border-gray-700/50 hover:bg-gray-800 transition-colors">
           <div class="flex items-start justify-between mb-4">
             <div>
-              <h4 class="text-lg font-black font-playfair italic text-[#f3cf7a]">${esc(a.name)}</h4>
-              <p class="text-[9px] uppercase font-black tracking-widest text-gray-600">${esc(a.category||'')}</p>
+              <h4 class="text-base font-bold text-gray-200">${esc(a.name)}</h4>
+              <p class="text-xs font-semibold text-gray-500">${esc(a.category||'')}</p>
             </div>
-            <span class="px-2.5 py-1 rounded-full border text-[8px] font-black uppercase tracking-widest ${col}">${status}</span>
+            <span class="px-2.5 py-1 rounded-md border text-xs font-bold uppercase ${col}">${status}</span>
           </div>
-          <div class="grid grid-cols-3 gap-3 mb-4">
-            <div class="p-3 rounded-2xl bg-white/5 text-center">
-              <p class="text-lg font-bold text-white">${a.quantity||0}</p>
-              <p class="text-[8px] uppercase font-black text-gray-600">Units</p>
+          <div class="grid grid-cols-3 gap-2 mb-4">
+            <div class="p-2.5 rounded-lg bg-gray-900 border border-gray-700 text-center">
+              <p class="text-base font-bold text-white">${a.quantity||0}</p>
+              <p class="text-xs font-semibold text-gray-500">Units</p>
             </div>
-            <div class="p-3 rounded-2xl bg-white/5 text-center">
+            <div class="p-2.5 rounded-lg bg-gray-900 border border-gray-700 text-center">
               <p class="text-sm font-bold text-white">${fmt(totalVal)}</p>
-              <p class="text-[8px] uppercase font-black text-gray-600">Total Value</p>
+              <p class="text-xs font-semibold text-gray-500">Total Value</p>
             </div>
-            <div class="p-3 rounded-2xl bg-red-500/5 border border-red-500/10 text-center">
+            <div class="p-2.5 rounded-lg bg-red-500/5 border border-red-500/10 text-center">
               <p class="text-sm font-bold text-red-400">${fmt(valueLost)}</p>
-              <p class="text-[8px] uppercase font-black text-gray-600">Value Lost</p>
+              <p class="text-xs font-semibold text-gray-500">Value Lost</p>
             </div>
           </div>
           ${S.isAdmin ? `
-          <div class="flex items-center gap-2 pt-4 border-t border-white/5">
-            <button onclick="openDismiss('${a.id}')" class="flex-1 py-2 rounded-xl bg-amber-400/10 text-amber-400 border border-amber-400/20 text-[9px] font-black uppercase hover:bg-amber-400 hover:text-black transition-all">Dismiss</button>
-            <button onclick="openEditAsset('${a.id}')" class="w-9 h-9 rounded-xl bg-white/5 text-gray-500 flex items-center justify-center hover:text-white transition-all"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
-            <button onclick="deleteAsset('${a.id}')" class="w-9 h-9 rounded-xl bg-white/5 text-red-500 flex items-center justify-center hover:bg-red-500/10 transition-all"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-            ${history.length ? `<button onclick="toggleAssetHistory('${a.id}')" class="w-9 h-9 rounded-xl bg-white/5 text-gray-500 flex items-center justify-center hover:text-white transition-all"><i data-lucide="history" class="w-3.5 h-3.5"></i></button>` : ''}
+          <div class="flex items-center gap-2 pt-3 border-t border-gray-700/50">
+            <button onclick="openDismiss('${a.id}')" class="flex-1 py-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-semibold hover:bg-amber-500 hover:text-gray-900 transition-colors">Dismiss</button>
+            <button onclick="openEditAsset('${a.id}')" class="w-8 h-8 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 flex items-center justify-center hover:text-white transition-colors"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+            <button onclick="deleteAsset('${a.id}')" class="w-8 h-8 rounded-lg bg-gray-800 border border-gray-700 text-red-500 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+            ${history.length ? `<button onclick="toggleAssetHistory('${a.id}')" class="w-8 h-8 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 flex items-center justify-center hover:text-white transition-colors"><i data-lucide="history" class="w-3.5 h-3.5"></i></button>` : ''}
           </div>` : ''}
           ${S.expandedAsset === a.id && history.length ? `
-          <div class="mt-4 space-y-2">
-            <p class="text-[9px] uppercase font-black tracking-widest text-gray-600 mb-2">Dismissal History</p>
+          <div class="mt-3 space-y-2">
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Dismissal History</p>
             ${history.map(h => `
-            <div class="p-3 rounded-xl bg-white/5 border border-white/5 text-[10px]">
-              <div class="flex justify-between"><span class="text-gray-400 font-bold">${h.reason||''}</span><span class="text-red-400 font-bold">${fmt(h.valueLost||0)} lost</span></div>
-              <p class="text-gray-600 mt-1">${h.date ? new Date(h.date).toLocaleDateString() : ''} · ${h.quantity||0} units</p>
+            <div class="p-3 rounded-lg bg-gray-900 border border-gray-700 text-xs">
+              <div class="flex justify-between"><span class="text-gray-300 font-semibold">${h.reason||''}</span><span class="text-red-400 font-bold">${fmt(h.valueLost||0)} lost</span></div>
+              <p class="text-gray-500 mt-1">${h.date ? new Date(h.date).toLocaleDateString() : ''} · ${h.quantity||0} units</p>
             </div>`).join('')}
           </div>` : ''}
         </div>`;
     });
     return `
-    <div class="flex items-center justify-between mb-6">
-      <h3 class="text-xs font-black uppercase tracking-widest text-gray-500">${S.assets.length} Fixed Assets · Total: ${fmt(S.assets.reduce((a,x)=>a+(x.totalValue||0),0))}</h3>
-      <button onclick="exportCSV('assets')" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition-all"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV</button>
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400">${S.assets.length} Fixed Assets · Total: ${fmt(S.assets.reduce((a,x)=>a+(x.totalValue||0),0))}</h3>
+      <button onclick="exportCSV('assets')" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-xs font-semibold text-gray-400 hover:text-white transition-colors"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV</button>
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">${cards.join('')}</div>`;
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">${cards.join('')}</div>`;
 }
 
 window.toggleAssetHistory = function(id) {
@@ -495,10 +495,17 @@ window.submitTransfer = async function(e) {
 };
 
 // ── Add/Edit Item ──
+function populateItemCategories(selected = '') {
+    const sel = document.getElementById('item-category');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">-- Select Category --</option>' + S.stockCats.map(c => `<option value="${esc(c.name)}"${c.name===selected ? ' selected' : ''}>${esc(c.name)}</option>`).join('');
+}
+
 window.openAddItem = function() {
     S.editItemId = null;
     resetItemForm();
     document.getElementById('item-form-title').textContent = 'New Store Item';
+    populateItemCategories();
     showModal('modal-item');
 };
 
@@ -507,8 +514,9 @@ window.openEditItem = function(id) {
     const i = S.items.find(x => x.id === id);
     if (!i) return;
     document.getElementById('item-form-title').textContent = 'Edit Item';
+    populateItemCategories(i.category);
     setFormVals({
-        'item-name': i.name, 'item-category': i.category, 'item-unit': i.unit||'pcs',
+        'item-name': i.name, 'item-unit': i.unit||'pcs',
         'item-store-qty': i.storeQuantity||0, 'item-min-limit': i.minLimit||5,
         'item-store-min': i.storeMinLimit||20, 'item-buy-price': i.averagePurchasePrice||0,
         'item-sell-price': i.unitCost||0,
@@ -547,9 +555,28 @@ window.deleteItem = async function(id) {
 };
 
 // ── Fixed Asset ──
-window.openAddAsset = function() { S.editAssetId=null; resetAssetForm(); document.getElementById('asset-form-title').textContent='New Fixed Asset'; showModal('modal-asset'); };
-window.openEditAsset = function(id) { S.editAssetId=id; const a=S.assets.find(x=>x.id===id); if(!a) return; document.getElementById('asset-form-title').textContent='Edit Asset'; setFormVals({'asset-name':a.name,'asset-category':a.category||'','asset-qty':a.quantity||1,'asset-price':a.unit_price||a.unitPrice||0,'asset-date':a.purchase_date||a.purchaseDate||''}); showModal('modal-asset'); };
-function resetAssetForm() { setFormVals({'asset-name':'','asset-category':'','asset-qty':1,'asset-price':0,'asset-date':''}); }
+window.openAddAsset = function() { 
+    S.editAssetId = null; 
+    resetAssetForm(); 
+    document.getElementById('asset-form-title').textContent = 'New Fixed Asset'; 
+    populateAssetCategories();
+    showModal('modal-asset'); 
+};
+window.openEditAsset = function(id) { 
+    S.editAssetId = id; 
+    const a = S.assets.find(x => x.id === id); 
+    if(!a) return; 
+    document.getElementById('asset-form-title').textContent = 'Edit Asset'; 
+    populateAssetCategories(a.category);
+    setFormVals({'asset-name':a.name,'asset-qty':a.quantity||1,'asset-price':a.unit_price||a.unitPrice||0,'asset-date':a.purchase_date||a.purchaseDate||''}); 
+    showModal('modal-asset'); 
+};
+function resetAssetForm() { setFormVals({'asset-name':'','asset-qty':1,'asset-price':0,'asset-date':''}); }
+function populateAssetCategories(selected = '') {
+    const sel = document.getElementById('asset-category');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">-- Select Category --</option>' + S.assetCats.map(c => `<option value="${esc(c.name)}"${c.name===selected ? ' selected' : ''}>${esc(c.name)}</option>`).join('');
+}
 
 window.submitAssetForm = async function(e) {
     e.preventDefault();
@@ -581,7 +608,21 @@ window.submitDismiss = async function(e) {
 };
 
 // ── Expense Form ──
-window.openExpenseForm = function() { document.getElementById('exp-date').value=today(); document.getElementById('exp-name').value=''; document.getElementById('exp-category').value=''; document.getElementById('exp-unit-cost').value=''; document.getElementById('exp-qty').value=''; document.getElementById('exp-unit').value='pcs'; document.getElementById('exp-desc').value=''; showModal('modal-expense'); };
+function populateExpenseCategories() {
+    const sel = document.getElementById('exp-category');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">-- Select Category --</option>' + S.expenseCats.map(c => `<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('');
+}
+window.openExpenseForm = function() { 
+    document.getElementById('exp-date').value = today(); 
+    document.getElementById('exp-name').value = ''; 
+    populateExpenseCategories(); 
+    document.getElementById('exp-unit-cost').value = ''; 
+    document.getElementById('exp-qty').value = ''; 
+    document.getElementById('exp-unit').value = 'pcs'; 
+    document.getElementById('exp-desc').value = ''; 
+    showModal('modal-expense'); 
+};
 window.submitExpenseForm = async function(e) {
     e.preventDefault();
     const d = { name: val('exp-name'), category: val('exp-category'), date: val('exp-date'), unitCost: parseFloat(val('exp-unit-cost')||0), quantity: parseFloat(val('exp-qty')||0), unit: val('exp-unit'), description: val('exp-desc') };
