@@ -19,10 +19,8 @@ function renderHeader($title = "Management System") {
         <title><?php echo $title . " - " . $appName; ?></title>
         <!-- Tailwind CSS CDN -->
         <script src="https://cdn.tailwindcss.com"></script>
-        <!-- Google Fonts: Inter, Playfair Display, and JetBrains Mono -->
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Great+Vibes&display=swap" rel="stylesheet">
-        <!-- Geist Mono via CDN fallback -->
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist-mono@1.2.0/dist/index.css">
+        <!-- Google Fonts: Inter -->
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
         <!-- Lucide Icons -->
         <script src="https://unpkg.com/lucide@latest"></script>
         <!-- Chart.js -->
@@ -56,37 +54,22 @@ function renderHeader($title = "Management System") {
                 background-color: #0f1110;
                 color: hsl(var(--foreground));
                 -webkit-font-smoothing: antialiased;
-                background-image: 
-                    radial-gradient(circle at 0% 0%, rgba(197, 160, 89, 0.03) 0%, transparent 40%),
-                    radial-gradient(circle at 100% 100%, rgba(197, 160, 89, 0.03) 0%, transparent 40%);
             }
-
-            .font-playfair { font-family: 'Playfair Display', serif; }
-            .font-mono { font-family: 'JetBrains Mono', monospace; }
-
-            /* Premium Animations */
-            @keyframes pulse-glow {
-                0% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.4); }
-                70% { box-shadow: 0 0 0 10px rgba(197, 160, 89, 0); }
-                100% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0); }
-            }
-            .pulse-glow { animation: pulse-glow 2s infinite; }
 
             /* Smooth Page Transition */
             .page-enter {
-                animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+                animation: fadeIn 0.4s ease-out;
             }
             @keyframes fadeIn {
                 from { opacity: 0; transform: translateY(10px); }
                 to { opacity: 1; transform: translateY(0); }
             }
 
-            /* Obsidian Glass Components */
+            /* Standard Glass Components */
             .glass {
-                background: rgba(21, 24, 23, 0.7);
-                backdrop-filter: blur(12px);
-                border: 1px solid rgba(197, 160, 89, 0.1);
-                box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+                background: rgba(255, 255, 255, 0.03);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
             }
 
             .sidebar-link {
@@ -95,40 +78,31 @@ function renderHeader($title = "Management System") {
                 gap: 0.875rem;
                 padding: 0.875rem 1.25rem;
                 border-radius: var(--radius);
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                color: rgba(255, 255, 255, 0.4);
+                transition: all 0.2s ease;
+                color: rgba(255, 255, 255, 0.6);
                 font-size: 0.875rem;
                 font-weight: 500;
             }
 
             .sidebar-link:hover {
-                background-color: rgba(197, 160, 89, 0.08);
-                color: #c5a059;
-                transform: translateX(6px);
+                background-color: rgba(255, 255, 255, 0.05);
+                color: #ffffff;
             }
 
             .sidebar-link.active {
-                background-color: #c5a059;
-                color: #0f1110;
-                box-shadow: 0 12px 24px -6px rgba(197, 160, 89, 0.4);
-                font-weight: 700;
+                background-color: rgba(255, 255, 255, 0.1);
+                color: #ffffff;
+                font-weight: 600;
             }
 
-            /* Custom Gold Scrollbar */
+            /* Custom Standard Scrollbar */
             ::-webkit-scrollbar { width: 6px; }
             ::-webkit-scrollbar-track { background: transparent; }
             ::-webkit-scrollbar-thumb { 
-                background: rgba(197, 160, 89, 0.3); 
+                background: rgba(255, 255, 255, 0.2); 
                 border-radius: 9999px; 
             }
-            ::-webkit-scrollbar-thumb:hover { background: rgba(197, 160, 89, 0.6); }
-
-            /* Atmospheric Mesh */
-            .gold-mesh {
-                background-image: radial-gradient(#c5a059 0.5px, transparent 0.5px);
-                background-size: 32px 32px;
-                opacity: 0.03;
-            }
+            ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
         </style>
         <script>
             tailwind.config = {
@@ -173,13 +147,12 @@ function renderHeader($title = "Management System") {
         <nav class="h-[60px] bg-[#111413] border-b border-white/5 flex items-center justify-between px-6 shrink-0 z-50 sticky top-0">
             <!-- Logo -->
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-[#1a1209] border-2 border-[#c5a059] flex flex-col items-center justify-center shadow-lg flex-shrink-0">
-                    <span class="text-[7px] font-black tracking-widest text-[#c5a059] leading-none">ABE</span>
-                    <span class="text-[5px] font-bold tracking-[0.2em] text-[#c5a059] leading-none">HOTEL</span>
+                <div class="w-10 h-10 rounded-lg bg-white/10 border border-white/20 flex flex-col items-center justify-center flex-shrink-0">
+                    <span class="text-[10px] font-bold tracking-widest text-white leading-none">ABE</span>
                 </div>
                 <div>
-                    <h1 class="text-[#c5a059] font-black text-lg italic leading-none tracking-tight">ABE HOTEL</h1>
-                    <p class="text-[7px] text-[#c5a059]/40 font-bold uppercase tracking-widest leading-none mt-0.5">ምርጥ አገልግሎት ለመስጠት</p>
+                    <h1 class="text-white font-bold text-lg leading-none tracking-tight mt-0.5">ABE HOTEL</h1>
+                    <p class="text-[9px] text-white/50 font-medium uppercase tracking-wider leading-none mt-1">Admin Dashboard</p>
                 </div>
             </div>
 
@@ -195,22 +168,21 @@ function renderHeader($title = "Management System") {
                     <button class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all">
                         <i data-lucide="bell" class="w-4 h-4"></i>
                     </button>
-                    <span class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#c5a059] text-black text-[8px] font-black rounded-full flex items-center justify-center">0</span>
+                <span class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-blue-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">0</span>
                 </div>
 
                 <!-- User Avatar -->
-                <div class="w-9 h-9 rounded-full bg-[#2a2a2a] border border-white/10 flex items-center justify-center text-white font-black text-sm">
+                <div class="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white font-bold text-sm">
                     <?php echo strtoupper(substr($user['name'] ?? 'U', 0, 1)); ?>
                 </div>
 
                 <!-- User Greeting -->
-                <span class="hidden lg:block text-[11px] font-black uppercase tracking-widest text-white/60">
-                    Hi, <?php echo strtoupper(explode(' ', $user['name'])[0]); ?>! 
-                    <span class="text-[#c5a059]">→</span>
+                <span class="hidden lg:block text-sm font-medium text-white/80">
+                    Hi, <?php echo htmlspecialchars(explode(' ', $user['name'])[0]); ?>
                 </span>
 
                 <!-- Logout -->
-                <a href="logout.php" class="px-5 py-2 bg-red-600/90 hover:bg-red-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full transition-all shadow-lg">
+                <a href="logout.php" class="px-4 py-2 bg-white/10 hover:bg-red-500/80 hover:text-white text-white text-sm font-medium rounded-lg transition-colors border border-white/10">
                     Logout
                 </a>
             </div>
@@ -219,8 +191,6 @@ function renderHeader($title = "Management System") {
 
         <!-- Main Content -->
         <main class="flex-1 flex bg-[#0f1110] relative">
-            <div class="absolute inset-0 gold-mesh pointer-events-none"></div>
-            
             <div class="flex-1 flex relative page-enter">
     <?php
 }
@@ -256,8 +226,8 @@ function renderTopNavLinks($role) {
         if (in_array($role, $link['roles'])) {
             $active = ($currentUrl === $link['url']);
             $cls = $active
-                ? 'px-4 py-2 text-[11px] font-black uppercase tracking-widest text-[#c5a059] border-b-2 border-[#c5a059] bg-[#c5a059]/5 rounded-t-md'
-                : 'px-4 py-2 text-[11px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors rounded-md hover:bg-white/5';
+                ? 'px-4 py-2 text-sm font-semibold text-white bg-white/10 rounded-md transition-colors'
+                : 'px-4 py-2 text-sm font-medium text-white/60 hover:text-white hover:bg-white/5 rounded-md transition-colors';
             echo "<a href='{$link['url']}' class='{$cls}'>{$link['name']}</a>";
         }
     }

@@ -167,7 +167,7 @@ class SettingsManager {
         return $data['tables'] ?? [];
     }
 
-    public function addTable($tableNumber, $capacity, $floor_id) {
+    public function addTable($tableNumber, $capacity, $floor_id = null) {
         $data = $this->readJson($this->tablesFile);
         $id = 'tbl_' . uniqid();
         

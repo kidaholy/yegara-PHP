@@ -77,12 +77,12 @@ function updateMetricCard(id, value, subtext = '', color = null) {
     if (subEl) subEl.textContent = state.loading && !state.metrics ? 'loading...' : subtext;
 
     if (color === 'red') {
-        iconBox?.classList.remove('bg-[#1a1c1b]', 'text-gray-400', 'border-white/10');
-        iconBox?.classList.add('bg-[#1a0f0f]', 'text-red-400', 'border-red-900/50');
+        iconBox?.classList.remove('bg-gray-900', 'text-gray-400');
+        iconBox?.classList.add('bg-red-500/10', 'text-red-500');
         card.classList.add('border-red-900/50');
     } else if (color === 'gray') {
-        iconBox?.classList.add('bg-[#1a1c1b]', 'text-gray-400', 'border-white/10');
-        iconBox?.classList.remove('bg-[#1a0f0f]', 'text-red-400', 'border-red-900/50');
+        iconBox?.classList.add('bg-gray-900', 'text-gray-400');
+        iconBox?.classList.remove('bg-red-500/10', 'text-red-500');
         card.classList.remove('border-red-900/50');
     }
 }
@@ -104,12 +104,12 @@ function updateStockAlertsPanel(alerts) {
     
     if (list) {
         list.innerHTML = alerts.slice(0, 5).map(a => `
-            <div class="flex justify-between p-4 bg-[#0f1110] rounded-lg border border-red-900/30">
+            <div class="flex justify-between p-4 bg-gray-900 rounded-lg border border-red-900/30">
                 <div>
                     <p class="font-medium text-gray-200">${a.name}</p>
-                    <p class="text-sm text-gray-500">${a.current} ${a.unit} remaining</p>
+                    <p class="text-sm text-gray-400">${a.current} ${a.unit} remaining</p>
                 </div>
-                <span class="text-[10px] h-fit uppercase bg-red-950/80 text-red-400 px-3 py-1 rounded-full border border-red-900/50">
+                <span class="text-xs font-semibold bg-red-950/50 text-red-400 px-2.5 py-1 rounded-md border border-red-900/50">
                     ${a.urgency}
                 </span>
             </div>
@@ -118,8 +118,8 @@ function updateStockAlertsPanel(alerts) {
         if (alerts.length > 5) {
             const moreLink = document.createElement('a');
             moreLink.href = 'reports.php';
-            moreLink.className = 'text-[10px] uppercase font-black text-red-400/60 hover:text-red-400 transition-colors pt-4 flex items-center gap-2';
-            moreLink.innerHTML = `View all ${alerts.length} alerts <i data-lucide="arrow-right" class="w-3 h-3"></i>`;
+            moreLink.className = 'text-xs font-semibold text-red-400/60 hover:text-red-400 transition-colors pt-2 flex items-center gap-2';
+            moreLink.innerHTML = `View all ${alerts.length} alerts <i data-lucide="arrow-right" class="w-4 h-4"></i>`;
             list.appendChild(moreLink);
             lucide.createIcons();
         }
