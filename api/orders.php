@@ -4,6 +4,7 @@
  */
 require_once '../includes/auth.php';
 require_once '../includes/stock-logic.php';
+require_once '../includes/order-utils.php';
 
 function sendJson($data, $status = 200) {
     header('Content-Type: application/json');
@@ -52,8 +53,11 @@ try {
 
         $updateData = [
             'status' => $newStatus,
-            'updatedAt' => date('Y-m-d H:i:s')
+            'updatedAt' => date('Y-m-d H:i:s'),
         ];
+        if ($newStatus === 'served') {
+            $updateData['servedAt'] = date('Y-m-d H:i:s');
+        }
 
         // --- STOCK LOGIC ---
         $items = db('orderItems')->findMany(['where' => ['orderId' => $id]]);
@@ -180,7 +184,11 @@ try {
         // --- CREATE ORDER (No action provided) ---
         if (!$action) {
             $tableNumber = $input['tableNumber'] ?? 'Buy&Go';
+            $floorId = $input['floorId'] ?? null;
+            $floorNumber = $input['floorNumber'] ?? null;
             $paymentMethod = $input['paymentMethod'] ?? 'cash';
+            $batchNumber = $input['batchNumber'] ?? null;
+            $distributions = $input['distributions'] ?? [];
             $totalAmount = (float)($input['totalAmount'] ?? 0);
             $orderItems = $input['items'] ?? [];
 
@@ -194,12 +202,16 @@ try {
                 sendJson(['message' => $e->getMessage()], 400);
             }
 
-            // Create Order
-            $orderNumber = 'ORD-' . strtoupper(substr(uniqid(), -6));
+            // Create Order — daily sequence: 1, 2, 3… resets each day
+            $orderNumber = nextDailyOrderNumber();
             $order = db('orders')->create(['data' => [
                 'orderNumber' => $orderNumber,
                 'tableNumber' => $tableNumber,
+                'floorId' => $floorId,
+                'floorNumber' => $floorNumber,
                 'paymentMethod' => $paymentMethod,
+                'batchNumber' => $batchNumber,
+                'distributions' => is_array($distributions) ? $distributions : [],
                 'totalAmount' => $totalAmount,
                 'status' => 'pending', 
                 'isDeleted' => false,
@@ -211,14 +223,29 @@ try {
 
             // Create Order Items
             foreach ($orderItems as $it) {
+                $menuItem = null;
+                if (!empty($it['menuItemId'])) {
+                    $menuItem = db('menuItems')->findUnique(['where' => ['id' => $it['menuItemId']]])
+                        ?: db('vip1Menu')->findUnique(['where' => ['id' => $it['menuItemId']]])
+                        ?: db('vip2Menu')->findUnique(['where' => ['id' => $it['menuItemId']]]);
+                }
+
+                $mainCategory = $it['mainCategory'] ?? $menuItem['mainCategory'] ?? 'Food';
+                $category = $it['category'] ?? $menuItem['category'] ?? '';
+                $menuId = $it['menuId'] ?? $menuItem['menuId'] ?? '';
+
                 db('orderItems')->create(['data' => [
                     'orderId' => $order['id'],
                     'menuItemId' => $it['menuItemId'],
+                    'menuId' => (string)$menuId,
                     'name' => $it['name'],
                     'quantity' => $it['quantity'],
                     'price' => $it['price'],
                     'notes' => $it['notes'] ?? '',
-                    'isDeleted' => false
+                    'category' => $category,
+                    'mainCategory' => $mainCategory,
+                    'status' => 'pending',
+                    'isDeleted' => false,
                 ]]);
             }
 

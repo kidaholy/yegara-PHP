@@ -4,9 +4,38 @@
  */
 require_once 'includes/config.php';
 require_once 'includes/auth.php';
+require_once 'includes/SettingsManager.php';
+
+$manager = new SettingsManager();
+extract($manager->getBrandingVars());
+if ($appTagline === 'HOTEL MANAGEMENT SYSTEM') {
+    $appTagline = 'ምርጥ አገልግሎት ለመስጠት';
+}
+
+function routeUserBasedOnRole($role) {
+    switch ($role) {
+        case 'admin':
+            return 'admin.php';
+        case 'cashier':
+            return 'cashier.php';
+        case 'chef':
+            return 'chef.php';
+        case 'bar':
+            return 'bar.php';
+        case 'store_keeper':
+        case 'store':
+            return 'store.php';
+        case 'receptionist':
+        case 'reception':
+            return 'reception.php';
+        default:
+            return 'index.php';
+    }
+}
 
 if (isAuthenticated()) {
-    header('Location: admin.php');
+    $user = getCurrentUser();
+    header('Location: ' . routeUserBasedOnRole($user['role'] ?? ''));
     exit;
 }
 
@@ -17,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $res = login($email, $password);
     if ($res['success']) {
-        header('Location: admin.php');
+        header('Location: ' . routeUserBasedOnRole($res['user']['role'] ?? ''));
         exit;
     } else {
         $error = $res['message'] ?? 'Invalid credentials or account suspended.';
@@ -29,7 +58,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Abe Hotel</title>
+    <title>Login - <?php echo htmlspecialchars($appName); ?></title>
+    <?php if ($faviconUrl): ?>
+    <link rel="icon" href="<?php echo htmlspecialchars($faviconUrl); ?>" />
+    <?php endif; ?>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Great+Vibes&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -92,24 +124,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/90"></div>
     </div>
 
-    <!-- Header UI Ornament -->
-    <div class="absolute top-10 right-10 z-50">
+    <!-- Header -->
+    <header class="absolute top-0 w-full px-8 lg:px-12 py-8 flex justify-between items-center z-50">
+        <a href="index.php" class="flex items-center gap-4 hover:opacity-90 transition-opacity">
+            <?php if ($logoUrl): ?>
+                <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-[#c5a059]/40 bg-black/40 shadow-xl flex-shrink-0">
+                    <img src="<?php echo htmlspecialchars($logoUrl); ?>" alt="Logo" class="w-full h-full object-cover">
+                </div>
+            <?php else: ?>
+                <div class="w-12 h-12 rounded-full border-2 border-[#c5a059] flex flex-col items-center justify-center p-1 bg-black/40 backdrop-blur-sm shadow-xl">
+                    <span class="text-[8px] font-black tracking-widest text-[#c5a059] leading-none mb-0.5"><?php echo htmlspecialchars(strtoupper(substr($appName, 0, 3))); ?></span>
+                    <span class="text-[6px] font-bold tracking-[0.2em] text-[#c5a059] leading-none">SYS</span>
+                </div>
+            <?php endif; ?>
+            <div class="hidden sm:block">
+                <h2 class="text-[#c5a059] font-black text-lg italic tracking-tight leading-none mb-1"><?php echo htmlspecialchars($appName); ?></h2>
+                <p class="text-[8px] text-[#c5a059]/60 font-bold uppercase tracking-widest"><?php echo htmlspecialchars($appTagline); ?></p>
+            </div>
+        </a>
         <button class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:bg-white/10 transition-all">
             <i data-lucide="languages" class="w-5 h-5"></i>
         </button>
-    </div>
+    </header>
 
     <!-- Login Container -->
     <div class="relative z-10 w-full max-w-[480px] animate-in fade-in zoom-in duration-1000">
         <div class="glass-card rounded-[2.5rem] p-12 relative">
             <div class="flex flex-col items-center mb-10">
-                <!-- Circular Logo -->
-                <div class="w-16 h-16 rounded-full border-2 border-[#c5a059] flex flex-col items-center justify-center p-1 bg-black/40 backdrop-blur-sm shadow-xl mb-6">
-                    <span class="text-[9px] font-black tracking-widest text-[#c5a059] leading-none mb-0.5">ABE</span>
-                    <span class="text-[7px] font-bold tracking-[0.2em] text-[#c5a059] leading-none">HOTEL</span>
-                </div>
-                <h2 class="text-[#c5a059] font-black text-2xl italic tracking-tight leading-none mb-1">ABE HOTEL</h2>
-                <p class="text-[8px] text-[#c5a059]/40 font-bold uppercase tracking-widest">ምርጥ አገልግሎት ለመስጠት</p>
+                <!-- Logo -->
+                <?php if ($logoUrl): ?>
+                    <div class="w-20 h-20 rounded-full overflow-hidden border-2 border-[#c5a059]/40 bg-black/30 shadow-2xl mb-6">
+                        <img src="<?php echo htmlspecialchars($logoUrl); ?>" alt="Logo" class="w-full h-full object-cover">
+                    </div>
+                <?php else: ?>
+                    <div class="w-16 h-16 rounded-full border-2 border-[#c5a059] flex flex-col items-center justify-center p-1 bg-black/40 backdrop-blur-sm shadow-xl mb-6">
+                        <span class="text-[9px] font-black tracking-widest text-[#c5a059] leading-none mb-0.5"><?php echo htmlspecialchars(strtoupper(substr($appName, 0, 3))); ?></span>
+                        <span class="text-[7px] font-bold tracking-[0.2em] text-[#c5a059] leading-none">SYS</span>
+                    </div>
+                <?php endif; ?>
+                <h2 class="text-[#c5a059] font-black text-2xl italic tracking-tight leading-none mb-1 text-center"><?php echo htmlspecialchars($appName); ?></h2>
+                <p class="text-[8px] text-[#c5a059]/40 font-bold uppercase tracking-widest text-center"><?php echo htmlspecialchars($appTagline); ?></p>
             </div>
 
             <div class="text-center mb-10">
@@ -131,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="space-y-2">
                     <label class="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 ml-1">Email Address</label>
-                    <input type="email" name="email" value="admin@abehotel.com" required 
+                    <input type="email" name="email" placeholder="user@abehotel.com" required 
                            class="gold-input w-full py-4 px-6 rounded-xl text-sm text-white placeholder:text-white/10 appearance-none">
                 </div>
 

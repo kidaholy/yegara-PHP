@@ -1,6 +1,7 @@
 <?php
 // api/admin/settings.php
 
+ini_set('display_errors', '0');
 header('Content-Type: application/json');
 require_once __DIR__ . '/../../includes/SettingsManager.php';
 require_once __DIR__ . '/../../includes/auth.php';
@@ -8,29 +9,24 @@ require_once __DIR__ . '/../../includes/auth.php';
 $manager = new SettingsManager();
 
 try {
-    // Verify admin role using the project's existing auth method
-    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        http_response_code(403);
-        echo json_encode(['message' => 'Forbidden']);
-        exit;
-    }
+    requireApiAuth(['admin']);
 
     $method = $_SERVER['REQUEST_METHOD'];
     $input = json_decode(file_get_contents('php://input'), true);
 
     // GET: Fetch all settings
     if ($method === 'GET') {
-        $settings = $manager->getAllSettings();
+        $branding = $manager->getBranding();
+        $config = $manager->getSetting('configuration') ?? [];
         
-        // Transform to match frontend format
         $response = [
-            'logo_url' => $settings['branding']['logo_url'] ?? '',
-            'favicon_url' => $settings['branding']['favicon_url'] ?? '',
-            'app_name' => $settings['branding']['app_name'] ?? 'Prime Addis',
-            'app_tagline' => $settings['branding']['app_tagline'] ?? 'Coffee Management',
-            'vat_rate' => $settings['configuration']['vat_rate'] ?? 0.08,
-            'enable_cashier_printing' => $settings['configuration']['enable_cashier_printing'] ?? true,
-            'enable_cashier_today_revenue' => $settings['configuration']['enable_cashier_today_revenue'] ?? false
+            'logo_url' => $branding['logo_url'] ?? '',
+            'favicon_url' => $branding['favicon_url'] ?? ($branding['logo_url'] ?? ''),
+            'app_name' => $branding['app_name'] ?? 'ABE HOTEL',
+            'app_tagline' => $branding['app_tagline'] ?? 'HOTEL MANAGEMENT SYSTEM',
+            'vat_rate' => $config['vat_rate'] ?? 0.08,
+            'enable_cashier_printing' => $config['enable_cashier_printing'] ?? true,
+            'enable_cashier_today_revenue' => $config['enable_cashier_today_revenue'] ?? false
         ];
         
         echo json_encode($response);
@@ -61,12 +57,16 @@ try {
 
         $manager->updateSetting($section, $key, $value);
 
-        echo json_encode([
+        $response = [
+            'success' => true,
             'key' => $key,
-            'value' => $value,
             'type' => $type,
             'updated_at' => date('c')
-        ]);
+        ];
+        if (!in_array($key, ['logo_url', 'favicon_url'], true)) {
+            $response['value'] = $value;
+        }
+        echo json_encode($response);
     }
     
     // POST: Upload image
@@ -74,19 +74,25 @@ try {
         $type = $_GET['type'] ?? 'logo';
         
         try {
-            $base64 = $manager->uploadImage($_FILES['file']);
-            
             if ($type === 'logo') {
-                $manager->updateSetting('branding', 'logo_url', $base64);
-            } else if ($type === 'favicon') {
+                $uploaded = $manager->uploadLogoAndFavicon($_FILES['file']);
+                echo json_encode([
+                    'success' => true,
+                    'url' => $uploaded['logo_url'],
+                    'favicon_url' => $uploaded['favicon_url'],
+                    'type' => $type
+                ]);
+            } else {
+                $base64 = $manager->uploadImage($_FILES['file'], 'favicon');
                 $manager->updateSetting('branding', 'favicon_url', $base64);
+                echo json_encode([
+                    'success' => true,
+                    'url' => $base64,
+                    'favicon_url' => $base64,
+                    'type' => $type
+                ]);
             }
-
-            echo json_encode([
-                'success' => true,
-                'url' => $base64,
-                'type' => $type
-            ]);
+            exit;
         } catch (Exception $e) {
             http_response_code(400);
             echo json_encode(['message' => $e->getMessage()]);

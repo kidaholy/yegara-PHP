@@ -1,7 +1,12 @@
 <?php
 // includes/SettingsManager.php
 
+require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/JsonDB.php';
+
 class SettingsManager {
+    private static $brandingKeys = ['logo_url', 'favicon_url', 'app_name', 'app_tagline'];
+    private static $legacyConfigKeys = ['vat_rate', 'enable_cashier_printing', 'enable_cashier_today_revenue'];
     private $storageDir;
     private $settingsFile;
     private $categoriesFile;
@@ -91,6 +96,88 @@ class SettingsManager {
         return $this->readJson($this->settingsFile);
     }
 
+    /**
+     * Branding with one-time migration from legacy data/settings.json
+     */
+    public function getBranding() {
+        $settings = $this->getAllSettings();
+        $branding = $settings['branding'] ?? [];
+        $legacy = $this->readLegacySettings();
+        $changed = false;
+
+        foreach (self::$brandingKeys as $key) {
+            if (empty($branding[$key]) && !empty($legacy[$key])) {
+                $branding[$key] = $legacy[$key];
+                $changed = true;
+            }
+        }
+
+        if ($changed) {
+            $settings['branding'] = array_merge($settings['branding'] ?? [], $branding, ['updated_at' => date('c')]);
+            $this->writeJson($this->settingsFile, $settings);
+        }
+
+        return $branding;
+    }
+
+    public function getBrandingVars() {
+        $b = $this->getBranding();
+        $logo = $b['logo_url'] ?? '';
+        return [
+            'appName' => !empty($b['app_name']) ? $b['app_name'] : 'ABE HOTEL',
+            'appTagline' => !empty($b['app_tagline']) ? $b['app_tagline'] : 'HOTEL MANAGEMENT SYSTEM',
+            'logoUrl' => $logo,
+            'faviconUrl' => !empty($b['favicon_url']) ? $b['favicon_url'] : $logo,
+        ];
+    }
+
+    private function readLegacySettings() {
+        $map = [];
+        try {
+            foreach (db('settings')->findMany() as $row) {
+                if (!empty($row['key'])) {
+                    $map[$row['key']] = $row['value'];
+                }
+            }
+        } catch (Exception $e) {
+            error_log('Legacy settings read failed: ' . $e->getMessage());
+        }
+        return $map;
+    }
+
+    private function syncKeyToLegacy($key, $value, $type = 'string') {
+        try {
+            $db = db('settings');
+            $stored = is_bool($value) ? ($value ? 'true' : 'false') : (string)$value;
+            $rows = $db->findMany();
+
+            foreach ($rows as $row) {
+                if (($row['key'] ?? '') !== $key) continue;
+
+                $where = !empty($row['id']) ? ['id' => $row['id']] : ['key' => $key];
+                $db->update([
+                    'where' => $where,
+                    'data' => [
+                        'value' => $stored,
+                        'type' => $type,
+                        'updated_at' => date('Y-m-d H:i:s'),
+                    ]
+                ]);
+                return;
+            }
+
+            $db->create([
+                'data' => [
+                    'key' => $key,
+                    'value' => $stored,
+                    'type' => $type,
+                ]
+            ]);
+        } catch (Exception $e) {
+            error_log('Legacy settings sync failed: ' . $e->getMessage());
+        }
+    }
+
     public function updateSetting($section, $key, $value) {
         $settings = $this->getAllSettings();
         if (!isset($settings[$section])) {
@@ -99,6 +186,15 @@ class SettingsManager {
         $settings[$section][$key] = $value;
         $settings[$section]['updated_at'] = date('c');
         $this->writeJson($this->settingsFile, $settings);
+
+        if ($section === 'branding' && in_array($key, self::$brandingKeys, true)) {
+            $this->syncKeyToLegacy($key, $value, $key === 'logo_url' || $key === 'favicon_url' ? 'url' : 'string');
+        }
+        if ($section === 'configuration' && in_array($key, self::$legacyConfigKeys, true)) {
+            $type = is_bool($value) ? 'boolean' : (is_numeric($value) ? 'number' : 'string');
+            $this->syncKeyToLegacy($key, $value, $type);
+        }
+
         return $settings;
     }
 
@@ -278,46 +374,85 @@ class SettingsManager {
             throw new Exception('Invalid file upload');
         }
 
-        $allowed = ['image/jpeg', 'image/png', 'image/webp'];
-        if (!in_array($file['type'], $allowed)) {
-            throw new Exception('Invalid image type');
+        $mime = $file['type'] ?? '';
+        if (!$mime || $mime === 'application/octet-stream') {
+            $info = @getimagesize($file['tmp_name']);
+            $mime = $info['mime'] ?? '';
         }
+        $allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/jpg', 'image/pjpeg'];
+        if (!in_array($mime, $allowed, true)) {
+            throw new Exception('Invalid image type. Use JPG, PNG, WebP, or GIF.');
+        }
+        $file['type'] = $mime;
 
         if ($file['size'] > 5 * 1024 * 1024) { // 5MB
             throw new Exception('File too large');
         }
 
-        // Compress image
-        $image = $this->compressImage($file['tmp_name']);
-        $base64 = 'data:' . $file['type'] . ';base64,' . base64_encode($image);
-        
-        return $base64;
+        $dims = $type === 'favicon' ? [64, 64, 85] : [200, 200, 90];
+        return $this->imageFileToDataUrl($file['tmp_name'], $file['type'], $dims[0], $dims[1], $dims[2]);
+    }
+
+    public function uploadLogoAndFavicon($file) {
+        $logo = $this->uploadImage($file, 'logo');
+        $favicon = $this->imageFileToDataUrl($file['tmp_name'], $file['type'], 64, 64, 85);
+        $this->updateSetting('branding', 'logo_url', $logo);
+        $this->updateSetting('branding', 'favicon_url', $favicon);
+        return ['logo_url' => $logo, 'favicon_url' => $favicon];
+    }
+
+    private function imageFileToDataUrl($filePath, $mime, $maxWidth = 200, $maxHeight = 200, $quality = 90) {
+        if (!function_exists('imagecreatefromstring')) {
+            return $this->fileToDataUrlFallback($filePath);
+        }
+
+        $image = $this->compressImage($filePath, $maxWidth, $maxHeight, $quality);
+        return 'data:image/jpeg;base64,' . base64_encode($image);
+    }
+
+    private function fileToDataUrlFallback($filePath) {
+        $raw = file_get_contents($filePath);
+        if ($raw === false || $raw === '') {
+            throw new Exception('Could not read uploaded image');
+        }
+
+        $info = @getimagesize($filePath);
+        if ($info === false) {
+            throw new Exception('Invalid image file');
+        }
+
+        $mime = $info['mime'] ?? 'image/jpeg';
+        return 'data:' . $mime . ';base64,' . base64_encode($raw);
     }
 
     private function compressImage($filePath, $maxWidth = 200, $maxHeight = 200, $quality = 90) {
+        if (!function_exists('imagecreatefromstring')) {
+            return file_get_contents($filePath);
+        }
+
         $image = imagecreatefromstring(file_get_contents($filePath));
-        
+        if ($image === false) {
+            throw new Exception('Could not process image');
+        }
+
         list($width, $height) = getimagesize($filePath);
-        
+
         $ratio = min($maxWidth / $width, $maxHeight / $height);
-        $newWidth = (int)($width * $ratio);
-        $newHeight = (int)($height * $ratio);
-        
+        $newWidth = max(1, (int)($width * $ratio));
+        $newHeight = max(1, (int)($height * $ratio));
+
         $thumb = imagecreatetruecolor($newWidth, $newHeight);
-        
-        // Handle transparency
         imagealphablending($thumb, false);
         imagesavealpha($thumb, true);
-        
         imagecopyresampled($thumb, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
-        
+
         ob_start();
-        imagejpeg($thumb, null, $quality); // JPEG doesn't support alpha, use png for alpha if needed
+        imagejpeg($thumb, null, $quality);
         $output = ob_get_clean();
-        
+
         imagedestroy($image);
         imagedestroy($thumb);
-        
+
         return $output;
     }
 }

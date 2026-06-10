@@ -63,6 +63,9 @@ function updateUI() {
 
     // Update Stock Alerts Panel
     updateStockAlertsPanel(m.inventoryInsights.lowStockAlerts);
+
+    // Update Active Orders Panel
+    updateActiveOrdersPanel(m.realTimeMetrics.recentActive || []);
 }
 
 function updateMetricCard(id, value, subtext = '', color = null) {
@@ -85,6 +88,61 @@ function updateMetricCard(id, value, subtext = '', color = null) {
         iconBox?.classList.remove('bg-red-500/10', 'text-red-500');
         card.classList.remove('border-red-900/50');
     }
+}
+
+function updateActiveOrdersPanel(orders) {
+    const panel = document.getElementById('active-orders-panel');
+    if (!panel) return;
+
+    if (orders.length === 0) {
+        panel.classList.add('hidden');
+        return;
+    }
+
+    panel.classList.remove('hidden');
+    const list = panel.querySelector('.orders-list');
+    const countEl = panel.querySelector('.active-count');
+    
+    if (countEl) countEl.textContent = `(${orders.length})`;
+    
+    if (list) {
+        list.innerHTML = orders.map(o => `
+            <div class="glass p-5 rounded-xl border border-blue-900/30 bg-gray-900/60 hover:bg-gray-900 transition-colors flex flex-col group">
+                <div class="flex items-start justify-between mb-4">
+                    <div>
+                        <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest leading-none mb-1">#${o.orderNumber.substr(-4)}</p>
+                        <h4 class="text-sm font-bold text-white">${o.tableNumber === 'Buy&Go' ? 'Takeaway' : 'Table ' + o.tableNumber}</h4>
+                    </div>
+                    <span class="text-[9px] font-black uppercase tracking-tighter px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                        ${o.status}
+                    </span>
+                </div>
+                
+                <div class="flex-1 space-y-2 mb-4">
+                    ${(o.items || []).slice(0, 2).map(it => `
+                        <div class="flex justify-between items-center text-[10px] text-gray-400">
+                            <span class="truncate pr-2">${it.name}</span>
+                            <span class="font-bold text-gray-200">x${it.quantity}</span>
+                        </div>
+                    `).join('')}
+                    ${(o.items || []).length > 2 ? `<p class="text-[9px] text-gray-500 font-medium italic">+ ${(o.items.length - 2)} more items</p>` : ''}
+                </div>
+
+                <div class="pt-4 border-t border-gray-800 flex items-center justify-between">
+                    <span class="text-[10px] font-bold text-gray-500">${getTimeAgo(o.createdAt)}</span>
+                    <p class="text-xs font-bold text-blue-400">${formatCurrency(o.totalAmount)}</p>
+                </div>
+            </div>
+        `).join('');
+        lucide.createIcons();
+    }
+}
+
+function getTimeAgo(dateStr) {
+    const diff = Math.floor((new Date() - new Date(dateStr)) / 60000);
+    if (diff < 1) return 'Just now';
+    if (diff < 60) return diff + 'm ago';
+    return Math.floor(diff/60) + 'h ago';
 }
 
 function updateStockAlertsPanel(alerts) {

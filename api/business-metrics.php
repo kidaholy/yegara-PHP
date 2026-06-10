@@ -26,6 +26,27 @@ try {
         'isDeleted' => false
     ]]);
 
+    // Fetch active orders for dashboard display
+    $activeOrders = db('orders')->findMany([
+        'where' => [
+            'status' => ['nin' => ['completed', 'served', 'cancelled']],
+            'isDeleted' => false
+        ],
+        'orderBy' => ['createdAt' => 'desc'],
+        'limit' => 5
+    ]);
+    
+    // Fetch items for active orders
+    if (!empty($activeOrders)) {
+        $activeOrderIds = array_map(fn($o) => $o['id'], $activeOrders);
+        $orderItems = db('orderItems')->findMany([
+            'where' => ['orderId' => ['in' => $activeOrderIds]]
+        ]);
+        $itemsMap = [];
+        foreach ($orderItems as $it) $itemsMap[$it['orderId']][] = $it;
+        foreach ($activeOrders as &$ao) $ao['items'] = $itemsMap[$ao['id']] ?? [];
+    }
+
     $stocks = db('stocks')->findMany([]);
     
     // 1. Revenue Calculations
@@ -67,7 +88,8 @@ try {
             'todayRevenue' => $todayRevenue,
             'todayOrders' => $todayOrdersCount,
             'averageOrderValue' => $avgOrderValue,
-            'activeOrders' => 0 // Mocked for now
+            'activeOrders' => count($activeOrders),
+            'recentActive' => $activeOrders
         ],
         'operationalMetrics' => [
             'customerSatisfaction' => [

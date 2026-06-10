@@ -125,7 +125,30 @@ renderHeader($title);
         </div>
 >
 
-        <!-- SECTION 4: STOCK ALERTS (Conditional via JS) -->
+        <!-- SECTION 4: LIVE ACTIVE ORDERS -->
+        <div id="active-orders-panel" class="hidden animate-in fade-in">
+            <div class="glass p-8 rounded-2xl border border-blue-900/40 bg-blue-950/20">
+                <div class="flex items-center justify-between mb-8">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500">
+                            <i data-lucide="bell-ring" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-blue-400 mt-1">Active Orders <span class="active-count ml-1 text-blue-500"></span></h3>
+                            <p class="text-sm font-medium text-blue-400/60 mt-1">Real-time Order Flow</p>
+                        </div>
+                    </div>
+                    <a href="orders.php" class="text-xs font-bold uppercase tracking-widest text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-2">
+                        View All <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    </a>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 orders-list">
+                    <!-- Orders injected here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 5: STOCK ALERTS (Conditional via JS) -->
         <div id="stock-alerts-panel" class="hidden animate-in fade-in">
             <div class="glass p-8 rounded-2xl border border-red-900/50 bg-red-950/20">
                 <div class="flex items-center gap-4 mb-8">

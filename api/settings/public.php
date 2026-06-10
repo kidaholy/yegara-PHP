@@ -1,41 +1,26 @@
 <?php
 header('Content-Type: application/json');
-require_once '../../includes/JsonDB.php';
-
-require_once '../../includes/JsonDB.php';
+require_once '../../includes/SettingsManager.php';
 
 /**
- * Public Settings API
- * Exposes non-sensitive branding and configuration
+ * Public Settings API — non-sensitive branding and configuration
  */
-
 try {
-    $settings = db('settings')->findMany();
-    
-    // Map key-value pairs
-    $publicData = [];
-    $publicKeys = ['logo_url', 'favicon_url', 'app_name', 'app_tagline', 'vat_rate', 'enable_cashier_printing', 'enable_cashier_today_revenue'];
-    
-    // Set Defaults
-    $publicData = [
-        'logo_url' => '',
-        'favicon_url' => '',
-        'app_name' => 'Prime Addis',
-        'app_tagline' => 'Coffee Management',
-        'vat_rate' => '0.15',
-        'enable_cashier_printing' => 'true',
-        'enable_cashier_today_revenue' => 'false'
-    ];
-
-    foreach ($settings as $s) {
-        if (in_array($s['key'], $publicKeys)) {
-            $publicData[$s['key']] = $s['value'];
-        }
-    }
+    $manager = new SettingsManager();
+    $branding = $manager->getBranding();
+    $config = $manager->getSetting('configuration') ?? [];
 
     echo json_encode([
         'status' => 'success',
-        'data' => $publicData
+        'data' => [
+            'logo_url' => $branding['logo_url'] ?? '',
+            'favicon_url' => $branding['favicon_url'] ?? ($branding['logo_url'] ?? ''),
+            'app_name' => $branding['app_name'] ?? 'ABE HOTEL',
+            'app_tagline' => $branding['app_tagline'] ?? 'HOTEL MANAGEMENT SYSTEM',
+            'vat_rate' => (string)($config['vat_rate'] ?? '0.15'),
+            'enable_cashier_printing' => ($config['enable_cashier_printing'] ?? true) ? 'true' : 'false',
+            'enable_cashier_today_revenue' => ($config['enable_cashier_today_revenue'] ?? false) ? 'true' : 'false',
+        ]
     ]);
 
 } catch (Exception $e) {

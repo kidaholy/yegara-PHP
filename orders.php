@@ -4,8 +4,206 @@
  * High-Fidelity "Luxury-First" Edition (Spec-Corrected)
  */
 require_once 'includes/layout.php';
-requireAuth(['admin']);
+require_once 'includes/order-utils.php';
+requireAuth(['admin', 'cashier', 'chef', 'reception', 'receptionist', 'store_keeper']);
+
+$user = getCurrentUser();
+$userRole = $user['role'] ?? '';
+$userName = $user['name'] ?? 'Cashier';
+$isCashierView = ($userRole === 'cashier')
+    || (isset($_GET['view']) && $_GET['view'] === 'recent' && in_array($userRole, ['cashier', 'admin'], true));
+$isKiosk = isset($_GET['kiosk']) && $_GET['kiosk'] == 1;
+
+if ($isCashierView) {
+    $manager = new SettingsManager();
+    $config = $manager->getSetting('configuration') ?? [];
+    $showRevenue = !empty($config['enable_cashier_today_revenue']);
+    $welcomeDate = date('D, M j');
+    $todayStart = date('Y-m-d 00:00:00');
+    $todayEnd = date('Y-m-d 23:59:59');
+
+    try {
+        $todayOrders = db('orders')->findMany([
+            'where' => [
+                'isDeleted' => false,
+                'createdAt' => ['gte' => $todayStart, 'lte' => $todayEnd],
+            ],
+        ]);
+        $orderIds = array_map(fn($o) => $o['id'], $todayOrders);
+        $itemsMap = [];
+        if (!empty($orderIds)) {
+            $orderItems = db('orderItems')->findMany([
+                'where' => ['orderId' => ['in' => $orderIds], 'isDeleted' => false],
+            ]);
+            foreach ($orderItems as $item) {
+                $itemsMap[$item['orderId']][] = $item;
+            }
+        }
+        foreach ($todayOrders as &$o) {
+            $o['items'] = $itemsMap[$o['id']] ?? [];
+        }
+        unset($o);
+
+        $todayOrders = array_values(array_filter($todayOrders, fn($o) => !isRoomServiceOrder($o)));
+        usort($todayOrders, fn($a, $b) => strtotime($b['createdAt'] ?? 'now') - strtotime($a['createdAt'] ?? 'now'));
+
+        $todayRevenue = 0;
+        foreach ($todayOrders as $o) {
+            if (strtolower($o['status'] ?? '') !== 'cancelled') {
+                $todayRevenue += (float)($o['totalAmount'] ?? 0);
+            }
+        }
+    } catch (Exception $e) {
+        $todayOrders = [];
+        $todayRevenue = 0;
+    }
+
+    renderHeader($isKiosk ? 'Kiosk Mode' : 'Recent Orders', ['nav' => $isKiosk ? 'kiosk' : 'pos', 'posTab' => 'recent']);
+    ?>
+    <div class="min-h-screen w-full bg-[#0f1110] <?php echo $isKiosk ? 'p-0' : 'p-6 lg:p-12'; ?> flex justify-center">
+        <div class="max-w-screen-2xl w-full <?php echo $isKiosk ? 'space-y-0' : 'space-y-8'; ?>">
+
+            <?php if (!$isKiosk): ?>
+            <div class="glass p-8 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-8 bg-gray-900/40">
+                <div class="flex items-center gap-6">
+                    <div class="w-16 h-16 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center text-blue-400">
+                        <i data-lucide="clipboard-list" class="w-8 h-8"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl lg:text-4xl font-bold text-white leading-tight mt-1">Today's Orders</h1>
+                        <p class="text-sm font-medium text-gray-400 mt-2">
+                            Welcome, <?php echo htmlspecialchars(strtoupper($userName)); ?> &bull; <?php echo $welcomeDate; ?>
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <a href="orders.php?view=recent&kiosk=1" class="text-xs font-bold uppercase tracking-widest text-[#c5a059] bg-[#c5a059]/10 px-4 py-2 rounded-lg hover:bg-[#c5a059]/20 transition-all flex items-center gap-2">
+                        <i data-lucide="monitor" class="w-4 h-4"></i> Enter Kiosk
+                    </a>
+                    <a href="cashier.php" class="text-xs font-bold uppercase tracking-widest text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-2">
+                        Back to POS <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-<?php echo $showRevenue ? '2' : '1'; ?> gap-6 max-w-2xl">
+                <div class="glass p-6 rounded-2xl bg-gray-800/80 hover:bg-gray-800 transition-colors border border-gray-700/50">
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-sm font-medium text-gray-400">Orders Today</p>
+                        <div class="inline-flex p-3 rounded-lg bg-gray-900 border border-gray-700 text-blue-400">
+                            <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-bold text-white leading-none tracking-tight"><?php echo count($todayOrders); ?></p>
+                </div>
+                <?php if ($showRevenue): ?>
+                <div class="glass p-6 rounded-2xl bg-gray-800/80 hover:bg-gray-800 transition-colors border border-gray-700/50">
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-sm font-medium text-gray-400">Today's Revenue</p>
+                        <div class="inline-flex p-3 rounded-lg bg-gray-900 border border-gray-700 text-blue-400">
+                            <i data-lucide="dollar-sign" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-bold text-white leading-none tracking-tight"><?php echo number_format($todayRevenue, 0); ?> ETB</p>
+                </div>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($isKiosk): ?>
+            <a href="orders.php?view=recent" class="fixed top-4 right-4 z-[300] px-5 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-black uppercase tracking-widest border border-red-500/30 transition-all flex items-center gap-2 shadow-lg">
+                <i data-lucide="minimize" class="w-4 h-4"></i> Exit Kiosk
+            </a>
+            <?php endif; ?>
+
+            <div class="glass <?php echo $isKiosk ? 'rounded-none border-none min-h-screen overflow-hidden flex flex-col bg-[#0f1110]' : 'p-8 rounded-2xl border border-blue-900/40 bg-blue-950/20'; ?>">
+                <?php if (!$isKiosk): ?>
+                <div class="flex items-center justify-between mb-8">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500">
+                            <i data-lucide="receipt" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-blue-400 mt-1">Order History</h3>
+                            <p class="text-sm font-medium text-blue-400/60 mt-1">All orders placed today</p>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <div class="<?php echo $isKiosk ? 'flex-1 overflow-y-auto px-4 pt-16 pb-6 space-y-4' : ''; ?>">
+                    <?php if (empty($todayOrders)): ?>
+                    <div class="py-16 flex flex-col items-center justify-center text-center">
+                        <i data-lucide="inbox" class="w-14 h-14 mb-4 text-gray-600"></i>
+                        <p class="text-sm font-medium text-gray-500">No orders placed today yet</p>
+                    </div>
+                    <?php else: ?>
+                    <div class="<?php echo $isKiosk ? 'space-y-4 max-w-5xl mx-auto' : 'space-y-4'; ?>">
+                    <?php foreach ($todayOrders as $o):
+                        $status = strtolower($o['status'] ?? 'pending');
+                        $itemCount = count($o['items'] ?? []);
+                        $statusColors = [
+                            'preparing' => 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+                            'pending'   => 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                            'ready'     => 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+                            'served'    => 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+                            'completed' => 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+                            'cancelled' => 'bg-red-500/10 text-red-400 border-red-500/20',
+                        ];
+                        $statusCls = $statusColors[$status] ?? 'bg-white/5 text-muted-foreground border-white/10';
+                    ?>
+                    <div class="glass p-5 rounded-2xl border border-blue-900/30 bg-gray-900/60 hover:bg-gray-900 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div class="flex items-center gap-6 min-w-0">
+                            <div class="shrink-0 w-24 text-center">
+                                <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest leading-none mb-1">#<?php echo htmlspecialchars($o['orderNumber'] ?? '—'); ?></p>
+                                <p class="text-[10px] text-gray-500"><?php echo date('h:i A', strtotime($o['createdAt'])); ?></p>
+                            </div>
+                            <div class="h-10 w-[1px] bg-gray-800 hidden md:block"></div>
+                            <div class="min-w-0">
+                                <h4 class="text-base font-bold text-white mb-1"><?php echo htmlspecialchars($o['tableNumber'] ?? '—'); ?></h4>
+                                <span class="text-[10px] font-black uppercase tracking-tighter px-2 py-0.5 rounded border <?php echo $statusCls; ?>">
+                                    <?php echo htmlspecialchars(ucfirst($status)); ?>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 min-w-0 md:px-6">
+                            <div class="flex flex-wrap gap-x-4 gap-y-1">
+                                <?php foreach ($o['items'] ?? [] as $item): ?>
+                                <span class="text-xs text-gray-400 bg-gray-800/40 px-2 py-1 rounded-lg border border-gray-700/30">
+                                    <span class="font-bold text-blue-400/80"><?php echo (int)($item['quantity'] ?? 1); ?>×</span>
+                                    <?php echo htmlspecialchars($item['name'] ?? 'Item'); ?>
+                                </span>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+
+                        <div class="shrink-0 flex items-center gap-8 md:text-right border-t md:border-t-0 border-gray-800 pt-4 md:pt-0">
+                            <div class="hidden lg:block">
+                                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">Total Amount</p>
+                                <p class="text-lg font-bold text-white font-serif"><?php echo number_format((float)($o['totalAmount'] ?? 0), 0); ?> <span class="text-xs text-blue-400 ml-0.5">ETB</span></p>
+                            </div>
+                            <div class="lg:hidden">
+                                <p class="text-lg font-bold text-white"><?php echo number_format((float)($o['totalAmount'] ?? 0), 0); ?> <span class="text-xs text-blue-400">ETB</span></p>
+                            </div>
+                            <div class="h-10 w-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all cursor-pointer">
+                                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    <?php
+    renderFooter();
+    exit;
+}
+
 $title = __('admin_orders.title');
+$filter_tab = $_GET['tab'] ?? 'all';
 
 // --- Filters ---
 $filter_time     = $_GET['time']     ?? 'week';
@@ -87,6 +285,7 @@ try {
         'preparing' => $calcStats($preparingBucket),
         'ready'     => $calcStats($readyBucket),
         'served'    => $calcStats($servedBucket),
+        'room'      => ['count' => count(array_filter($allOrders, fn($o) => in_array('room', array_map('strtolower', (array)($o['distributions'] ?? [])))))],
         'deleted'   => ['count' => count($deletedOrders)]
     ];
 
@@ -107,15 +306,27 @@ try {
     }
 
     // --- Filtering ---
-    $filteredOrders = match($filter_status) {
-        'all'       => $allOrders,
-        'preparing' => $preparingBucket,
-        'ready'     => $readyBucket,
-        'served'    => $servedBucket,
-        'deleted'   => $deletedOrders,
-        'cashier'   => $cashierOrders,
-        default     => $allOrders
-    };
+    if ($filter_tab === 'room') {
+        $filteredOrders = array_filter($allOrders, function($o) {
+            $dist = $o['distributions'] ?? [];
+            return in_array('room', array_map('strtolower', (array)$dist)) 
+                || in_array('reception', array_map('strtolower', (array)$dist));
+        });
+        $filter_status = 'room'; // For UI highlighting
+    } else {
+        $filteredOrders = match($filter_status) {
+            'all'       => $allOrders,
+            'preparing' => $preparingBucket,
+            'ready'     => $readyBucket,
+            'served'    => $servedBucket,
+            'deleted'   => $deletedOrders,
+            'cashier'   => $cashierOrders,
+            'room'      => array_filter($allOrders, fn($o) => in_array('room', array_map('strtolower', (array)($o['distributions'] ?? [])))),
+            default     => $allOrders
+        };
+    }
+    
+    $filteredOrders = array_values($filteredOrders);
 
     if ($filter_time !== 'all') {
         $filteredOrders = array_filter($filteredOrders, function($o) use ($filter_time, $now) {
@@ -184,6 +395,7 @@ renderHeader($title);
                         ['id'=>'preparing', 'label'=>__('admin_orders.preparing'),  'icon'=>'flame',          'data'=>$stats['preparing'], 'color'=>'red'],
                         ['id'=>'ready',     'label'=>__('admin_orders.ready'),      'icon'=>'check-circle-2', 'data'=>$stats['ready'],     'color'=>'green'],
                         ['id'=>'served',    'label'=>__('admin_orders.served'),     'icon'=>'package-check',  'data'=>$stats['served'],    'color'=>'blue'],
+                        ['id'=>'room',      'label'=>'ROOM SERVICE',                'icon'=>'door-open',      'data'=>$stats['room'],      'color'=>'amber'],
                         ['id'=>'cashier',   'label'=>'BY CASHIER',                  'icon'=>'users',          'data'=>['count'=>count($cashierNames)], 'color'=>'purple'],
                         ['id'=>'deleted',   'label'=>'DELETED HISTORY',             'icon'=>'trash-2',        'data'=>$stats['deleted'],   'color'=>'white'],
                     ];

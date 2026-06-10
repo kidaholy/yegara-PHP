@@ -5,8 +5,15 @@
 require_once 'includes/layout.php';
 
 $user = getCurrentUser();
-$title = "Abe Hotel - Management System";
 
+require_once __DIR__ . '/includes/SettingsManager.php';
+$manager = new SettingsManager();
+extract($manager->getBrandingVars());
+if ($appTagline === 'HOTEL MANAGEMENT SYSTEM') {
+    $appTagline = 'ምርጥ አገልግሎት ለመስጠት';
+}
+
+$title = $appName . " - Management System";
 renderHeader($title);
 ?>
 
@@ -20,14 +27,20 @@ renderHeader($title);
     <!-- Header / Navigation -->
     <header class="absolute top-0 w-full px-12 py-10 flex justify-between items-center z-50">
         <div class="flex items-center gap-4">
-            <!-- Circular Logo -->
-            <div class="w-14 h-14 rounded-full border-2 border-[#c5a059] flex flex-col items-center justify-center p-1 bg-black/40 backdrop-blur-sm shadow-xl">
-                <span class="text-[8px] font-black tracking-widest text-[#c5a059] leading-none mb-0.5">ABE</span>
-                <span class="text-[6px] font-bold tracking-[0.2em] text-[#c5a059] leading-none">HOTEL</span>
-            </div>
+            <!-- Dynamic Logo -->
+            <?php if ($logoUrl): ?>
+                <div class="w-14 h-14 rounded-full overflow-hidden border-2 border-[#c5a059]/40 bg-black/40 shadow-xl flex-shrink-0">
+                    <img src="<?php echo htmlspecialchars($logoUrl); ?>" alt="Logo" class="w-full h-full object-cover">
+                </div>
+            <?php else: ?>
+                <div class="w-14 h-14 rounded-full border-2 border-[#c5a059] flex flex-col items-center justify-center p-1 bg-black/40 backdrop-blur-sm shadow-xl">
+                    <span class="text-[8px] font-black tracking-widest text-[#c5a059] leading-none mb-0.5"><?php echo htmlspecialchars(strtoupper(substr($appName, 0, 3))); ?></span>
+                    <span class="text-[6px] font-bold tracking-[0.2em] text-[#c5a059] leading-none">SYS</span>
+                </div>
+            <?php endif; ?>
             <div class="hidden md:block">
-                <h2 class="text-[#c5a059] font-black text-xl italic tracking-tight leading-none mb-1">ABE HOTEL</h2>
-                <p class="text-[8px] text-[#c5a059]/60 font-bold uppercase tracking-widest">ምርጥ አገልግሎት ለመስጠት</p>
+                <h2 class="text-[#c5a059] font-black text-xl italic tracking-tight leading-none mb-1"><?php echo htmlspecialchars($appName); ?></h2>
+                <p class="text-[8px] text-[#c5a059]/60 font-bold uppercase tracking-widest"><?php echo htmlspecialchars($appTagline); ?></p>
             </div>
         </div>
 

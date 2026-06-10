@@ -5,18 +5,28 @@
 
 require_once 'lang.php';
 require_once 'auth.php';
+require_once __DIR__ . '/SettingsManager.php';
 
-function renderHeader($title = "Management System") {
+function renderHeader($title = "Management System", $options = []) {
     global $currentLang;
     $user = getCurrentUser();
-    $appName = "Prime Addis"; // Default from layout.tsx
+    $navMode = $options['nav'] ?? 'default';
+    $posTab = $options['posTab'] ?? 'standard';
+    
+    // Load branding (storage + legacy sync)
+    $manager = new SettingsManager();
+    extract($manager->getBrandingVars());
+    
     ?>
     <!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title><?php echo $title . " - " . $appName; ?></title>
+        <title><?php echo htmlspecialchars($title . " - " . $appName); ?></title>
+        <?php if ($faviconUrl): ?>
+        <link rel="icon" href="<?php echo htmlspecialchars($faviconUrl); ?>" />
+        <?php endif; ?>
         <!-- Tailwind CSS CDN -->
         <script src="https://cdn.tailwindcss.com"></script>
         <!-- Google Fonts: Inter -->
@@ -142,46 +152,44 @@ function renderHeader($title = "Management System") {
     </head>
     <body class="min-h-screen flex flex-col selection:bg-primary/10 selection:text-primary">
         
-        <?php if ($user): ?>
+        <?php if ($user && $navMode !== 'kiosk'): ?>
         <!-- Top Navigation Bar -->
         <nav class="h-[60px] bg-[#111413] border-b border-white/5 flex items-center justify-between px-6 shrink-0 z-50 sticky top-0">
-            <!-- Logo -->
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-white/10 border border-white/20 flex flex-col items-center justify-center flex-shrink-0">
-                    <span class="text-[10px] font-bold tracking-widest text-white leading-none">ABE</span>
-                </div>
+            <!-- Logo & Brand -->
+            <a href="admin.php" class="flex items-center gap-3 hover:opacity-90 transition-opacity">
+                <?php if ($logoUrl): ?>
+                    <div class="w-10 h-10 rounded-full overflow-hidden bg-white/10 border border-white/20 flex-shrink-0">
+                        <img src="<?php echo htmlspecialchars($logoUrl); ?>" alt="Logo" class="w-full h-full object-cover">
+                    </div>
+                <?php else: ?>
+                    <div class="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex flex-col items-center justify-center flex-shrink-0">
+                        <span class="text-[10px] font-bold tracking-widest text-white leading-none"><?php echo htmlspecialchars(strtoupper(substr($appName, 0, 3))); ?></span>
+                    </div>
+                <?php endif; ?>
                 <div>
-                    <h1 class="text-white font-bold text-lg leading-none tracking-tight mt-0.5">ABE HOTEL</h1>
-                    <p class="text-[9px] text-white/50 font-medium uppercase tracking-wider leading-none mt-1">Admin Dashboard</p>
+                    <h1 class="text-white font-bold text-lg leading-none tracking-tight mt-0.5"><?php echo htmlspecialchars($appName); ?></h1>
+                    <p class="text-[9px] text-white/50 font-medium uppercase tracking-wider leading-none mt-1"><?php echo htmlspecialchars($appTagline); ?></p>
                 </div>
-            </div>
+            </a>
 
             <!-- Nav Links -->
             <div class="hidden md:flex items-center gap-1">
-                <?php renderTopNavLinks($user['role']); ?>
+                <?php
+                if ($navMode === 'pos') {
+                    renderPosNavLinks($posTab);
+                } elseif ($navMode === 'kitchen') {
+                    echo '<span class="text-sm font-bold uppercase tracking-[0.25em] text-white">Kitchen</span>';
+                } else {
+                    renderTopNavLinks($user['role']);
+                }
+                ?>
             </div>
 
             <!-- Right Side -->
             <div class="flex items-center gap-4">
-                <!-- Notification Bell -->
-                <div class="relative">
-                    <button class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all">
-                        <i data-lucide="bell" class="w-4 h-4"></i>
-                    </button>
-                <span class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-blue-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">0</span>
-                </div>
-
-                <!-- User Avatar -->
-                <div class="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white font-bold text-sm">
-                    <?php echo strtoupper(substr($user['name'] ?? 'U', 0, 1)); ?>
-                </div>
-
-                <!-- User Greeting -->
                 <span class="hidden lg:block text-sm font-medium text-white/80">
-                    Hi, <?php echo htmlspecialchars(explode(' ', $user['name'])[0]); ?>
+                    Hi, <?php echo htmlspecialchars($user['name'] ?? 'User'); ?>!
                 </span>
-
-                <!-- Logout -->
                 <a href="logout.php" class="px-4 py-2 bg-white/10 hover:bg-red-500/80 hover:text-white text-white text-sm font-medium rounded-lg transition-colors border border-white/10">
                     Logout
                 </a>
@@ -190,8 +198,8 @@ function renderHeader($title = "Management System") {
         <?php endif; ?>
 
         <!-- Main Content -->
-        <main class="flex-1 flex bg-[#0f1110] relative">
-            <div class="flex-1 flex relative page-enter">
+        <main class="flex-1 flex bg-[#0f1110] relative min-h-0">
+            <div class="flex-1 flex relative page-enter min-h-0 w-full">
     <?php
 }
 
@@ -230,6 +238,23 @@ function renderTopNavLinks($role) {
                 : 'px-4 py-2 text-sm font-medium text-white/60 hover:text-[#c5a059] hover:bg-[#c5a059]/5 rounded-md transition-colors';
             echo "<a href='{$link['url']}' class='{$cls}'>{$link['name']}</a>";
         }
+    }
+}
+
+function renderPosNavLinks($activeTab = 'standard') {
+    $tabs = [
+        ['key' => 'standard', 'label' => 'Standard POS', 'url' => 'cashier.php'],
+        ['key' => 'vip1',     'label' => 'VIP 1 POS',    'url' => 'cashier.php?mode=vip1'],
+        ['key' => 'vip2',     'label' => 'VIP 2 POS',    'url' => 'cashier.php?mode=vip2'],
+        ['key' => 'recent',   'label' => 'Recent Orders','url' => 'orders.php?view=recent'],
+    ];
+
+    foreach ($tabs as $tab) {
+        $on = ($activeTab === $tab['key']);
+        $cls = $on
+            ? 'px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-[#c5a059] bg-[#c5a059]/10 rounded-md'
+            : 'px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-white/50 hover:text-[#c5a059] hover:bg-[#c5a059]/5 rounded-md transition-colors';
+        echo "<a href='{$tab['url']}' class='{$cls}'>{$tab['label']}</a>";
     }
 }
 

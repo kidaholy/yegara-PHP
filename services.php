@@ -16,7 +16,7 @@ renderHeader($title);
     .services-tab-btn:not(.active-tab):hover { color: #f3f4f6; }
 </style>
 
-<div class="max-w-screen-2xl w-full flex flex-col h-[calc(100vh-theme(space.4))] overflow-hidden bg-gray-900 border border-gray-700/50 rounded-2xl shadow-xl mt-2 mb-2 lg:ml-2">
+<div class="max-w-screen-2xl w-full flex flex-col h-[calc(100vh-theme(space.4))] overflow-hidden bg-[#0f1110] rounded-2xl mt-2 mb-2 lg:ml-2">
     <!-- Header / Tab Bar -->
     <header class="px-8 pt-8 pb-0 border-b border-gray-700/50 bg-gray-800/80 backdrop-blur-xl shrink-0">
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-0">
