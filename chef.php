@@ -226,7 +226,6 @@ renderHeader('Kitchen');
     }
 
     async function serveOrder(id, num) {
-        if (!confirm('Mark order #' + num + ' as served?')) return;
         try {
             const resp = await fetch('api/orders.php?id=' + encodeURIComponent(id), {
                 method: 'PUT',

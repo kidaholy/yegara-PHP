@@ -133,7 +133,7 @@ function renderInventory() {
             }
           </td>
           <td class="p-4">
-            <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div class="flex items-center gap-2">
               <button onclick="openTransfer('${i.id}')" ${storeQty <= 0 ? 'disabled' : ''} title="Transfer to POS"
                 class="w-8 h-8 rounded-lg flex items-center justify-center border transition-colors
                 ${storeQty > 0 ? 'bg-[#c5a059]/10 border-[#c5a059]/30 text-[#c5a059] hover:bg-[#c5a059] hover:text-gray-900' : 'bg-gray-800 border-gray-700 text-gray-600 cursor-not-allowed'}">
@@ -142,6 +142,10 @@ function renderInventory() {
               <button onclick="openRestock('${i.id}')" title="Restock Bulk"
                 class="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center hover:bg-blue-500 hover:text-white transition-colors">
                 <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="openDecrease('${i.id}')" title="Decrease Stock (Wastage)"
+                class="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors">
+                <i data-lucide="minus-circle" class="w-3.5 h-3.5"></i>
               </button>
               <button onclick="openEditItem('${i.id}')" title="Edit"
                 class="w-8 h-8 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 flex items-center justify-center hover:text-white transition-colors">
@@ -327,8 +331,13 @@ function renderExpenses() {
       <td class="p-5 font-mono text-sm font-black text-[#f3cf7a]">${fmt(e.amount||0)}</td>
       <td class="p-5">
         ${S.isAdmin ? `
-        <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button onclick="deleteExpense('${e.id}')" class="w-8 h-8 rounded-xl bg-white/5 text-red-400 flex items-center justify-center hover:bg-red-500/10 transition-all"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        <div class="flex gap-2">
+          <button onclick="openRestockExpense('${e.id}')" title="Restock / Add Quantity"
+            class="w-8 h-8 rounded-xl bg-white/5 text-blue-400 flex items-center justify-center hover:bg-blue-500/10 transition-all"><i data-lucide="plus-circle" class="w-3.5 h-3.5"></i></button>
+          <button onclick="openDecreaseExpense('${e.id}')" title="Decrease Quantity"
+            class="w-8 h-8 rounded-xl bg-white/5 text-amber-500 flex items-center justify-center hover:bg-amber-500/10 transition-all"><i data-lucide="minus-circle" class="w-3.5 h-3.5"></i></button>
+          <button onclick="deleteExpense('${e.id}')" title="Delete record"
+            class="w-8 h-8 rounded-xl bg-white/5 text-red-400 flex items-center justify-center hover:bg-red-500/10 transition-all"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
         </div>` : ''}
       </td>
     </tr>`);
@@ -446,8 +455,8 @@ window.openRestock = function(itemId) {
     document.getElementById('restock-item-name').textContent = i.name;
     document.getElementById('restock-current').textContent   = `${i.storeQuantity||0} ${i.unit}`;
     document.getElementById('restock-qty').value   = '';
-    document.getElementById('restock-cost').value  = '';
-    document.getElementById('restock-upc').value   = '';
+    document.getElementById('restock-unit-price').value = i.averagePurchasePrice || 0;
+    document.getElementById('restock-upc').value   = i.unitCost || 0;
     document.getElementById('restock-notes').value = '';
     showModal('modal-restock');
 };
@@ -456,12 +465,36 @@ window.submitRestock = async function(e) {
     e.preventDefault();
     const id  = S.restockItemId;
     const qty  = parseFloat(document.getElementById('restock-qty').value);
-    const cost = parseFloat(document.getElementById('restock-cost').value);
+    const unitPrice = parseFloat(document.getElementById('restock-unit-price').value);
     const upc  = document.getElementById('restock-upc').value;
     const notes= document.getElementById('restock-notes').value;
     try {
-        await api('PUT', `api/stock.php?id=${id}`, { action:'restock', quantityAdded: qty, totalPurchaseCost: cost, newUnitCost: upc, notes });
+        await api('PUT', `api/stock.php?id=${id}`, { action:'restock', quantityAdded: qty, unitPrice, newUnitCost: upc, notes });
         hideModal('modal-restock');
+        await fetchAll();
+    } catch(err) { alert(err.message); }
+};
+
+// ── Decrease ──
+window.openDecrease = function(itemId) {
+    S.decreaseItemId = itemId;
+    const i = S.items.find(x => x.id === itemId);
+    if (!i) return;
+    document.getElementById('decrease-item-name').textContent = i.name;
+    document.getElementById('decrease-current').textContent   = `${i.storeQuantity||0} ${i.unit}`;
+    document.getElementById('decrease-qty').value   = '';
+    document.getElementById('decrease-notes').value = '';
+    showModal('modal-decrease');
+};
+
+window.submitDecrease = async function(e) {
+    e.preventDefault();
+    const id  = S.decreaseItemId;
+    const qty = parseFloat(document.getElementById('decrease-qty').value);
+    const notes = document.getElementById('decrease-notes').value;
+    try {
+        await api('PUT', `api/stock.php?id=${id}`, { action:'decrease', quantity: qty, notes });
+        hideModal('modal-decrease');
         await fetchAll();
     } catch(err) { alert(err.message); }
 };
@@ -628,6 +661,56 @@ window.submitExpenseForm = async function(e) {
     const d = { name: val('exp-name'), category: val('exp-category'), date: val('exp-date'), unitCost: parseFloat(val('exp-unit-cost')||0), quantity: parseFloat(val('exp-qty')||0), unit: val('exp-unit'), description: val('exp-desc') };
     try { await api('POST', 'api/operational-expenses.php', d); hideModal('modal-expense'); await fetchAll(); }
     catch(err) { alert(err.message); }
+};
+
+// ── Restock Expense Record ──
+window.openRestockExpense = function(id) {
+    S.restockExpId = id;
+    const e = S.expenses.find(x => x.id === id);
+    if (!e) return;
+    document.getElementById('res-exp-name').textContent = e.name;
+    document.getElementById('res-exp-current').textContent = `${e.quantity||0} ${e.unit||''}`;
+    document.getElementById('res-exp-qty').value = '';
+    document.getElementById('res-exp-unit-price').value = e.unit_cost || 0;
+    document.getElementById('res-exp-notes').value = '';
+    showModal('modal-restock-expense');
+};
+
+window.submitRestockExpense = async function(e) {
+    e.preventDefault();
+    const id = S.restockExpId;
+    const qty = parseFloat(document.getElementById('res-exp-qty').value);
+    const unitPrice = parseFloat(document.getElementById('res-exp-unit-price').value);
+    const notes = document.getElementById('res-exp-notes').value;
+    try {
+        await api('PUT', `api/operational-expenses.php?id=${id}`, { action: 'restock', quantityAdded: qty, unitPrice, notes });
+        hideModal('modal-restock-expense');
+        await fetchAll();
+    } catch(err) { alert(err.message); }
+};
+
+// ── Decrease Expense Record ──
+window.openDecreaseExpense = function(id) {
+    S.decreaseExpId = id;
+    const e = S.expenses.find(x => x.id === id);
+    if (!e) return;
+    document.getElementById('dec-exp-name').textContent = e.name;
+    document.getElementById('dec-exp-current').textContent = `${e.quantity||0} ${e.unit||''}`;
+    document.getElementById('dec-exp-qty').value = '';
+    document.getElementById('dec-exp-notes').value = '';
+    showModal('modal-decrease-expense');
+};
+
+window.submitDecreaseExpense = async function(e) {
+    e.preventDefault();
+    const id = S.decreaseExpId;
+    const qty = parseFloat(document.getElementById('dec-exp-qty').value);
+    const notes = document.getElementById('dec-exp-notes').value;
+    try {
+        await api('PUT', `api/operational-expenses.php?id=${id}`, { action: 'decrease', quantity: qty, notes });
+        hideModal('modal-decrease-expense');
+        await fetchAll();
+    } catch(err) { alert(err.message); }
 };
 
 // ── Denial Modal ──

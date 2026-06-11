@@ -165,12 +165,12 @@ $cancel    = 'w-full py-3 rounded-lg bg-gray-800 border border-gray-700 text-gra
             <input id="restock-qty" type="number" step="any" min="0.001" required class="<?= $input ?> text-[#c5a059]">
           </div>
           <div class="space-y-1.5">
-            <label class="<?= $label ?>">Total Purchase Cost</label>
-            <input id="restock-cost" type="number" step="any" min="0" required class="<?= $input ?>">
+            <label class="<?= $label ?>">Unit Purchase Price (Br)</label>
+            <input id="restock-unit-price" type="number" step="any" min="0" required class="<?= $input ?>">
           </div>
         </div>
         <div class="space-y-1.5">
-          <label class="<?= $label ?>">New Unit Cost (optional)</label>
+          <label class="<?= $label ?>">New Selling Price (Ref - optional)</label>
           <input id="restock-upc" type="number" step="any" min="0" class="<?= $input ?>">
         </div>
         <div class="space-y-1.5">
@@ -180,6 +180,99 @@ $cancel    = 'w-full py-3 rounded-lg bg-gray-800 border border-gray-700 text-gra
         <div class="grid grid-cols-2 gap-3 pt-3">
           <button type="button" onclick="closeModal('modal-restock')" class="<?= $cancel ?>">Cancel</button>
           <button type="submit" class="<?= $btn ?>">Confirm Restock</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- DECREASE STOCK MODAL -->
+<div id="modal-decrease" class="<?= $modalWrap ?>">
+  <div class="<?= $overlay ?>" onclick="closeModal('modal-decrease')"></div>
+  <div class="<?= $panel ?>">
+    <div class="p-7">
+      <h2 class="text-xl font-bold text-red-400 mb-1">Decrease Bulk Stock</h2>
+      <p id="decrease-item-name" class="text-xs font-semibold text-gray-500 mb-5"></p>
+      <div class="mb-5 p-3 rounded-xl bg-gray-800 border border-gray-700 flex justify-between items-center">
+        <span class="text-xs font-semibold text-gray-400">Store Quantity</span>
+        <span id="decrease-current" class="font-bold text-white text-base"></span>
+      </div>
+      <form onsubmit="submitDecrease(event)" class="space-y-4">
+        <div class="space-y-1.5">
+          <label class="<?= $label ?>">Qty to Remove (Wastage/Usage)</label>
+          <input id="decrease-qty" type="number" step="any" min="0.001" required class="<?= $input ?> text-red-400">
+        </div>
+        <div class="space-y-1.5">
+          <label class="<?= $label ?>">Notes / Reason</label>
+          <input id="decrease-notes" type="text" class="<?= $input ?>" placeholder="e.g. Expired, Spilled...">
+        </div>
+        <div class="grid grid-cols-2 gap-3 pt-3">
+          <button type="button" onclick="closeModal('modal-decrease')" class="<?= $cancel ?>">Cancel</button>
+          <button type="submit" class="w-full py-3 rounded-lg bg-red-600 text-white font-bold text-sm uppercase tracking-wider hover:bg-red-500 active:scale-95 transition-all">Confirm Decrease</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- RESTOCK EXPENSE MODAL -->
+<div id="modal-restock-expense" class="<?= $modalWrap ?>">
+  <div class="<?= $overlay ?>" onclick="closeModal('modal-restock-expense')"></div>
+  <div class="<?= $panel ?>">
+    <div class="p-7">
+      <h2 class="text-xl font-bold text-emerald-500 mb-1">Restock Expense</h2>
+      <p id="res-exp-name" class="text-xs font-semibold text-gray-500 mb-5"></p>
+      <div class="mb-5 p-3 rounded-xl bg-gray-800 border border-gray-700 flex justify-between items-center">
+        <span class="text-xs font-semibold text-gray-400">Recorded Quantity</span>
+        <span id="res-exp-current" class="font-bold text-white text-base"></span>
+      </div>
+      <form onsubmit="submitRestockExpense(event)" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label class="<?= $label ?>">Qty to Add</label>
+            <input id="res-exp-qty" type="number" step="any" min="0.001" required class="<?= $input ?> text-emerald-400">
+          </div>
+          <div class="space-y-1.5">
+            <label class="<?= $label ?>">New Unit Price (Br)</label>
+            <input id="res-exp-unit-price" type="number" step="any" min="0" required class="<?= $input ?>">
+          </div>
+        </div>
+        <div class="space-y-1.5">
+          <label class="<?= $label ?>">Notes</label>
+          <input id="res-exp-notes" type="text" class="<?= $input ?>" placeholder="e.g. Additional supplies...">
+        </div>
+        <div class="grid grid-cols-2 gap-3 pt-3">
+          <button type="button" onclick="closeModal('modal-restock-expense')" class="<?= $cancel ?>">Cancel</button>
+          <button type="submit" class="w-full py-3 rounded-lg bg-emerald-600 text-white font-bold text-sm uppercase tracking-wider hover:bg-emerald-500 active:scale-95 transition-all">Add & Update Price</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- DECREASE EXPENSE MODAL -->
+<div id="modal-decrease-expense" class="<?= $modalWrap ?>">
+  <div class="<?= $overlay ?>" onclick="closeModal('modal-decrease-expense')"></div>
+  <div class="<?= $panel ?>">
+    <div class="p-7">
+      <h2 class="text-xl font-bold text-red-500 mb-1">Decrease Expense Record</h2>
+      <p id="dec-exp-name" class="text-xs font-semibold text-gray-500 mb-5"></p>
+      <div class="mb-5 p-3 rounded-xl bg-gray-800 border border-gray-700 flex justify-between items-center">
+        <span class="text-xs font-semibold text-gray-400">Recorded Quantity</span>
+        <span id="dec-exp-current" class="font-bold text-white text-base"></span>
+      </div>
+      <form onsubmit="submitDecreaseExpense(event)" class="space-y-4">
+        <div class="space-y-1.5">
+          <label class="<?= $label ?>">Qty to Remove</label>
+          <input id="dec-exp-qty" type="number" step="any" min="0.001" required class="<?= $input ?> text-red-400">
+        </div>
+        <div class="space-y-1.5">
+          <label class="<?= $label ?>">Reason / Adjustment Notes</label>
+          <input id="dec-exp-notes" type="text" class="<?= $input ?>" placeholder="e.g. Refunded, Data correction...">
+        </div>
+        <div class="grid grid-cols-2 gap-3 pt-3">
+          <button type="button" onclick="closeModal('modal-decrease-expense')" class="<?= $cancel ?>">Cancel</button>
+          <button type="submit" class="w-full py-3 rounded-lg bg-red-600 text-white font-bold text-sm uppercase tracking-wider hover:bg-red-500 active:scale-95 transition-all">Apply Adjustment</button>
         </div>
       </form>
     </div>

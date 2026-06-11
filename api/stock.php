@@ -74,18 +74,20 @@ try {
 
         if (($d['action'] ?? '') === 'restock') {
             $added     = floatval($d['quantityAdded']);
-            $totalCost = floatval($d['totalPurchaseCost']);
+            $unitPrice = floatval($d['unitPrice'] ?? $item['averagePurchasePrice'] ?? 0);
+            
             $newStore  = ($item['storeQuantity'] ?? 0) + $added;
             $newTotal  = ($item['totalPurchased']  ?? 0) + $added;
-            $newInvest = ($item['totalInvestment'] ?? 0) + $totalCost;
-            $newAvg    = $newTotal > 0 ? $newInvest / $newTotal : 0;
+            
+            // Recalibrate total investment based on new unit price (user requirement: unit price goes with new one)
+            $newInvest = $newStore * $unitPrice;
 
             $entry = [
                 'id'               => uniqid(),
                 'date'             => date('c'),
                 'quantityAdded'    => $added,
-                'totalPurchaseCost'=> $totalCost,
-                'unitCostAtTime'   => $totalCost > 0 && $added > 0 ? $totalCost / $added : 0,
+                'unitPrice'        => $unitPrice,
+                'totalPurchaseCost'=> $added * $unitPrice,
                 'notes'            => $d['notes'] ?? '',
             ];
 
@@ -93,12 +95,27 @@ try {
                 'storeQuantity'        => $newStore,
                 'totalPurchased'       => $newTotal,
                 'totalInvestment'      => $newInvest,
-                'averagePurchasePrice' => $newAvg,
+                'averagePurchasePrice' => $unitPrice,
                 'unitCost'             => !empty($d['newUnitCost']) ? floatval($d['newUnitCost']) : $item['unitCost'],
                 'status'               => 'active',
                 'restockHistory'       => array_merge($item['restockHistory'] ?? [], [$entry]),
             ]]);
-            j(['message' => 'Restocked', 'item' => $updated]);
+            j(['message' => 'Restocked and price updated', 'item' => $updated]);
+        }
+
+        if (($d['action'] ?? '') === 'decrease') {
+            $qty = floatval($d['quantity']);
+            $currentPrice = floatval($item['averagePurchasePrice'] ?? 0);
+            
+            $newStore  = max(0, ($item['storeQuantity'] ?? 0) - $qty);
+            $reduction = $qty * $currentPrice;
+            $newInvest = max(0, ($item['totalInvestment'] ?? 0) - $reduction);
+
+            $updated = db('stocks')->update(['where' => ['id' => $id], 'data' => [
+                'storeQuantity'   => $newStore,
+                'totalInvestment' => $newInvest,
+            ]]);
+            j(['message' => 'Stock decreased and expense reduced', 'item' => $updated]);
         }
 
         // Plain meta update (name, category, limits, unit cost, or manual qty)
