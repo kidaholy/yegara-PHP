@@ -22,5 +22,16 @@
         "notes": "",
         "by": "Super Admin",
         "date": "2026-06-11T18:52:15+03:00"
+    },
+    {
+        "id": "43669e372b6d0a3645be",
+        "createdAt": "2026-06-11T21:15:27.000Z",
+        "updatedAt": "2026-06-11T21:15:27.000Z",
+        "isDeleted": false,
+        "stockId": "69adbbeb9912e80b392cdecf",
+        "type": "RESTOCK",
+        "quantity": 100,
+        "date": "2026-06-11T21:15:27+03:00",
+        "notes": "Restock via Stock Management"
     }
 ]

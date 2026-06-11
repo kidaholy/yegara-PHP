@@ -103,7 +103,13 @@ const ReportHub = {
         const s = this.periodData?.summary || {};
         const rev = s.totalRevenue || 0;
         const totalRev = rev + this.receptionRevenue;
-        const periodInvest = (s.periodStockInvestment || 0) + (s.totalOtherExpenses || 0);
+        let periodInvest = (s.periodStockInvestment || 0) + (s.totalOtherExpenses || 0);
+        
+        // If secondary data (stockUsageData) is loaded, override with accurate "Current Inventory Value"
+        if (this.stockUsageData && this.stockUsageData.stockAnalysis) {
+            const inventoryValue = this.stockUsageData.stockAnalysis.reduce((sum, item) => sum + ((item.closingStock || 0) * (item.weightedAvgCost || 0)), 0);
+            periodInvest = inventoryValue + (s.totalOtherExpenses || 0);
+        }
         
         // Group Orders by Cashier
         const cashierMap = {};
