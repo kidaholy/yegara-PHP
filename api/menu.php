@@ -18,7 +18,8 @@ if (!isAuthenticated()) {
 try {
     $type = $_GET['type'] ?? 'all';
     $collection = $_GET['collection'] ?? 'menuItems';
-    if (!in_array($collection, ['menuItems', 'vip1Menu', 'vip2Menu'])) $collection = 'menuItems';
+    require_once '../includes/menu-tiers.php';
+    if (!isAllowedMenuCollection($collection)) $collection = 'menuItems';
 
     $stocks = db('stocks')->findMany([]);
     $finishedStockIds = array_map(fn($s) => $s['id'], array_filter($stocks, fn($s) => 

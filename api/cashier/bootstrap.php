@@ -4,6 +4,7 @@
  */
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/SettingsManager.php';
+require_once __DIR__ . '/../../includes/menu-tiers.php';
 
 header('Content-Type: application/json');
 
@@ -32,7 +33,14 @@ if (!in_array($role, ['cashier', 'admin'], true)) {
 
 try {
     $collection = $_GET['collection'] ?? 'menuItems';
-    if (!in_array($collection, ['menuItems', 'vip1Menu', 'vip2Menu'], true)) {
+    $tierId = trim($_GET['tier'] ?? '');
+    if ($tierId !== '') {
+        $tier = getMenuTierById($tierId);
+        if ($tier) {
+            $collection = getMenuTierCollection($tier);
+        }
+    }
+    if (!isAllowedMenuCollection($collection)) {
         $collection = 'menuItems';
     }
 
@@ -169,8 +177,21 @@ try {
 
     $tables = array_map(fn($t) => $t['tableNumber'], $allTables);
 
+    $tierMeta = null;
+    if ($tierId !== '') {
+        $tier = getMenuTierById($tierId);
+        if ($tier) {
+            $tierMeta = [
+                'id' => $tier['id'],
+                'name' => $tier['name'],
+                'percentage' => $tier['percentage'],
+            ];
+        }
+    }
+
     sendJson([
         'collection' => $collection,
+        'menuTier' => $tierMeta,
         'items' => $slimItems,
         'categories' => $categories,
         'distributions' => $distributions,

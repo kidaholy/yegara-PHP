@@ -5,6 +5,7 @@
 require_once '../includes/auth.php';
 require_once '../includes/stock-logic.php';
 require_once '../includes/order-utils.php';
+require_once '../includes/menu-tiers.php';
 
 function sendJson($data, $status = 200) {
     header('Content-Type: application/json');
@@ -191,6 +192,19 @@ try {
             $distributions = $input['distributions'] ?? [];
             $totalAmount = (float)($input['totalAmount'] ?? 0);
             $orderItems = $input['items'] ?? [];
+            $menuTierId = trim($input['menuTierId'] ?? '');
+            $menuTierName = trim($input['menuTierName'] ?? 'Standard');
+            $menuCollection = trim($input['menuCollection'] ?? 'menuItems');
+            $activeTier = $menuTierId !== '' ? getMenuTierById($menuTierId) : null;
+
+            if ($activeTier) {
+                $menuTierName = $activeTier['name'] ?? $menuTierName;
+                $menuCollection = getMenuTierCollection($activeTier);
+            } elseif ($menuTierName === '' || strcasecmp($menuTierName, 'standard') === 0) {
+                $menuTierName = 'Standard';
+                $menuTierId = '';
+                $menuCollection = 'menuItems';
+            }
 
             if (empty($orderItems)) sendJson(['message' => 'Order items required'], 400);
 
@@ -218,17 +232,17 @@ try {
                 'createdBy' => ['id' => $user['id'] ?? 'pos', 'name' => $user['name'] ?? 'Cashier'],
                 'createdAt' => date('Y-m-d H:i:s'),
                 'updatedAt' => date('Y-m-d H:i:s'),
-                'type' => 'cashier'
+                'type' => 'cashier',
+                'menuTierId' => $menuTierId ?: null,
+                'menuTierName' => $menuTierName,
+                'menuCollection' => $menuCollection,
             ]]);
 
             // Create Order Items
             foreach ($orderItems as $it) {
-                $menuItem = null;
-                if (!empty($it['menuItemId'])) {
-                    $menuItem = db('menuItems')->findUnique(['where' => ['id' => $it['menuItemId']]])
-                        ?: db('vip1Menu')->findUnique(['where' => ['id' => $it['menuItemId']]])
-                        ?: db('vip2Menu')->findUnique(['where' => ['id' => $it['menuItemId']]]);
-                }
+                $menuItem = !empty($it['menuItemId'])
+                    ? findMenuItemInCollections($it['menuItemId'], $activeTier)
+                    : null;
 
                 $mainCategory = $it['mainCategory'] ?? $menuItem['mainCategory'] ?? 'Food';
                 $category = $it['category'] ?? $menuItem['category'] ?? '';
@@ -244,6 +258,10 @@ try {
                     'notes' => $it['notes'] ?? '',
                     'category' => $category,
                     'mainCategory' => $mainCategory,
+                    'menuTierId' => $menuTierId ?: null,
+                    'menuTierName' => $menuTierName,
+                    'menuTier' => $menuTierName,
+                    'menuCollection' => $menuCollection,
                     'status' => 'pending',
                     'isDeleted' => false,
                 ]]);

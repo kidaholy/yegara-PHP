@@ -162,6 +162,7 @@ renderHeader('Kitchen');
                     <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest leading-none mb-2">Order</p>
                     <p class="text-3xl font-bold text-white leading-none mb-3">#${esc(order.orderNumber)}</p>
                     <div class="flex flex-wrap gap-2">
+                        ${order.menuTierName && order.menuTierName !== 'Standard' ? `<span class="text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/20">${esc(order.menuTierName)}</span>` : ''}
                         <span class="text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20">${esc(order.floorLabel)}</span>
                         <span class="text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-md bg-gray-800 text-gray-300 border border-gray-700">${esc(order.tableLabel)}</span>
                         <span class="text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-md bg-gray-800 text-gray-500 border border-gray-700 flex items-center gap-1">

@@ -5,6 +5,7 @@
 header('Content-Type: application/json');
 require_once '../../includes/auth.php';
 require_once '../../includes/JsonDB.php';
+require_once '../../includes/menu-tiers.php';
 
 
 function sendJson($data, $status = 200) {
@@ -16,7 +17,11 @@ function sendJson($data, $status = 200) {
 requireAuth(['admin']);
 
 $method = $_SERVER['REQUEST_METHOD'];
-$type = $_GET['collection'] ?? 'menuItems'; // menuItems, vip1Menu, vip2Menu
+$type = $_GET['collection'] ?? 'menuItems';
+
+if (!isAllowedMenuCollection($type)) {
+    sendJson(['status' => 'error', 'message' => 'Invalid menu collection'], 400);
+}
 
 try {
     $db = db($type);

@@ -3,6 +3,8 @@
  * stock-logic.php - Unified Stock-Menu Linkage & Deduction Engine
  */
 
+require_once __DIR__ . '/menu-tiers.php';
+
 /**
  * Calculate total stock consumption for a list of order items
  * @param array $items Array of ['menuItemId' => string, 'quantity' => number]
@@ -10,7 +12,7 @@
  */
 function calculateStockConsumption($items) {
     $consumptionMap = [];
-    $collections = ['menuItems', 'vip1Menu', 'vip2Menu'];
+    $collections = getAllMenuCollections();
     
     foreach ($items as $item) {
         $menuItemId = $item['menuItemId'] ?? null;

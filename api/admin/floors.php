@@ -21,7 +21,7 @@ try {
     // GET: Fetch all floors
     if ($method === 'GET') {
         $floors = $manager->getFloors();
-        echo json_encode($floors);
+        echo json_encode(['status' => 'success', 'data' => $floors]);
     }
     
     // POST: Add floor

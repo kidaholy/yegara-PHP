@@ -1,16 +1,32 @@
 <?php
 require_once 'includes/layout.php';
+require_once 'includes/JsonDB.php';
 requireAuth(['admin']);
 
-$title = "VIP 1 Menu Management";
+$tierId = $_GET['tier'] ?? null;
+if (!$tierId) {
+    header("Location: services.php");
+    exit;
+}
+
+// Fetch tier details
+$db = db('menuTiers');
+$tier = $db->findFirst(['where' => ['id' => $tierId]]);
+
+if (!$tier) {
+    echo "<h1>Tier Not Found</h1><a href='services.php'>Go Back</a>";
+    exit;
+}
+
+$title = $tier['name'] . " Menu Management";
 renderHeader($title);
 ?>
 
 <div class="p-10 space-y-10">
     <div class="flex items-center justify-between">
         <div class="space-y-1">
-            <h1 class="text-3xl font-black font-playfair italic text-white tracking-tight gold-glow">VIP 1 Elite Menu</h1>
-            <p class="text-[10px] font-black uppercase tracking-[0.3em] text-[#d4af37]/40">Exclusive Culinary Management</p>
+            <h1 class="text-3xl font-black font-playfair italic text-white tracking-tight gold-glow"><?php echo htmlspecialchars($tier['name']); ?> Elite Menu</h1>
+            <p class="text-[10px] font-black uppercase tracking-[0.3em] text-[#d4af37]/40">Exclusive Culinary Management - <?php echo htmlspecialchars($tier['percentage']); ?>% Premium</p>
         </div>
         <a href="services.php" class="px-6 py-3 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-[#d4af37] hover:bg-white/10 transition-all">← Back to Services</a>
     </div>
@@ -21,7 +37,7 @@ renderHeader($title);
 <!-- Modal shell borrowed from services.php concept -->
 <div id="menu-modal" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-6 overflow-y-auto">
     <div class="glass w-full max-w-4xl rounded-[3rem] p-12 border border-white/10 my-auto animate-in">
-        <h2 id="menu-modal-title" class="text-3xl font-black text-white italic font-playfair mb-10 gold-glow">Add VIP Item</h2>
+        <h2 id="menu-modal-title" class="text-3xl font-black text-white italic font-playfair mb-10 gold-glow">Add Item to <?php echo htmlspecialchars($tier['name']); ?></h2>
         <form onsubmit="AdminServices.saveMenuItem(event)" class="grid grid-cols-1 md:grid-cols-2 gap-10 text-white">
             <input type="hidden" name="id" id="menu-item-id">
             <div class="space-y-6">
@@ -37,7 +53,7 @@ renderHeader($title);
                     <div class="space-y-2">
                         <label class="text-[9px] font-black uppercase tracking-widest text-[#d4af37]/60 ml-2">Category</label>
                         <select name="category" id="menu-category" class="w-full bg-black/40 border border-white/5 rounded-2xl py-4 px-6 text-sm outline-none appearance-none">
-                            <option value="VIP 1 Special">VIP 1 Special</option>
+                            <option value="<?php echo htmlspecialchars($tier['name']); ?> Special"><?php echo htmlspecialchars($tier['name']); ?> Special</option>
                         </select>
                     </div>
                 </div>
@@ -61,14 +77,22 @@ renderHeader($title);
 
 <script src="public/js/menu-manager.js"></script>
 <script>
+    // Configuration from PHP
+    const tierConfig = {
+        id: '<?php echo $tier['id']; ?>',
+        name: '<?php echo htmlspecialchars($tier['name']); ?>',
+        filePrefix: '<?php echo htmlspecialchars($tier['filePrefix']); ?>'
+    };
+    const collectionName = tierConfig.filePrefix + 'Menu';
+
     // Stub AdminServices to satisfy MenuManager expectation
     window.AdminServices = {
         menuManager: new MenuManager({
             containerId: 'vip-menu-root',
             apiBaseUrl: 'api/admin/menu.php',
-            collection: 'vip1Menu',
-            categoryType: 'vip1-menu',
-            publicMenuUrl: '/public-menu/vip1'
+            collection: collectionName,
+            categoryType: tierConfig.filePrefix + '-menu',
+            publicMenuUrl: '/public-menu/' + tierConfig.filePrefix
         }),
         openMenuModal: (item = {}) => {
             const modal = document.getElementById('menu-modal');
@@ -89,11 +113,16 @@ renderHeader($title);
             const id = data.id;
             const method = id ? 'PUT' : 'POST';
             const url = id 
-                ? `api/admin/menu.php?id=${id}&collection=vip1Menu` 
-                : `api/admin/menu.php?collection=vip1Menu`;
+                ? `api/admin/menu.php?id=${id}&collection=${collectionName}` 
+                : `api/admin/menu.php?collection=${collectionName}`;
             
-            data.collection = 'vip1Menu';
-            if (!id) data.mainCategory = AdminServices.menuManager.state.activeTab;
+            data.collection = collectionName;
+            
+            if (!id && AdminServices.menuManager.state.activeTab !== 'all') {
+                data.mainCategory = AdminServices.menuManager.state.activeTab;
+            } else if (!id) {
+                 data.mainCategory = 'Food';
+            }
             
             await fetch(url, { 
                 method, 

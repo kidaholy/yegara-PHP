@@ -101,6 +101,7 @@ try {
         $queue[] = [
             'id' => $order['id'],
             'orderNumber' => $order['orderNumber'] ?? '',
+            'menuTierName' => $order['menuTierName'] ?? 'Standard',
             'status' => strtolower($order['status'] ?? 'pending'),
             'tableNumber' => $order['tableNumber'] ?? '',
             'tableLabel' => $tableLabel,

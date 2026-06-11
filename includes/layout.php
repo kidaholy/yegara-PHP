@@ -6,6 +6,7 @@
 require_once 'lang.php';
 require_once 'auth.php';
 require_once __DIR__ . '/SettingsManager.php';
+require_once __DIR__ . '/menu-tiers.php';
 
 function renderHeader($title = "Management System", $options = []) {
     global $currentLang;
@@ -244,10 +245,17 @@ function renderTopNavLinks($role) {
 function renderPosNavLinks($activeTab = 'standard') {
     $tabs = [
         ['key' => 'standard', 'label' => 'Standard POS', 'url' => 'cashier.php'],
-        ['key' => 'vip1',     'label' => 'VIP 1 POS',    'url' => 'cashier.php?mode=vip1'],
-        ['key' => 'vip2',     'label' => 'VIP 2 POS',    'url' => 'cashier.php?mode=vip2'],
-        ['key' => 'recent',   'label' => 'Recent Orders','url' => 'orders.php?view=recent'],
     ];
+
+    foreach (getMenuTiers() as $tier) {
+        $tabs[] = [
+            'key' => $tier['id'],
+            'label' => ($tier['name'] ?? 'VIP') . ' POS',
+            'url' => 'cashier.php?tier=' . urlencode($tier['id']),
+        ];
+    }
+
+    $tabs[] = ['key' => 'recent', 'label' => 'Recent Orders', 'url' => 'orders.php?view=recent'];
 
     foreach ($tabs as $tab) {
         $on = ($activeTab === $tab['key']);

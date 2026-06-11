@@ -161,9 +161,16 @@ if ($isCashierView) {
                             <div class="h-10 w-[1px] bg-gray-800 hidden md:block"></div>
                             <div class="min-w-0">
                                 <h4 class="text-base font-bold text-white mb-1"><?php echo htmlspecialchars($o['tableNumber'] ?? '—'); ?></h4>
-                                <span class="text-[10px] font-black uppercase tracking-tighter px-2 py-0.5 rounded border <?php echo $statusCls; ?>">
-                                    <?php echo htmlspecialchars(ucfirst($status)); ?>
-                                </span>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <?php if (!empty($o['menuTierName']) && strcasecmp($o['menuTierName'], 'Standard') !== 0): ?>
+                                    <span class="text-[10px] font-black uppercase tracking-tighter px-2 py-0.5 rounded border bg-purple-500/10 text-purple-300 border-purple-500/20">
+                                        <?php echo htmlspecialchars($o['menuTierName']); ?>
+                                    </span>
+                                    <?php endif; ?>
+                                    <span class="text-[10px] font-black uppercase tracking-tighter px-2 py-0.5 rounded border <?php echo $statusCls; ?>">
+                                        <?php echo htmlspecialchars(ucfirst($status)); ?>
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
@@ -560,6 +567,9 @@ renderHeader($title);
                                     <div class="flex flex-wrap gap-2 text-xs">
                                         <span class="font-semibold text-gray-400 bg-gray-900 border border-gray-700 px-2 py-0.5 rounded-md uppercase"><?php echo $o['floorNumber'] ?? 'GF'; ?></span>
                                         <span class="font-semibold text-[#c5a059] bg-[#c5a059]/10 border border-[#c5a059]/20 px-2 py-0.5 rounded-md uppercase"><?php echo $o['tableNumber']; ?></span>
+                                        <?php if (!empty($o['menuTierName']) && strcasecmp($o['menuTierName'], 'Standard') !== 0): ?>
+                                        <span class="font-semibold text-purple-300 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-md uppercase"><?php echo htmlspecialchars($o['menuTierName']); ?></span>
+                                        <?php endif; ?>
                                         <?php if(!empty($o['distributions'])): foreach($o['distributions'] as $d): ?>
                                         <span class="font-semibold text-orange-400 bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded-md uppercase">🚚 <?php echo $d; ?></span>
                                         <?php endforeach; endif; ?>
@@ -577,12 +587,12 @@ renderHeader($title);
                                         <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider"><?php echo count($o['items']); ?> Items</span>
                                     </div>
                                     <div class="flex flex-wrap gap-x-5 gap-y-2">
-                                        <?php foreach ($o['items'] as $item): $isVIP = strpos(strtolower($item['menuTier'] ?? ''), 'vip') !== false; ?>
+                                        <?php foreach ($o['items'] as $item): $isVIP = !empty($item['menuTierName']) && strcasecmp($item['menuTierName'], 'Standard') !== 0; ?>
                                         <div class="flex items-center gap-2.5">
                                             <div class="w-6 h-6 rounded-md bg-gray-900 border border-gray-700 flex items-center justify-center text-xs font-bold text-gray-400"><?php echo $item['quantity']; ?></div>
                                             <div class="relative flex items-center gap-2">
                                                 <span class="text-sm font-semibold text-gray-200"><?php echo $item['name']; ?></span>
-                                                <?php if($isVIP): ?><span class="text-[9px] bg-[#c5a059] text-gray-900 px-1 py-0.5 rounded font-bold">VIP</span><?php endif; ?>
+                                                <?php if($isVIP): ?><span class="text-[9px] bg-purple-500/20 text-purple-300 px-1 py-0.5 rounded font-bold"><?php echo htmlspecialchars($item['menuTierName'] ?? 'VIP'); ?></span><?php endif; ?>
                                             </div>
                                             <span class="text-xs text-gray-500 font-medium"><?php echo $item['preparationTime'] ?? 0; ?>m</span>
                                         </div>

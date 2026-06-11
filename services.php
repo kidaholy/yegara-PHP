@@ -1,8 +1,12 @@
 <?php
 require_once 'includes/layout.php';
-requireAuth(['admin']);
+requireAuth(['admin', 'reception', 'receptionist']);
 $title = "Services Hub";
 renderHeader($title);
+
+// Load dynamic tiers for initial server-side render
+$tiersDataPath = 'data/menuTiers.json';
+$menuTiers = file_exists($tiersDataPath) ? json_decode(file_get_contents($tiersDataPath), true) : [];
 ?>
 
 <style>
@@ -27,13 +31,26 @@ renderHeader($title);
             <!-- Tabs -->
             <nav class="flex items-end gap-2 overflow-x-auto pb-0">
                 <?php
-                $tabs = [
-                    ['key'=>'rooms',        'label'=>'Rooms',         'icon'=>'building'],
-                    ['key'=>'menu-standard','label'=>'Standard Menu', 'icon'=>'utensils'],
-                    ['key'=>'vip',          'label'=>'VIP Menus',     'icon'=>'crown'],
-                    ['key'=>'reception',    'label'=>'Reception',     'icon'=>'bell'],
-                    ['key'=>'room-orders',  'label'=>'Room Orders',   'icon'=>'shopping-basket'],
-                ];
+                $userRole = $_SESSION['role'] ?? 'guest';
+                $isAdmin = $userRole === 'admin';
+                
+                $tabs = [];
+                if ($isAdmin) {
+                    $tabs = [
+                        ['key'=>'rooms',        'label'=>'Rooms',         'icon'=>'building'],
+                        ['key'=>'menu-standard','label'=>'Standard Menu', 'icon'=>'utensils'],
+                        ['key'=>'vip',          'label'=>'VIP Menus',     'icon'=>'crown'],
+                        ['key'=>'reception',    'label'=>'Reception',     'icon'=>'bell'],
+                        ['key'=>'room-orders',  'label'=>'Room Orders',   'icon'=>'shopping-basket'],
+                    ];
+                } else {
+                    $tabs = [
+                        ['key'=>'reception',    'label'=>'Reception',     'icon'=>'bell'],
+                        ['key'=>'room-orders',  'label'=>'Room Orders',   'icon'=>'shopping-basket'],
+                    ];
+                }
+                $defaultTab = $tabs[0]['key'];
+                
                 foreach ($tabs as $t): ?>
                 <button onclick="AdminServices.setTab('<?php echo $t['key']; ?>')"
                     data-tab="<?php echo $t['key']; ?>"
@@ -54,6 +71,10 @@ renderHeader($title);
         <!-- Populated by admin-services.js -->
     </div>
 </div>
+
+<script>
+    window.INITIAL_TAB = "<?php echo $defaultTab; ?>";
+</script>
 
 <!-- ═══════════════════════════════════════════════════════ MODALS ═══ -->
 
@@ -105,20 +126,33 @@ renderHeader($title);
                     </select>
                 </div>
             </div>
-            <div class="space-y-1.5 pt-2">
-                <label class="lbl">Room Service Menu Tier</label>
-                <div class="flex gap-4">
-                    <?php foreach (['standard','vip1','vip2'] as $tier): ?>
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="room-tier" value="<?php echo $tier; ?>" <?php echo $tier==='standard'?'checked':''; ?> class="accent-[#c5a059]">
-                        <span class="text-sm font-bold uppercase text-gray-400"><?php echo strtoupper($tier); ?></span>
-                    </label>
-                    <?php endforeach; ?>
-                </div>
-            </div>
+
             <div class="flex justify-end gap-3 pt-6 border-t border-gray-700/50 mt-4">
                 <button type="button" onclick="document.getElementById('room-modal').classList.add('hidden')" class="px-5 py-2.5 rounded-lg text-sm font-bold text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 transition-colors border border-gray-700 hover:border-gray-600">Cancel</button>
                 <button type="submit" class="px-5 py-2.5 rounded-lg text-sm font-bold bg-[#c5a059] text-gray-900 border border-[#c5a059] hover:bg-[#b59048] transition-colors shadow-sm">Save Room</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tier Modal -->
+<div id="tier-modal" class="hidden fixed inset-0 z-[100] bg-gray-900/80 backdrop-blur-sm flex items-center justify-center p-6">
+    <div class="bg-gray-800 w-full max-w-lg rounded-2xl p-8 border border-gray-700 shadow-2xl animate-in">
+        <h2 id="tier-modal-title" class="text-xl font-bold text-gray-200 mb-6 border-b border-gray-700/50 pb-4">Create New VIP Tier</h2>
+        <form onsubmit="AdminServices._saveTier(event)" class="space-y-5 text-gray-300">
+            <input type="hidden" id="tier-id">
+            <div class="space-y-1.5">
+                <label class="lbl">Tier Name *</label>
+                <input type="text" id="tier-name" required class="inp" placeholder="e.g. VVIP">
+            </div>
+            <div class="space-y-1.5">
+                <label class="lbl">Price Increase Percentage (%) *</label>
+                <input type="number" id="tier-percentage" required min="1" step="0.1" class="inp" placeholder="e.g. 15">
+                <p class="text-[10px] uppercase font-bold tracking-wider text-gray-500 mt-1">This will clone the Standard Menu and increase all prices.</p>
+            </div>
+            <div class="flex justify-end gap-3 pt-6 border-t border-gray-700/50 mt-4">
+                <button type="button" onclick="document.getElementById('tier-modal').classList.add('hidden')" class="px-5 py-2.5 rounded-lg text-sm font-bold text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 transition-colors border border-gray-700 hover:border-gray-600">Cancel</button>
+                <button type="submit" class="px-5 py-2.5 rounded-lg text-sm font-bold bg-[#c5a059] text-gray-900 border border-[#c5a059] hover:bg-[#b59048] transition-colors shadow-sm">Save Tier</button>
             </div>
         </form>
     </div>

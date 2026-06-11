@@ -6,18 +6,23 @@ require_once 'includes/layout.php';
 
 requireAuth(['cashier', 'admin']);
 
-$posMode = $_GET['mode'] ?? 'standard';
-if (!in_array($posMode, ['standard', 'vip1', 'vip2'], true)) $posMode = 'standard';
+$tierId = trim($_GET['tier'] ?? '');
+$activeTier = $tierId !== '' ? getMenuTierById($tierId) : null;
+if ($tierId !== '' && !$activeTier) {
+    header('Location: cashier.php');
+    exit;
+}
 
-$collections = ['standard' => 'menuItems', 'vip1' => 'vip1Menu', 'vip2' => 'vip2Menu'];
-$titles = ['standard' => 'Standard POS', 'vip1' => 'VIP 1 POS', 'vip2' => 'VIP 2 POS'];
-$collection = $collections[$posMode];
-$posTitle = $titles[$posMode];
+$collection = $activeTier ? getMenuTierCollection($activeTier) : 'menuItems';
+$posTitle = $activeTier ? (($activeTier['name'] ?? 'VIP') . ' POS') : 'Standard POS';
+$posTab = $activeTier ? $activeTier['id'] : 'standard';
+$menuTierName = $activeTier ? ($activeTier['name'] ?? 'VIP') : 'Standard';
+
 $user = getCurrentUser();
 $userName = $user['name'] ?? 'Cashier';
 $welcomeDate = date('D, M j');
 
-renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posMode]);
+renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
 ?>
 
 <div class="min-h-screen w-full bg-[#0f1110] p-6 lg:p-8 flex justify-center">
@@ -33,6 +38,9 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posMode]);
                     <h1 class="text-3xl lg:text-4xl font-bold text-white leading-tight mt-1"><?php echo htmlspecialchars($posTitle); ?></h1>
                     <p class="text-sm font-medium text-gray-400 mt-2">
                         Welcome, <?php echo htmlspecialchars(strtoupper($userName)); ?> &bull; <?php echo $welcomeDate; ?>
+                        <?php if ($activeTier): ?>
+                        &bull; <span class="text-purple-300"><?php echo htmlspecialchars($activeTier['name']); ?> (+<?php echo (float)$activeTier['percentage']; ?>%)</span>
+                        <?php endif; ?>
                     </p>
                 </div>
             </div>
@@ -193,6 +201,8 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posMode]);
 
 <script>
     const POS_COLLECTION = <?php echo json_encode($collection); ?>;
+    const MENU_TIER_ID = <?php echo json_encode($activeTier['id'] ?? null); ?>;
+    const MENU_TIER_NAME = <?php echo json_encode($menuTierName); ?>;
     const USER_FLOOR_ID = <?php echo json_encode($user['floorId'] ?? ''); ?>;
 
     let allItems = [];
@@ -211,7 +221,9 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posMode]);
 
     async function loadData() {
         try {
-            const resp = await fetch('api/cashier/bootstrap.php?collection=' + encodeURIComponent(POS_COLLECTION));
+            let bootUrl = 'api/cashier/bootstrap.php?collection=' + encodeURIComponent(POS_COLLECTION);
+            if (MENU_TIER_ID) bootUrl += '&tier=' + encodeURIComponent(MENU_TIER_ID);
+            const resp = await fetch(bootUrl);
             const data = JSON.parse(await resp.text());
             if (!resp.ok) throw new Error(data.message || 'Failed to load');
 
@@ -428,6 +440,9 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posMode]);
                     paymentMethod: 'cash',
                     batchNumber: document.getElementById('batch-number').value.trim() || null,
                     distributions: dist ? [dist] : [],
+                    menuTierId: MENU_TIER_ID,
+                    menuTierName: MENU_TIER_NAME,
+                    menuCollection: POS_COLLECTION,
                     totalAmount: cart.reduce((a, i) => a + i.price * i.quantity, 0),
                     items: cart.map(i => ({
                         menuItemId: i.id,

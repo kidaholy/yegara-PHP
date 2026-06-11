@@ -3,8 +3,8 @@
  * API for Reception Lifecycle management
  */
 header('Content-Type: application/json');
-require_once '../../includes/auth.php';
-require_once '../../includes/JsonDB.php';
+require_once '../includes/auth.php';
+require_once '../includes/JsonDB.php';
 
 
 function sendJson($data, $status = 200) {
