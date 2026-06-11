@@ -141,6 +141,10 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
 
                 <div class="space-y-3 shrink-0 mb-4 pb-4 border-b border-gray-700/50">
                     <div>
+                        <label class="pos-label">Floor</label>
+                        <select id="floor-select" class="pos-inp w-full"></select>
+                    </div>
+                    <div>
                         <label class="pos-label">Select Table</label>
                         <button type="button" id="table-picker-btn" class="pos-inp w-full flex items-center justify-between text-left">
                             <span id="table-picker-label">Buy & Go</span>
@@ -233,10 +237,16 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
             floorPlan = data.floorPlan || [];
             appName = data.branding?.app_name || appName;
 
+            const floorSelect = document.getElementById('floor-select');
+            floorSelect.innerHTML = floorPlan.map(f => `<option value="${esc(f.id)}">${esc(f.label)}</option>`).join('');
+
             if (floorPlan.length) {
                 activeFloorId = floorPlan.find(f => f.id === USER_FLOOR_ID)?.id
                     || floorPlan.find(f => /ground/i.test(f.floorNumber))?.id
                     || floorPlan[0].id;
+                
+                floorSelect.value = activeFloorId;
+                updateFloorInputs();
             }
 
             document.getElementById('distribution-select').innerHTML = '<option value="">All Distributions</option>' +
@@ -305,8 +315,22 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
         document.getElementById('table-number').value = tableNumber;
         document.getElementById('floor-id').value = floorId || '';
         document.getElementById('floor-number').value = floorNumber || '';
+        if (floorId) {
+            document.getElementById('floor-select').value = floorId;
+            activeFloorId = floorId;
+        }
         document.getElementById('table-picker-label').textContent = label;
         closeTableModal();
+    }
+
+    function updateFloorInputs() {
+        const floorId = document.getElementById('floor-select').value;
+        const floor = floorPlan.find(f => f.id === floorId);
+        if (floor) {
+            document.getElementById('floor-id').value = floor.id;
+            document.getElementById('floor-number').value = floor.floorNumber;
+            activeFloorId = floor.id;
+        }
     }
 
     function openTableModal() {
@@ -502,6 +526,15 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
     });
 
     document.getElementById('place-order-btn').onclick = placeOrder;
+
+    document.getElementById('floor-select').onchange = () => {
+        updateFloorInputs();
+        // Clear table if it doesn't belong to the new floor
+        const currentTable = document.getElementById('table-number').value;
+        if (currentTable !== 'Buy&Go') {
+            setTableSelection('Buy&Go', '', '', 'Buy & Go');
+        }
+    };
 
     document.getElementById('table-picker-btn').onclick = openTableModal;
     document.getElementById('table-modal-close').onclick = closeTableModal;

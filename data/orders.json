@@ -402,7 +402,7 @@
     {
         "id": "a292253a63f193f9c6d2",
         "createdAt": "2026-06-11 11:44:01",
-        "updatedAt": "2026-06-11 11:44:01",
+        "updatedAt": "2026-06-11T12:07:33.000Z",
         "isDeleted": false,
         "orderNumber": "17",
         "tableNumber": "T#01",
@@ -412,7 +412,7 @@
         "batchNumber": null,
         "distributions": [],
         "totalAmount": 1300,
-        "status": "pending",
+        "status": "served",
         "createdBy": {
             "id": "69c66d83658d6f717f557cd5",
             "name": "Floor 1(Menbere)CASHER 2"
@@ -420,12 +420,13 @@
         "type": "cashier",
         "menuTierId": null,
         "menuTierName": "Standard",
-        "menuCollection": "menuItems"
+        "menuCollection": "menuItems",
+        "servedAt": "2026-06-11 12:07:33"
     },
     {
         "id": "e51995e79012b98120cf",
         "createdAt": "2026-06-11 11:58:26",
-        "updatedAt": "2026-06-11T12:02:15.000Z",
+        "updatedAt": "2026-06-11T12:07:27.000Z",
         "isDeleted": false,
         "orderNumber": "18",
         "tableNumber": "Buy&Go",
@@ -444,12 +445,12 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems",
-        "servedAt": "2026-06-11 12:02:15"
+        "servedAt": "2026-06-11 12:07:27"
     },
     {
         "id": "814c4366b4af920ce909",
         "createdAt": "2026-06-11 12:01:43",
-        "updatedAt": "2026-06-11T12:02:41.000Z",
+        "updatedAt": "2026-06-11T12:07:28.000Z",
         "isDeleted": false,
         "orderNumber": "19",
         "tableNumber": "T#01",
@@ -468,6 +469,6 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems",
-        "servedAt": "2026-06-11 12:02:41"
+        "servedAt": "2026-06-11 12:07:28"
     }
 ]

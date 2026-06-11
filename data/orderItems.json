@@ -631,7 +631,7 @@
     {
         "id": "cf7085b448939ff25691",
         "createdAt": "2026-06-11T11:58:26.000Z",
-        "updatedAt": "2026-06-11T11:58:26.000Z",
+        "updatedAt": "2026-06-11T12:07:27.000Z",
         "isDeleted": false,
         "orderId": "e51995e79012b98120cf",
         "menuItemId": "69ada302d661b3f94ac72f82",
@@ -646,12 +646,12 @@
         "menuTierName": "Standard",
         "menuTier": "Standard",
         "menuCollection": "menuItems",
-        "status": "pending"
+        "status": "completed"
     },
     {
         "id": "86dae987f71e429594d3",
         "createdAt": "2026-06-11T12:01:43.000Z",
-        "updatedAt": "2026-06-11T12:01:43.000Z",
+        "updatedAt": "2026-06-11T12:07:28.000Z",
         "isDeleted": false,
         "orderId": "814c4366b4af920ce909",
         "menuItemId": "69ada303d661b3f94ac72f87",
@@ -666,6 +666,6 @@
         "menuTierName": "Standard",
         "menuTier": "Standard",
         "menuCollection": "menuItems",
-        "status": "served"
+        "status": "completed"
     }
 ]
