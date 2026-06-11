@@ -1225,8 +1225,8 @@
         "id": "69adbbeb9912e80b392cdecf",
         "name": "BEAFOF OX\/\u1235\u130b \u12e8\u1260\u122c",
         "category": "Meat",
-        "quantity": 88.75,
-        "storeQuantity": 200,
+        "quantity": 188.75,
+        "storeQuantity": 100,
         "unit": "kg",
         "unitType": "weight",
         "minLimit": 5,
@@ -1261,7 +1261,7 @@
             }
         ],
         "createdAt": "2026-03-08T18:11:55.167Z",
-        "updatedAt": "2026-06-11T21:15:27.000Z",
+        "updatedAt": "2026-06-11T21:20:56.000Z",
         "isDeleted": false
     },
     {

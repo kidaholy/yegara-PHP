@@ -1,1 +1,29 @@
-[]
+[
+    {
+        "id": "4b7d4a643294e58129c1",
+        "createdAt": "2026-06-11T21:19:37+03:00",
+        "updatedAt": "2026-06-11T21:20:12.000Z",
+        "isDeleted": false,
+        "stockId": "69adbbeb9912e80b392cdecf",
+        "quantity": 50,
+        "notes": "",
+        "status": "denied",
+        "requestedBy": "Store",
+        "requestedById": "69d55101c6263ab35c06be51",
+        "denialReason": "balegie",
+        "deniedAt": "2026-06-11T21:20:12+03:00"
+    },
+    {
+        "id": "4ea5f9e87a801b8af395",
+        "createdAt": "2026-06-11T21:20:42+03:00",
+        "updatedAt": "2026-06-11T21:20:56.000Z",
+        "isDeleted": false,
+        "stockId": "69adbbeb9912e80b392cdecf",
+        "quantity": 100,
+        "notes": "",
+        "status": "approved",
+        "requestedBy": "Store",
+        "requestedById": "69d55101c6263ab35c06be51",
+        "approvedAt": "2026-06-11T21:20:56+03:00"
+    }
+]

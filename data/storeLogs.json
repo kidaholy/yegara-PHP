@@ -33,5 +33,16 @@
         "quantity": 100,
         "date": "2026-06-11T21:15:27+03:00",
         "notes": "Restock via Stock Management"
+    },
+    {
+        "id": "100133bf71ea63899c9c",
+        "createdAt": "2026-06-11T21:20:56.000Z",
+        "updatedAt": "2026-06-11T21:20:56.000Z",
+        "isDeleted": false,
+        "stockId": "69adbbeb9912e80b392cdecf",
+        "type": "TRANSFER_OUT",
+        "quantity": 100,
+        "date": "2026-06-11T21:20:56+03:00",
+        "notes": "Store Transfer approved"
     }
 ]
