@@ -22,10 +22,6 @@ const AdminServices = {
     // VIP Tiers
     menuTiers: [],
 
-    // Room Orders
-    roomOrders: [],
-    prevOrdersCount: 0,
-
     menuManager: null,
     pollingTimer: null,
     audio: new Audio('/notification.mp3'),
@@ -41,29 +37,19 @@ const AdminServices = {
     // ─── POLLING ───────────────────────────────────────────────────────────────
     async fetchQueueData() {
         try {
-            const [recRes, ordRes] = await Promise.all([
-                this.api('GET', 'api/reception-requests.php?limit=500'),
-                this.api('GET', 'api/room-orders.php')
-            ]);
-
+            const recRes = await this.api('GET', 'api/reception-requests.php?limit=500');
             const recs = Array.isArray(recRes) ? recRes : (recRes.data || []);
-            const ords = ordRes.data || [];
 
             const pendingCount = recs.filter(r => this._isPending(r.status)).length;
-            const ordCount = ords.length;
 
-            if (pendingCount > this.prevReceptionCount || ordCount > this.prevOrdersCount) {
+            if (pendingCount > this.prevReceptionCount) {
                 this._playAlert();
             }
 
             this.prevReceptionCount = pendingCount;
-            this.prevOrdersCount = ordCount;
             this.receptionRequests = recs;
-            this.roomOrders = ords;
 
-            this._updateBadges(ordCount);
             if (this.activeTab === 'reception') this._renderReceptionContent();
-            if (this.activeTab === 'room-orders') this._renderOrdersContent();
         } catch (e) { console.warn('Poll error', e); }
     },
 
@@ -73,12 +59,7 @@ const AdminServices = {
         t();
     },
 
-    _updateBadges(count) {
-        const b = document.getElementById('tab-badge-orders');
-        if (!b) return;
-        b.textContent = count;
-        b.classList.toggle('hidden', count === 0);
-    },
+
 
     // ─── TAB SWITCHING ─────────────────────────────────────────────────────────
     async setTab(tab) {
@@ -92,7 +73,6 @@ const AdminServices = {
         if (tab === 'rooms') this.fetchRoomsData();
         if (tab === 'vip') this.fetchTiersData();
         if (tab === 'reception') { this.fetchQueueData(); if (!this.floors.length) this.fetchRoomsData(); }
-        if (tab === 'room-orders') this.fetchQueueData();
     },
 
     _renderPanel() {
@@ -101,13 +81,11 @@ const AdminServices = {
             'rooms': () => this._buildRoomsHTML(),
             'menu-standard': () => `<div id="menu-manager-root"></div>`,
             'vip': () => this._buildVipHTML(),
-            'reception': () => this._buildReceptionShellHTML(),
-            'room-orders': () => this._buildOrdersHTML()
+            'reception': () => this._buildReceptionShellHTML()
         };
         panel.innerHTML = `<div class="tab-content-anim">${(map[this.activeTab] || (() => ''))()}</div>`;
         lucide.createIcons();
         if (this.activeTab === 'reception') this._renderReceptionContent();
-        if (this.activeTab === 'room-orders') this._renderOrdersContent();
     },
 
     // ─── TAB 1: ROOMS ──────────────────────────────────────────────────────────
@@ -326,36 +304,28 @@ const AdminServices = {
 
     // ─── TAB 3: RECEPTION ──────────────────────────────────────────────────────
     setReceptionSubView(v) {
+        const isAdmin = window.USER_ROLE === 'admin';
+        // Enforce role-based view restrictions
+        if (isAdmin && v !== 'status') return;
+        if (!isAdmin && v !== 'check-in') return;
+        
         this.receptionSubView = v;
         this._renderPanel();
     },
 
     _buildReceptionShellHTML() {
+        const isAdmin = window.USER_ROLE === 'admin';
+        // Enforce role-based view default
+        if (isAdmin && this.receptionSubView !== 'status') {
+            this.receptionSubView = 'status';
+        } else if (!isAdmin && this.receptionSubView !== 'check-in') {
+            this.receptionSubView = 'check-in';
+        }
+
         const isStatus = this.receptionSubView === 'status';
         
         return `
         <div class="space-y-6">
-            <!-- Master Header -->
-            <div class="bg-gray-800/80 border border-gray-700/50 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
-                <div class="flex items-center gap-5 relative z-10">
-                    <div class="w-14 h-14 rounded-xl border border-[#c5a059]/30 bg-[#c5a059]/10 flex items-center justify-center text-[#c5a059] shadow-[0_0_15px_rgba(197,160,89,0.15)] shrink-0">
-                        <i data-lucide="bell-concierge" class="w-7 h-7"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-2xl font-bold font-playfair italic text-[#c5a059] tracking-tight">Reception Desk</h2>
-                        <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-1">Welcome, Reception — Guest Management</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-4 bg-gray-900/50 p-1.5 rounded-xl border border-gray-800 relative z-10 w-full md:w-auto">
-                    <button onclick="AdminServices.setReceptionSubView('check-in')" class="flex items-center justify-center gap-2 flex-1 md:w-auto px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all duration-300 ${!isStatus ? 'bg-[#c5a059]/20 text-[#c5a059] border border-[#c5a059]/30' : 'text-gray-500 hover:text-gray-300 border border-transparent'}">
-                        <i data-lucide="clipboard-list" class="w-4 h-4"></i> New Check-In
-                    </button>
-                    <button onclick="AdminServices.setReceptionSubView('status')" class="flex items-center justify-center gap-2 flex-1 md:w-auto px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all duration-300 ${isStatus ? 'bg-[#c5a059] text-gray-900 shadow-[0_0_20px_rgba(197,160,89,0.3)]' : 'text-gray-500 hover:text-gray-300'}">
-                        <i data-lucide="users" class="w-4 h-4"></i> Guest Status
-                    </button>
-                </div>
-            </div>
-
             <!-- Dynamic View Area -->
             <div id="reception-view-area">
                 ${isStatus ? this._buildReceptionStatusHTML() : this._buildReceptionCheckInHTML()}
@@ -759,6 +729,19 @@ const AdminServices = {
         this._renderReceptionContent();
     },
 
+    async approveReceptionItem(id) {
+        if (!confirm('Approve this guest check-in?')) return;
+        const res = await this.api('PUT', `api/reception-requests.php?id=${id}`, { status: 'CHECKIN_APPROVED' });
+        if (res.status === 'success') this.fetchQueueData();
+    },
+
+    async denyReceptionItem(id) {
+        if (!confirm('Reject this guest check-in?')) return;
+        const note = prompt('Enter rejection reason (optional):');
+        const res = await this.api('PUT', `api/reception-requests.php?id=${id}`, { status: 'REJECTED', reviewNote: note });
+        if (res.status === 'success') this.fetchQueueData();
+    },
+
     _filterReception() {
         let list = [...this.receptionRequests];
         // Date filter
@@ -832,15 +815,16 @@ const AdminServices = {
         }
 
         container.innerHTML = list.map(r => {
-            const dotClass = this._getStatusDotClass(r.status);
             const badgeClass = this._getStatusBadgeClass(r.status);
-            const pending = this._isPending(r.status);
+            const isPending = ['CHECKIN_PENDING', 'pending'].includes(r.status);
+            const isAdmin = window.USER_ROLE === 'admin';
+
             return `
-            <div class="bg-[#121413] rounded-2xl border border-[#1a1c1a] p-6 hover:border-[#c5a059]/20 transition-all flex flex-col relative overflow-hidden">
+            <div class="bg-[#121413] rounded-2xl border border-[#1a1c1a] p-6 hover:border-[#c5a059]/20 transition-all flex flex-col relative overflow-hidden group">
                 <div class="flex justify-between items-start gap-4 mb-6">
                     <div class="flex items-center gap-4">
                         <div class="w-12 h-12 rounded-xl bg-gray-900 border border-[#2a2c2a] flex items-center justify-center shrink-0">
-                            <i data-lucide="users" class="w-5 h-5 text-gray-500"></i>
+                            ${r.photoUrl ? `<img src="${r.photoUrl}" class="w-full h-full object-cover rounded-xl">` : `<i data-lucide="user" class="w-5 h-5 text-gray-500"></i>`}
                         </div>
                         <div class="min-w-0">
                             <h4 class="text-sm font-black text-gray-200 uppercase tracking-widest truncate">${r.guestName || 'Guest'}</h4>
@@ -857,20 +841,37 @@ const AdminServices = {
                         <span class="ml-auto font-bold text-white">${r.roomNumber ? `Room ${r.roomNumber}` : '—'}</span>
                     </div>
                     
-                    <div class="flex justify-between border-b border-gray-800 pb-2">
-                        <span class="text-gray-500">Phone</span>
+                    <div class="flex justify-between items-center border-b border-gray-800 pb-2">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="phone" class="w-3.5 h-3.5 text-gray-600"></i>
+                            <span class="text-gray-500">Phone</span>
+                        </div>
                         <span class="text-gray-300">${r.phone || '—'}</span>
                     </div>
-                    <div class="flex justify-between border-b border-gray-800 pb-2">
-                        <span class="text-gray-500">Stay Duration</span>
+                    <div class="flex justify-between items-center border-b border-gray-800 pb-2">
+                         <div class="flex items-center gap-2">
+                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-gray-600"></i>
+                            <span class="text-gray-500">Stay</span>
+                        </div>
                         <span class="text-gray-300">${r.checkIn ? `${r.checkIn?.slice(0,10)} → ${r.checkOut?.slice(0,10)||'?'}` : '—'}</span>
                     </div>
                 </div>
 
+                ${isAdmin && isPending ? `
+                <div class="grid grid-cols-2 gap-3 mt-6">
+                    <button onclick="AdminServices.approveReceptionItem('${r.id}')" class="bg-[#c5a059] text-gray-900 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-[#b59048] transition-colors shadow-lg shadow-[#c5a059]/10">APPROVE</button>
+                    <button onclick="AdminServices.denyReceptionItem('${r.id}')" class="bg-gray-800 border border-gray-700 text-red-400 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 hover:border-red-500/30 transition-all">REJECT</button>
+                </div>
+                ` : `
                 <div class="mt-auto pt-6 flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-[#c5a059]">
                     <span>Payment Ref</span>
                     <span>#${r.faydaId?.substring(0,8) || (Math.random()*10000|0).toString().padStart(4,'0')}${r.id.substring(0,4).toUpperCase()}</span>
                 </div>
+                `}
+
+                <button onclick="AdminServices.viewReceptionDetail('${r.id}')" class="absolute top-2 right-2 w-7 h-7 flex items-center justify-center text-gray-700 hover:text-gray-400 transition-colors opacity-0 group-hover:opacity-100">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                </button>
             </div>`;
         }).join('');
     },
@@ -948,71 +949,7 @@ const AdminServices = {
         document.getElementById('rec-detail-id-hidden').value = id;
     },
 
-    // ─── TAB 4: ROOM ORDERS ────────────────────────────────────────────────────
-    _buildOrdersHTML() {
-        return `<div id="orders-container" class="space-y-10"></div>`;
-    },
 
-    _renderOrdersContent() {
-        const c = document.getElementById('orders-container');
-        if (!c) return;
-        if (this.roomOrders.length === 0) {
-            c.innerHTML = `
-            <div class="flex flex-col items-center justify-center py-40 gap-4 text-center">
-                <div class="w-16 h-16 rounded-3xl bg-white/3 flex items-center justify-center text-gray-700">
-                    <i data-lucide="inbox" class="w-8 h-8"></i>
-                </div>
-                <p class="text-[10px] uppercase tracking-[1em] text-gray-700 font-bold">Queue Empty</p>
-            </div>`;
-            lucide.createIcons();
-            return;
-        }
-        c.innerHTML = `
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-bold uppercase tracking-wider text-gray-400">Room Service Queue</h3>
-            <span class="bg-red-500/15 text-red-400 border border-red-500/20 text-xs font-bold px-3 py-1 rounded-lg">${this.roomOrders.length} Awaiting</span>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            ${this.roomOrders.map(o => `
-            <div class="bg-gray-800 rounded-xl border border-gray-700/50 relative overflow-hidden">
-                <div class="h-1 w-full bg-[#c5a059]"></div>
-                <div class="p-6">
-                    <div class="flex items-center gap-4 mb-5">
-                        <div class="w-12 h-12 rounded-lg bg-gray-700 flex items-center justify-center text-gray-200 font-bold text-lg">${o.tableNumber}</div>
-                        <div>
-                            <p class="text-base font-bold text-gray-200">Room ${o.tableNumber}</p>
-                            <p class="text-xs text-gray-500 uppercase tracking-wider">Floor ${o.floorNumber || '—'} · ${new Date(o.createdAt).toLocaleTimeString()}</p>
-                        </div>
-                    </div>
-                    <div class="space-y-2.5 mb-5">
-                        ${(o.items||[]).map(i => `
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="font-mono text-xs text-[#c5a059] bg-[#c5a059]/10 px-2 py-0.5 rounded mr-2">${i.quantity}×</span>
-                            <span class="flex-1 text-gray-300 font-medium">${i.name}</span>
-                            <span class="text-gray-500 font-mono text-xs">${((i.price||0)*(i.quantity||1)).toLocaleString()}</span>
-                        </div>`).join('')}
-                        <div class="pt-3 border-t border-gray-700/50 flex justify-between items-center">
-                            <span class="text-xs font-bold text-gray-500 uppercase">Total</span>
-                            <span class="text-lg font-bold text-[#c5a059] font-mono">${Number(o.totalAmount||0).toLocaleString()} Br</span>
-                        </div>
-                    </div>
-                    <div class="flex gap-3">
-                        <button onclick="AdminServices.actionOrder('${o.id}','cancelled')"
-                            class="flex-1 py-2.5 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg text-xs font-bold uppercase hover:bg-red-500/20 transition-all">Deny</button>
-                        <button onclick="AdminServices.actionOrder('${o.id}','pending')"
-                            class="flex-1 py-2.5 bg-[#c5a059] text-gray-900 rounded-lg text-xs font-bold uppercase hover:bg-[#b59048] transition-colors shadow-sm">Send to Kitchen</button>
-                    </div>
-                </div>
-            </div>`).join('')}
-        </div>`;
-        lucide.createIcons();
-    },
-
-    async actionOrder(id, status) {
-        if (status === 'cancelled' && !confirm('Cancel this room-service order?')) return;
-        await this.api('PUT', `api/orders.php?id=${id}`, { status });
-        await this.fetchQueueData();
-    },
 
     // ─── MENU MANAGER ──────────────────────────────────────────────────────────
     _initMenuManager() {

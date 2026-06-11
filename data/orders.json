@@ -1,1 +1,394 @@
-[]
+[
+    {
+        "id": "f21c722c9a1d105f5ef4",
+        "createdAt": "2026-06-11 11:07:20",
+        "updatedAt": "2026-06-11T11:13:24.000Z",
+        "isDeleted": false,
+        "orderNumber": "1",
+        "tableNumber": "T#02",
+        "floorId": "69c6a7e2140cb91738d34fe3",
+        "floorNumber": "GROUND",
+        "paymentMethod": "cash",
+        "batchNumber": null,
+        "distributions": [
+            "\u1260\u1218\u1228\u1245"
+        ],
+        "totalAmount": 650,
+        "status": "served",
+        "createdBy": {
+            "id": "69c506a6733d5342b5d87c57",
+            "name": "GROUND FLOOR (SOSINA ABERA) CASHIER 1"
+        },
+        "type": "cashier",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuCollection": "menuItems",
+        "servedAt": "2026-06-11 11:13:24"
+    },
+    {
+        "id": "4314093f9f162967e3bd",
+        "createdAt": "2026-06-11 11:07:37",
+        "updatedAt": "2026-06-11T11:13:26.000Z",
+        "isDeleted": false,
+        "orderNumber": "2",
+        "tableNumber": "T#02",
+        "floorId": "69c6a7e2140cb91738d34fe3",
+        "floorNumber": "GROUND",
+        "paymentMethod": "cash",
+        "batchNumber": null,
+        "distributions": [
+            "\u1260\u1218\u1228\u1245"
+        ],
+        "totalAmount": 1950,
+        "status": "served",
+        "createdBy": {
+            "id": "69c506a6733d5342b5d87c57",
+            "name": "GROUND FLOOR (SOSINA ABERA) CASHIER 1"
+        },
+        "type": "cashier",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuCollection": "menuItems",
+        "servedAt": "2026-06-11 11:13:26"
+    },
+    {
+        "id": "7e02699244948cc657c8",
+        "createdAt": "2026-06-11 11:07:42",
+        "updatedAt": "2026-06-11T11:13:28.000Z",
+        "isDeleted": false,
+        "orderNumber": "3",
+        "tableNumber": "T#02",
+        "floorId": "69c6a7e2140cb91738d34fe3",
+        "floorNumber": "GROUND",
+        "paymentMethod": "cash",
+        "batchNumber": null,
+        "distributions": [
+            "\u1260\u1218\u1228\u1245"
+        ],
+        "totalAmount": 650,
+        "status": "served",
+        "createdBy": {
+            "id": "69c506a6733d5342b5d87c57",
+            "name": "GROUND FLOOR (SOSINA ABERA) CASHIER 1"
+        },
+        "type": "cashier",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuCollection": "menuItems",
+        "servedAt": "2026-06-11 11:13:28"
+    },
+    {
+        "id": "70e8b0e2b1de03f30ccc",
+        "createdAt": "2026-06-11 11:07:53",
+        "updatedAt": "2026-06-11T11:13:30.000Z",
+        "isDeleted": false,
+        "orderNumber": "4",
+        "tableNumber": "T#02",
+        "floorId": "69c6a7e2140cb91738d34fe3",
+        "floorNumber": "GROUND",
+        "paymentMethod": "cash",
+        "batchNumber": null,
+        "distributions": [
+            "\u1260\u1218\u1228\u1245"
+        ],
+        "totalAmount": 650,
+        "status": "served",
+        "createdBy": {
+            "id": "69c506a6733d5342b5d87c57",
+            "name": "GROUND FLOOR (SOSINA ABERA) CASHIER 1"
+        },
+        "type": "cashier",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuCollection": "menuItems",
+        "servedAt": "2026-06-11 11:13:30"
+    },
+    {
+        "id": "1d8b89b653e396b0a204",
+        "createdAt": "2026-06-11 11:08:12",
+        "updatedAt": "2026-06-11T11:13:32.000Z",
+        "isDeleted": false,
+        "orderNumber": "5",
+        "tableNumber": "T#02",
+        "floorId": "69c6a7e2140cb91738d34fe3",
+        "floorNumber": "GROUND",
+        "paymentMethod": "cash",
+        "batchNumber": null,
+        "distributions": [
+            "\u1260\u1218\u1228\u1245"
+        ],
+        "totalAmount": 1300,
+        "status": "served",
+        "createdBy": {
+            "id": "69c506a6733d5342b5d87c57",
+            "name": "GROUND FLOOR (SOSINA ABERA) CASHIER 1"
+        },
+        "type": "cashier",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuCollection": "menuItems",
+        "servedAt": "2026-06-11 11:13:32"
+    },
+    {
+        "id": "15b6c5ae2af91b1381c3",
+        "createdAt": "2026-06-11 11:08:16",
+        "updatedAt": "2026-06-11T11:13:33.000Z",
+        "isDeleted": false,
+        "orderNumber": "6",
+        "tableNumber": "T#02",
+        "floorId": "69c6a7e2140cb91738d34fe3",
+        "floorNumber": "GROUND",
+        "paymentMethod": "cash",
+        "batchNumber": null,
+        "distributions": [
+            "\u1260\u1218\u1228\u1245"
+        ],
+        "totalAmount": 1950,
+        "status": "served",
+        "createdBy": {
+            "id": "69c506a6733d5342b5d87c57",
+            "name": "GROUND FLOOR (SOSINA ABERA) CASHIER 1"
+        },
+        "type": "cashier",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuCollection": "menuItems",
+        "servedAt": "2026-06-11 11:13:33"
+    },
+    {
+        "id": "a4e2bb3a69e20c0da6bf",
+        "createdAt": "2026-06-11 11:08:21",
+        "updatedAt": "2026-06-11T11:13:35.000Z",
+        "isDeleted": false,
+        "orderNumber": "7",
+        "tableNumber": "T#02",
+        "floorId": "69c6a7e2140cb91738d34fe3",
+        "floorNumber": "GROUND",
+        "paymentMethod": "cash",
+        "batchNumber": null,
+        "distributions": [
+            "\u1260\u1218\u1228\u1245"
+        ],
+        "totalAmount": 400,
+        "status": "served",
+        "createdBy": {
+            "id": "69c506a6733d5342b5d87c57",
+            "name": "GROUND FLOOR (SOSINA ABERA) CASHIER 1"
+        },
+        "type": "cashier",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuCollection": "menuItems",
+        "servedAt": "2026-06-11 11:13:35"
+    },
+    {
+        "id": "2b0a8f7309b7025047e7",
+        "createdAt": "2026-06-11 11:09:51",
+        "updatedAt": "2026-06-11T11:13:37.000Z",
+        "isDeleted": false,
+        "orderNumber": "8",
+        "tableNumber": "T#02",
+        "floorId": "69c6a7e2140cb91738d34fe3",
+        "floorNumber": "GROUND",
+        "paymentMethod": "cash",
+        "batchNumber": null,
+        "distributions": [
+            "\u1260\u1218\u1228\u1245"
+        ],
+        "totalAmount": 1300,
+        "status": "served",
+        "createdBy": {
+            "id": "69c506a6733d5342b5d87c57",
+            "name": "GROUND FLOOR (SOSINA ABERA) CASHIER 1"
+        },
+        "type": "cashier",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuCollection": "menuItems",
+        "servedAt": "2026-06-11 11:13:37"
+    },
+    {
+        "id": "24afa729028aec963cbd",
+        "createdAt": "2026-06-11 11:18:45",
+        "updatedAt": "2026-06-11 11:18:45",
+        "isDeleted": false,
+        "orderNumber": "9",
+        "tableNumber": "Buy&Go",
+        "floorId": null,
+        "floorNumber": null,
+        "paymentMethod": "cash",
+        "batchNumber": null,
+        "distributions": [],
+        "totalAmount": 2600,
+        "status": "pending",
+        "createdBy": {
+            "id": "69c506a6733d5342b5d87c57",
+            "name": "GROUND FLOOR (SOSINA ABERA) CASHIER 1"
+        },
+        "type": "cashier",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuCollection": "menuItems"
+    },
+    {
+        "id": "df83c942ab5399dab79b",
+        "createdAt": "2026-06-11 11:18:47",
+        "updatedAt": "2026-06-11 11:18:47",
+        "isDeleted": false,
+        "orderNumber": "10",
+        "tableNumber": "Buy&Go",
+        "floorId": null,
+        "floorNumber": null,
+        "paymentMethod": "cash",
+        "batchNumber": null,
+        "distributions": [],
+        "totalAmount": 1950,
+        "status": "pending",
+        "createdBy": {
+            "id": "69c506a6733d5342b5d87c57",
+            "name": "GROUND FLOOR (SOSINA ABERA) CASHIER 1"
+        },
+        "type": "cashier",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuCollection": "menuItems"
+    },
+    {
+        "id": "91a0124a8d36bee37979",
+        "createdAt": "2026-06-11 11:18:51",
+        "updatedAt": "2026-06-11 11:18:51",
+        "isDeleted": false,
+        "orderNumber": "11",
+        "tableNumber": "Buy&Go",
+        "floorId": null,
+        "floorNumber": null,
+        "paymentMethod": "cash",
+        "batchNumber": null,
+        "distributions": [],
+        "totalAmount": 3250,
+        "status": "pending",
+        "createdBy": {
+            "id": "69c506a6733d5342b5d87c57",
+            "name": "GROUND FLOOR (SOSINA ABERA) CASHIER 1"
+        },
+        "type": "cashier",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuCollection": "menuItems"
+    },
+    {
+        "id": "6c0f6ae49afb4e7a11eb",
+        "createdAt": "2026-06-11 11:18:55",
+        "updatedAt": "2026-06-11 11:18:55",
+        "isDeleted": false,
+        "orderNumber": "12",
+        "tableNumber": "Buy&Go",
+        "floorId": null,
+        "floorNumber": null,
+        "paymentMethod": "cash",
+        "batchNumber": null,
+        "distributions": [],
+        "totalAmount": 650,
+        "status": "pending",
+        "createdBy": {
+            "id": "69c506a6733d5342b5d87c57",
+            "name": "GROUND FLOOR (SOSINA ABERA) CASHIER 1"
+        },
+        "type": "cashier",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuCollection": "menuItems"
+    },
+    {
+        "id": "1abba7e4c9d1011d34be",
+        "createdAt": "2026-06-11 11:18:57",
+        "updatedAt": "2026-06-11 11:18:57",
+        "isDeleted": false,
+        "orderNumber": "13",
+        "tableNumber": "Buy&Go",
+        "floorId": null,
+        "floorNumber": null,
+        "paymentMethod": "cash",
+        "batchNumber": null,
+        "distributions": [],
+        "totalAmount": 650,
+        "status": "pending",
+        "createdBy": {
+            "id": "69c506a6733d5342b5d87c57",
+            "name": "GROUND FLOOR (SOSINA ABERA) CASHIER 1"
+        },
+        "type": "cashier",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuCollection": "menuItems"
+    },
+    {
+        "id": "f66dd3dca8c249f88a63",
+        "createdAt": "2026-06-11 11:19:02",
+        "updatedAt": "2026-06-11 11:19:02",
+        "isDeleted": false,
+        "orderNumber": "14",
+        "tableNumber": "Buy&Go",
+        "floorId": null,
+        "floorNumber": null,
+        "paymentMethod": "cash",
+        "batchNumber": null,
+        "distributions": [],
+        "totalAmount": 1300,
+        "status": "pending",
+        "createdBy": {
+            "id": "69c506a6733d5342b5d87c57",
+            "name": "GROUND FLOOR (SOSINA ABERA) CASHIER 1"
+        },
+        "type": "cashier",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuCollection": "menuItems"
+    },
+    {
+        "id": "1dc771ec225bc5b78524",
+        "createdAt": "2026-06-11 11:20:20",
+        "updatedAt": "2026-06-11 11:20:20",
+        "isDeleted": false,
+        "orderNumber": "15",
+        "tableNumber": "Buy&Go",
+        "floorId": null,
+        "floorNumber": null,
+        "paymentMethod": "cash",
+        "batchNumber": null,
+        "distributions": [],
+        "totalAmount": 1950,
+        "status": "pending",
+        "createdBy": {
+            "id": "69c506a6733d5342b5d87c57",
+            "name": "GROUND FLOOR (SOSINA ABERA) CASHIER 1"
+        },
+        "type": "cashier",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuCollection": "menuItems"
+    },
+    {
+        "id": "74ccf21e69f8fcb3c4c1",
+        "createdAt": "2026-06-11 11:20:25",
+        "updatedAt": "2026-06-11 11:20:25",
+        "isDeleted": false,
+        "orderNumber": "16",
+        "tableNumber": "Buy&Go",
+        "floorId": null,
+        "floorNumber": null,
+        "paymentMethod": "cash",
+        "batchNumber": null,
+        "distributions": [],
+        "totalAmount": 1300,
+        "status": "pending",
+        "createdBy": {
+            "id": "69c506a6733d5342b5d87c57",
+            "name": "GROUND FLOOR (SOSINA ABERA) CASHIER 1"
+        },
+        "type": "cashier",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuCollection": "menuItems"
+    }
+]

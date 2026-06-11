@@ -97,9 +97,9 @@ renderHeader('Kitchen');
                 </div>
             </div>
 
-            <div id="queue-scroll" class="overflow-x-auto custom-scrollbar pb-2">
-                <div id="queue-row" class="flex gap-6 min-w-min">
-                    <div id="queue-loading" class="flex items-center justify-center min-w-[20rem] text-gray-500 text-sm animate-pulse py-12">
+            <div id="queue-scroll" class="pb-2">
+                <div id="queue-row" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <div id="queue-loading" class="col-span-full flex items-center justify-center text-gray-500 text-sm animate-pulse py-12">
                         Loading kitchen queue...
                     </div>
                 </div>
@@ -145,7 +145,7 @@ renderHeader('Kitchen');
 
         if (!queue.length) {
             row.innerHTML = `
-                <div class="flex flex-col items-center justify-center w-full py-16 text-center">
+                <div class="col-span-full flex flex-col items-center justify-center w-full py-16 text-center">
                     <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-4">
                         <i data-lucide="check-circle-2" class="w-8 h-8 text-emerald-500"></i>
                     </div>
@@ -157,7 +157,7 @@ renderHeader('Kitchen');
         }
 
         row.innerHTML = queue.map(order => `
-            <article class="glass shrink-0 w-[min(300px,85vw)] flex flex-col rounded-xl border border-blue-900/30 bg-gray-900/60 hover:bg-gray-900 transition-colors overflow-hidden">
+            <article class="glass flex flex-col rounded-xl border border-blue-900/30 bg-gray-900/60 hover:bg-gray-900 transition-colors overflow-hidden h-full">
                 <div class="px-5 pt-5 pb-4 border-b border-gray-700/50">
                     <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest leading-none mb-2">Order</p>
                     <p class="text-3xl font-bold text-white leading-none mb-3">#${esc(order.orderNumber)}</p>
@@ -312,13 +312,13 @@ renderHeader('Kitchen');
     body.kitchen-kiosk #queue-scroll {
         height: calc(100dvh - 5rem);
         padding-bottom: 0.5rem;
+        overflow-y: auto;
     }
     body.kitchen-kiosk #queue-row {
         align-items: stretch;
-        min-height: 100%;
     }
     body.kitchen-kiosk .kitchen-card {
-        width: min(340px, 90vw);
+        width: 100%;
     }
 </style>
 

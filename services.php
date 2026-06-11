@@ -41,12 +41,10 @@ $menuTiers = file_exists($tiersDataPath) ? json_decode(file_get_contents($tiersD
                         ['key'=>'menu-standard','label'=>'Standard Menu', 'icon'=>'utensils'],
                         ['key'=>'vip',          'label'=>'VIP Menus',     'icon'=>'crown'],
                         ['key'=>'reception',    'label'=>'Reception',     'icon'=>'bell'],
-                        ['key'=>'room-orders',  'label'=>'Room Orders',   'icon'=>'shopping-basket'],
                     ];
                 } else {
                     $tabs = [
                         ['key'=>'reception',    'label'=>'Reception',     'icon'=>'bell'],
-                        ['key'=>'room-orders',  'label'=>'Room Orders',   'icon'=>'shopping-basket'],
                     ];
                 }
                 $defaultTab = $tabs[0]['key'];
@@ -57,9 +55,6 @@ $menuTiers = file_exists($tiersDataPath) ? json_decode(file_get_contents($tiersD
                     class="services-tab-btn flex items-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-wider whitespace-nowrap relative">
                     <i data-lucide="<?php echo $t['icon']; ?>" class="w-4 h-4"></i>
                     <?php echo $t['label']; ?>
-                    <?php if ($t['key'] === 'room-orders'): ?>
-                    <span id="tab-badge-orders" class="hidden w-5 h-5 bg-red-500 text-[10px] font-bold text-white rounded-full flex items-center justify-center border border-gray-900 shadow-sm ml-1">0</span>
-                    <?php endif; ?>
                 </button>
                 <?php endforeach; ?>
             </nav>
@@ -74,6 +69,7 @@ $menuTiers = file_exists($tiersDataPath) ? json_decode(file_get_contents($tiersD
 
 <script>
     window.INITIAL_TAB = "<?php echo $defaultTab; ?>";
+    window.USER_ROLE = "<?php echo $userRole; ?>";
 </script>
 
 <!-- ═══════════════════════════════════════════════════════ MODALS ═══ -->
