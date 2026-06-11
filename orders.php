@@ -298,7 +298,7 @@ try {
     $processMetrics($allOrders);
     $processMetrics($deletedOrders);
 
-    usort($allOrders, fn($a, $b) => strtotime($a['createdAt'] ?? 'now') - strtotime($b['createdAt'] ?? 'now'));
+    usort($allOrders, fn($a, $b) => strtotime($b['createdAt'] ?? 'now') - strtotime($a['createdAt'] ?? 'now'));
 
     // --- Multi-bucket Sidebar Stats ---
     $preparingBucket = array_filter($allOrders, fn($o) => in_array(strtolower($o['status'] ?? ''), ['preparing', 'pending', 'unconfirmed']));

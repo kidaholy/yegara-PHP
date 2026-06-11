@@ -155,6 +155,22 @@ class JsonDB {
         throw new Exception("Record not found for update in {$this->table}");
     }
 
+    public function updateMany($args) {
+        $data = $this->read();
+        $count = 0;
+        foreach ($data as &$item) {
+            if ($this->matchCriteria($item, $args['where'])) {
+                $item = array_merge($item, $args['data']);
+                $item['updatedAt'] = date('Y-m-d\TH:i:s.v\Z');
+                $count++;
+            }
+        }
+        if ($count > 0) {
+            $this->write($data);
+        }
+        return $count;
+    }
+
     public function delete($args) {
         $data = $this->read();
         foreach ($data as $i => $item) {
@@ -197,8 +213,27 @@ class JsonDB {
             $itemVal = isset($item[$key]) ? $item[$key] : null;
 
             if (is_array($val)) {
-                if (isset($val['equals']) && $itemVal != $val['equals']) return false;
-                if (isset($val['in']) && !in_array($itemVal, $val['in'])) return false;
+                if (isset($val['equals'])) {
+                    $target = $val['equals'];
+                    $isInsensitive = isset($val['mode']) && $val['mode'] === 'insensitive';
+                    if ($isInsensitive) {
+                        if (strcasecmp((string)$itemVal, (string)$target) !== 0) return false;
+                    } else {
+                        if ($itemVal != $target) return false;
+                    }
+                }
+                if (isset($val['in'])) {
+                    $isInsensitive = isset($val['mode']) && $val['mode'] === 'insensitive';
+                    $found = false;
+                    foreach ($val['in'] as $v) {
+                        if ($isInsensitive) {
+                            if (strcasecmp((string)$itemVal, (string)$v) === 0) { $found = true; break; }
+                        } else {
+                            if ($itemVal == $v) { $found = true; break; }
+                        }
+                    }
+                    if (!$found) return false;
+                }
                 if (isset($val['not']) && $itemVal == $val['not']) return false;
                 if (isset($val['contains']) && stripos((string)$itemVal, $val['contains']) === false) return false;
                 if (isset($val['gte']) && strcasecmp((string)$itemVal, (string)$val['gte']) < 0) return false;

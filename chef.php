@@ -208,7 +208,7 @@ renderHeader('Kitchen');
         refreshIcon?.classList.add('animate-spin');
 
         try {
-            const url = 'api/kitchen/queue.php' + (activeCategory ? '?category=' + encodeURIComponent(activeCategory) : '');
+            const url = 'api/kitchen/queue.php?mainCategory=food' + (activeCategory ? '&category=' + encodeURIComponent(activeCategory) : '');
             const resp = await fetch(url);
             const json = await resp.json();
             if (!resp.ok) throw new Error(json.message || 'Failed to load queue');

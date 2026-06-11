@@ -182,6 +182,45 @@ try {
             sendJson(['success' => true, 'count' => count($ids)]);
         }
 
+        // --- FULFILL CATEGORY (Bar/Kitchen independent fulfillment) ---
+        if ($action === 'fulfill-category') {
+            $id = $input['id'] ?? null;
+            $mainCat = strtolower($input['mainCategory'] ?? 'drinks');
+            if (!$id) sendJson(['message' => 'Order ID required'], 400);
+
+            // Mark matching items as completed
+            // Simplified using the new case-insensitive 'in' support in JsonDB
+            $matchCat = ['in' => ['Drink', 'Drinks'], 'mode' => 'insensitive'];
+
+            $count = db('orderItems')->updateMany([
+                'where' => [
+                    'orderId' => $id,
+                    'mainCategory' => $matchCat
+                ],
+                'data' => [
+                    'status' => 'completed',
+                    'updatedAt' => date('Y-m-d H:i:s')
+                ]
+            ]);
+
+            // Check if entire order is finished
+            $allItems = db('orderItems')->findMany(['where' => ['orderId' => $id, 'isDeleted' => false]]);
+            $unfinished = array_filter($allItems, fn($it) => !in_array(strtolower($it['status'] ?? ''), ['completed', 'served', 'cancelled']));
+            
+            if (empty($unfinished)) {
+                db('orders')->update([
+                    'where' => ['id' => $id],
+                    'data' => [
+                        'status' => 'served',
+                        'servedAt' => date('Y-m-d H:i:s'),
+                        'updatedAt' => date('Y-m-d H:i:s')
+                    ]
+                ]);
+            }
+
+            sendJson(['success' => true, 'updatedCount' => $count]);
+        }
+
         // --- CREATE ORDER (No action provided) ---
         if (!$action) {
             $tableNumber = $input['tableNumber'] ?? 'Buy&Go';
@@ -262,7 +301,7 @@ try {
                     'menuTierName' => $menuTierName,
                     'menuTier' => $menuTierName,
                     'menuCollection' => $menuCollection,
-                    'status' => 'pending',
+                    'status' => strtolower($mainCategory) === 'drinks' ? 'served' : 'pending',
                     'isDeleted' => false,
                 ]]);
             }

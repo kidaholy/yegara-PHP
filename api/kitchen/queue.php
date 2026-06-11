@@ -18,7 +18,7 @@ if (!isAuthenticated()) {
 }
 
 $role = $_SESSION['role'] ?? '';
-if (!in_array($role, ['chef', 'admin'], true)) {
+if (!in_array($role, ['chef', 'bar', 'admin'], true)) {
     sendJson(['message' => 'Forbidden'], 403);
 }
 
@@ -26,12 +26,19 @@ try {
     $todayStart = date('Y-m-d 00:00:00');
     $todayEnd = date('Y-m-d 23:59:59');
     $categoryFilter = trim($_GET['category'] ?? '');
+    $mainCategory = strtolower(trim($_GET['mainCategory'] ?? 'food'));
+
+    // If fetching Drinks, we must also include orders that are 'served' (food might be done)
+    $allowedOrderStatuses = ['pending', 'preparing'];
+    if ($mainCategory === 'drinks') {
+        $allowedOrderStatuses[] = 'served';
+    }
 
     $orders = db('orders')->findMany([
         'where' => [
             'isDeleted' => false,
             'createdAt' => ['gte' => $todayStart, 'lte' => $todayEnd],
-            'status' => ['in' => ['pending', 'preparing']],
+            'status' => ['in' => $allowedOrderStatuses],
         ],
     ]);
 
@@ -52,16 +59,16 @@ try {
     $queue = [];
 
     foreach ($orders as $order) {
-        $foodItems = array_values(array_filter(
+        $scopedItems = array_values(array_filter(
             $itemsMap[$order['id']] ?? [],
-            fn($item) => strtolower($item['mainCategory'] ?? 'food') === 'food'
+            fn($item) => strtolower($item['mainCategory'] ?? 'food') === $mainCategory && strtolower($item['status'] ?? '') !== 'completed'
         ));
 
-        if (empty($foodItems)) {
+        if (empty($scopedItems)) {
             continue;
         }
 
-        foreach ($foodItems as $item) {
+        foreach ($scopedItems as $item) {
             $cat = trim($item['category'] ?? '');
             if ($cat !== '') {
                 $categories[$cat] = true;
@@ -70,7 +77,7 @@ try {
 
         if ($categoryFilter !== '') {
             $hasCategory = false;
-            foreach ($foodItems as $item) {
+            foreach ($scopedItems as $item) {
                 if (strcasecmp(trim($item['category'] ?? ''), $categoryFilter) === 0) {
                     $hasCategory = true;
                     break;
@@ -79,8 +86,8 @@ try {
             if (!$hasCategory) {
                 continue;
             }
-            $foodItems = array_values(array_filter(
-                $foodItems,
+            $scopedItems = array_values(array_filter(
+                $scopedItems,
                 fn($item) => strcasecmp(trim($item['category'] ?? ''), $categoryFilter) === 0
             ));
         }
@@ -114,17 +121,17 @@ try {
                 'name' => $item['name'] ?? '',
                 'quantity' => (int)($item['quantity'] ?? 1),
                 'category' => $item['category'] ?? '',
-                'status' => strtolower($item['status'] ?? $order['status'] ?? 'pending'),
+                'status' => strtolower($item['status'] ?? ($mainCategory === 'drinks' ? 'ready' : 'pending')),
                 'notes' => $item['notes'] ?? '',
-            ], $foodItems),
+            ], $scopedItems),
         ];
     }
 
-    usort($queue, fn($a, $b) => strtotime($a['createdAt'] ?? 'now') - strtotime($b['createdAt'] ?? 'now'));
+    usort($queue, fn($a, $b) => strtotime($b['createdAt'] ?? 'now') - strtotime($a['createdAt'] ?? 'now'));
 
     $menuItems = db('menuItems')->findMany(['where' => ['isDeleted' => false]]);
     foreach ($menuItems as $item) {
-        if (strtolower($item['mainCategory'] ?? '') !== 'food') {
+        if (strtolower($item['mainCategory'] ?? 'food') !== $mainCategory) {
             continue;
         }
         $cat = trim($item['category'] ?? '');
