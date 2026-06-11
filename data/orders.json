@@ -398,5 +398,28 @@
         "menuTierName": "Standard",
         "menuCollection": "menuItems",
         "servedAt": "2026-06-11 11:40:21"
+    },
+    {
+        "id": "a292253a63f193f9c6d2",
+        "createdAt": "2026-06-11 11:44:01",
+        "updatedAt": "2026-06-11 11:44:01",
+        "isDeleted": false,
+        "orderNumber": "17",
+        "tableNumber": "T#01",
+        "floorId": "69c6a7e2140cb91738d34fe3",
+        "floorNumber": "GROUND",
+        "paymentMethod": "cash",
+        "batchNumber": null,
+        "distributions": [],
+        "totalAmount": 1300,
+        "status": "pending",
+        "createdBy": {
+            "id": "69c66d83658d6f717f557cd5",
+            "name": "Floor 1(Menbere)CASHER 2"
+        },
+        "type": "cashier",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuCollection": "menuItems"
     }
 ]

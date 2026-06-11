@@ -191,10 +191,10 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
                     class="w-full py-2.5 mb-3 rounded-xl text-xs font-bold uppercase tracking-wider border border-gray-700 text-gray-400 hover:border-blue-500/40 hover:text-blue-400 transition-all">
                 Buy & Go (no table)
             </button>
-            <div id="floor-tabs" class="grid grid-cols-3 gap-2"></div>
+            <div id="floor-tabs" class="hidden"></div>
         </div>
         <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-6 pb-6">
-            <div id="table-grid" class="grid grid-cols-4 gap-2"></div>
+            <div id="table-grid" class="space-y-6"></div>
         </div>
     </div>
 </div>
@@ -280,19 +280,25 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
 
     function renderTableGrid() {
         const grid = document.getElementById('table-grid');
-        const floor = floorPlan.find(f => f.id === activeFloorId);
         const selectedNum = document.getElementById('table-number').value;
 
-        if (!floor || !floor.tables.length) {
-            grid.innerHTML = '<p class="col-span-4 text-center text-xs text-muted-foreground py-8">No tables on this floor</p>';
+        if (!floorPlan.length) {
+            grid.innerHTML = '<p class="text-center text-xs text-muted-foreground py-8">No floors configured</p>';
             return;
         }
 
-        grid.innerHTML = floor.tables.map(t => {
-            const on = selectedNum === t.tableNumber;
-            return `<button type="button" data-table="${esc(t.tableNumber)}" data-floor-id="${esc(floor.id)}" data-floor-num="${esc(floor.floorNumber)}"
-                class="table-pick py-3 rounded-lg text-xs font-bold border transition-all ${on ? 'bg-blue-500/20 text-blue-400 border-blue-500/40' : 'border-gray-700 text-gray-300 hover:border-blue-500/40 hover:text-blue-400'}">${esc(t.tableNumber)}</button>`;
-        }).join('');
+        grid.innerHTML = floorPlan.map(floor => `
+            <div class="space-y-3">
+                <h4 class="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] border-b border-gray-800 pb-2">${esc(floor.label)}</h4>
+                <div class="grid grid-cols-4 gap-2">
+                    ${floor.tables.map(t => {
+                        const on = selectedNum === t.tableNumber;
+                        return `<button type="button" data-table="${esc(t.tableNumber)}" data-floor-id="${esc(floor.id)}" data-floor-num="${esc(floor.floorNumber)}"
+                            class="table-pick py-3 rounded-lg text-xs font-bold border transition-all ${on ? 'bg-blue-500/20 text-blue-400 border-blue-500/40' : 'border-gray-700 text-gray-300 hover:border-blue-500/40 hover:text-blue-400'}">${esc(t.tableNumber)}</button>`;
+                    }).join('')}
+                </div>
+            </div>
+        `).join('');
     }
 
     function setTableSelection(tableNumber, floorId, floorNumber, label) {

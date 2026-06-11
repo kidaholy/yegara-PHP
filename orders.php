@@ -48,14 +48,35 @@ if ($isCashierView) {
         usort($todayOrders, fn($a, $b) => strtotime($b['createdAt'] ?? 'now') - strtotime($a['createdAt'] ?? 'now'));
 
         $todayRevenue = 0;
+        $foodRevenue = 0;
+        $drinkRevenue = 0;
+
+        $myOrders = [];
         foreach ($todayOrders as $o) {
+            $orderUserId = $o['createdBy']['id'] ?? '';
+            // Only show orders by this specific cashier
+            if ($userRole === 'cashier' && $orderUserId != $user['id']) {
+                continue;
+            }
+            
+            $myOrders[] = $o;
+
             if (strtolower($o['status'] ?? '') !== 'cancelled') {
                 $todayRevenue += (float)($o['totalAmount'] ?? 0);
+                foreach ($o['items'] as $it) {
+                    $mCat = strtolower($it['mainCategory'] ?? '');
+                    $itAmt = (float)($it['price'] ?? 0) * (int)($it['quantity'] ?? 1);
+                    if ($mCat === 'food') $foodRevenue += $itAmt;
+                    elseif ($mCat === 'drinks') $drinkRevenue += $itAmt;
+                }
             }
         }
+        $todayOrders = $myOrders;
     } catch (Exception $e) {
         $todayOrders = [];
         $todayRevenue = 0;
+        $foodRevenue = 0;
+        $drinkRevenue = 0;
     }
 
     renderHeader($isKiosk ? 'Kiosk Mode' : 'Recent Orders', ['nav' => $isKiosk ? 'kiosk' : 'pos', 'posTab' => 'recent']);
@@ -86,10 +107,10 @@ if ($isCashierView) {
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-<?php echo $showRevenue ? '2' : '1'; ?> gap-6 max-w-2xl">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div class="glass p-6 rounded-2xl bg-gray-800/80 hover:bg-gray-800 transition-colors border border-gray-700/50">
                     <div class="flex items-center justify-between mb-4">
-                        <p class="text-sm font-medium text-gray-400">Orders Today</p>
+                        <p class="text-sm font-medium text-gray-400">Your Orders</p>
                         <div class="inline-flex p-3 rounded-lg bg-gray-900 border border-gray-700 text-blue-400">
                             <i data-lucide="shopping-cart" class="w-5 h-5"></i>
                         </div>
@@ -99,12 +120,30 @@ if ($isCashierView) {
                 <?php if ($showRevenue): ?>
                 <div class="glass p-6 rounded-2xl bg-gray-800/80 hover:bg-gray-800 transition-colors border border-gray-700/50">
                     <div class="flex items-center justify-between mb-4">
-                        <p class="text-sm font-medium text-gray-400">Today's Revenue</p>
+                        <p class="text-sm font-medium text-gray-400">Food Revenue</p>
+                        <div class="inline-flex p-3 rounded-lg bg-gray-900 border border-gray-700 text-emerald-400">
+                            <i data-lucide="utensils" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <p class="text-2xl font-bold text-white leading-none tracking-tight"><?php echo number_format($foodRevenue, 0); ?> <span class="text-xs text-gray-500">ETB</span></p>
+                </div>
+                <div class="glass p-6 rounded-2xl bg-gray-800/80 hover:bg-gray-800 transition-colors border border-gray-700/50">
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-sm font-medium text-gray-400">Drinks Revenue</p>
+                        <div class="inline-flex p-3 rounded-lg bg-gray-900 border border-gray-700 text-purple-400">
+                            <i data-lucide="glass-water" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <p class="text-2xl font-bold text-white leading-none tracking-tight"><?php echo number_format($drinkRevenue, 0); ?> <span class="text-xs text-gray-500">ETB</span></p>
+                </div>
+                <div class="glass p-6 rounded-2xl bg-gray-800/80 hover:bg-gray-800 transition-colors border border-gray-700/50">
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-sm font-medium text-gray-400">Total Revenue</p>
                         <div class="inline-flex p-3 rounded-lg bg-gray-900 border border-gray-700 text-blue-400">
                             <i data-lucide="dollar-sign" class="w-5 h-5"></i>
                         </div>
                     </div>
-                    <p class="text-3xl font-bold text-white leading-none tracking-tight"><?php echo number_format($todayRevenue, 0); ?> ETB</p>
+                    <p class="text-2xl font-bold text-white leading-none tracking-tight"><?php echo number_format($todayRevenue, 0); ?> <span class="text-xs text-gray-500">ETB</span></p>
                 </div>
                 <?php endif; ?>
             </div>

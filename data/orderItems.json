@@ -607,5 +607,25 @@
         "menuTier": "Standard",
         "menuCollection": "menuItems",
         "status": "pending"
+    },
+    {
+        "id": "231d4ff1c079ad0d63d0",
+        "createdAt": "2026-06-11T11:44:01.000Z",
+        "updatedAt": "2026-06-11T11:44:01.000Z",
+        "isDeleted": false,
+        "orderId": "a292253a63f193f9c6d2",
+        "menuItemId": "69ada38bd661b3f94ac72fca",
+        "menuId": "8",
+        "name": "TIBS\/\u1235\u120b\u123d \u1325\u1265\u1235 1\/2\u12aa.\u130d",
+        "quantity": 1,
+        "price": 1300,
+        "notes": "",
+        "category": "TIBS\/\u1235\u120b\u123d \u1325\u1265\u1235",
+        "mainCategory": "Food",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuTier": "Standard",
+        "menuCollection": "menuItems",
+        "status": "pending"
     }
 ]
