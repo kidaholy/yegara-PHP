@@ -75,6 +75,21 @@ renderHeader($title);
     </div>
 </div>
 
+<!-- QR Modal (Mirrored from services.php) -->
+<div id="qr-modal" class="hidden fixed inset-0 z-[110] bg-gray-900/90 backdrop-blur-sm flex items-center justify-center p-6 text-gray-300 text-center">
+    <div class="bg-gray-800 p-8 rounded-2xl border border-gray-700 shadow-2xl space-y-6 max-w-sm mx-auto">
+        <h3 id="qr-room-title" class="text-xl font-bold uppercase text-gray-200">Digital Menu QR</h3>
+        <div id="qr-content" class="bg-white p-4 rounded-xl mx-auto shadow-sm w-[232px] h-[232px] flex items-center justify-center"></div>
+        <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Scan for Digital Menu View</p>
+        <div class="flex gap-3 pt-4 border-t border-gray-700/50">
+            <button onclick="document.getElementById('qr-modal').classList.add('hidden')" class="flex-1 py-3 text-sm font-bold bg-transparent border border-gray-600 rounded-lg text-gray-400 hover:text-white transition-colors">Close</button>
+            <button onclick="window.print()" class="flex-1 py-3 rounded-lg text-sm font-bold bg-[#c5a059] text-gray-900 transition-colors shadow-sm">Print</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
 <script src="public/js/menu-manager.js"></script>
 <script>
     // Configuration from PHP
@@ -132,6 +147,16 @@ renderHeader($title);
             document.getElementById('menu-modal').classList.add('hidden');
             await AdminServices.menuManager.loadData();
             AdminServices.menuManager.render();
+        },
+        openMenuQRModal: (url) => {
+            const qrBox = document.getElementById('qr-content');
+            qrBox.innerHTML = '';
+            new QRCode(qrBox, {
+                text: url,
+                width: 200, height: 200, correctLevel: QRCode.CorrectLevel.H
+            });
+            document.getElementById('qr-room-title').textContent = `${tierConfig.name} — QR Menu`;
+            document.getElementById('qr-modal').classList.remove('hidden');
         }
     };
 

@@ -336,6 +336,17 @@ AdminServices.openQRModal = (roomNumber) => {
     document.getElementById('qr-modal').classList.remove('hidden');
 };
 
+AdminServices.openMenuQRModal = (url) => {
+    document.getElementById('qr-content').innerHTML = '';
+    new QRCode(document.getElementById('qr-content'), {
+        text: url,
+        width: 200, height: 200, correctLevel: QRCode.CorrectLevel.H
+    });
+    document.getElementById('qr-room-title').textContent = `Digital Menu — QR Link`;
+    document.querySelector('#qr-modal p').textContent = 'Scan for Digital Menu View';
+    document.getElementById('qr-modal').classList.remove('hidden');
+};
+
 // ── Menu Modal ───────────────────────────────────────────────────────────────
 AdminServices.openMenuModal = (item = {}) => {
     const mm = AdminServices.menuManager;

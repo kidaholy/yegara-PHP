@@ -65,6 +65,9 @@ class MenuManager {
                             <button onclick="menuMgr.exportCSV()" class="block w-full text-left px-4 py-2.5 bg-transparent border-0 text-xs text-gray-400 hover:text-white hover:bg-gray-700">Complete Menu</button>
                         </div>
                     </div>
+                    <button onclick="menuMgr.showMenuQR()" class="w-full bg-[#c5a059]/10 border border-[#c5a059]/30 text-[#c5a059] py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-[#c5a059]/20 transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="qr-code" class="w-4 h-4"></i> Menu QR
+                    </button>
                 </div>
                 <!-- Filters -->
                 <div class="bg-gray-800 p-5 rounded-xl border border-gray-700/50 space-y-3">
@@ -314,6 +317,22 @@ class MenuManager {
         const label = mainCat ? mainCat.toLowerCase() : 'complete';
         a.download = `${label}_export_${new Date().toISOString().slice(0,10)}.csv`;
         a.click();
+    }
+
+    showMenuQR() {
+        // Build URL for public menu
+        let url = `${location.origin}/menu.php`;
+        if (this.config.collection !== 'menuItems') {
+            // It's a VIP tier
+            const tierId = this.config.collection.replace('Menu', '').toLowerCase();
+            url += `?tier=${tierId}`;
+        }
+        
+        if (typeof AdminServices.openMenuQRModal === 'function') {
+            AdminServices.openMenuQRModal(url);
+        } else {
+            console.warn('AdminServices.openMenuQRModal not found');
+        }
     }
 
     // ─── API Helper ────────────────────────────────────────────────────────────
