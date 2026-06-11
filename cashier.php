@@ -304,6 +304,69 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
         }
     }
 
+    function printReceipt(order, typeLabel = 'Kitchen Copy') {
+        const dateStr = new Date().toLocaleString();
+        const receipt = document.getElementById('receipt-print');
+        
+        let itemsHtml = order.items.map(i => `
+            <tr>
+                <td style="width: 50%">${esc(i.name)}</td>
+                <td style="width: 20%; text-align: center">${i.quantity}</td>
+                <td style="width: 30%; text-align: right">${Number(i.price * i.quantity).toLocaleString()}</td>
+            </tr>
+        `).join('');
+
+        receipt.innerHTML = `
+            <div class="receipt-header">
+                <div class="receipt-box uppercase">${esc(typeLabel)}</div>
+                <div class="receipt-title uppercase">${esc(appName)}</div>
+                <p class="receipt-tagline">Hotel Management System</p>
+            </div>
+            <div class="receipt-divider"></div>
+            <div class="receipt-row">
+                <span>Order #:</span>
+                <span style="font-weight: bold">${esc(order.orderNumber)}</span>
+            </div>
+            <div class="receipt-row">
+                <span>Date:</span>
+                <span>${dateStr}</span>
+            </div>
+            <div class="receipt-row">
+                <span>Table:</span>
+                <span style="font-weight: bold">${esc(order.tableNumber)}</span>
+            </div>
+            <div class="receipt-row">
+                <span>Floor:</span>
+                <span style="font-weight: bold">${esc(order.floorLabel || order.floorNumber || 'Ground')}</span>
+            </div>
+            <div class="receipt-divider"></div>
+            <table class="receipt-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50%">Item</th>
+                        <th style="width: 20%; text-align: center">Qty</th>
+                        <th style="width: 30%; text-align: right">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${itemsHtml}
+                </tbody>
+            </table>
+            <div class="receipt-row receipt-total">
+                <span>TOTAL:</span>
+                <span>${Number(order.totalAmount).toLocaleString()} ETB</span>
+            </div>
+            <div class="receipt-divider"></div>
+            <div class="receipt-footer">
+                <p style="font-weight: bold; font-size: 11px; margin-bottom: 4px;">THANK YOU!</p>
+                <p>Please visit us again</p>
+                <p style="margin-top: 10px; font-size: 9px; opacity: 0.8;">Powered by Prime Addis POS</p>
+            </div>
+        `;
+
+        window.print();
+    }
+
     /* ── Custom Distribution Dropdown ── */
     function populateDistList(dists) {
         const list = document.getElementById('dist-list');
@@ -590,10 +653,29 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
             });
             const result = await resp.json();
             if (resp.ok) {
-                alert('Order #' + result.orderNumber + ' sent to kitchen!');
+                const orderData = {
+                    orderNumber: result.orderNumber,
+                    tableNumber: document.getElementById('table-number').value,
+                    floorLabel: document.getElementById('table-picker-label').textContent.split(' · ')[1] || null,
+                    floorNumber: document.getElementById('floor-number').value,
+                    items: cart,
+                    totalAmount: cart.reduce((a, i) => a + i.price * i.quantity, 0)
+                };
+                
                 cart = [];
                 document.getElementById('batch-number').value = '';
                 renderCart();
+                
+                // Trigger sequential printing for Kitchen and Table copies
+                setTimeout(() => {
+                    const receipt = document.getElementById('receipt-print');
+                    if (receipt.parentElement !== document.body) {
+                        document.body.appendChild(receipt);
+                    }
+                    // Sequential calls: standard browsers will wait for first dialog to close
+                    printReceipt(orderData, 'Kitchen Copy');
+                    printReceipt(orderData, 'Table Copy');
+                }, 150);
             } else alert('Error: ' + (result.message || 'Failed'));
         } catch { alert('Server error.'); }
         finally { btn.disabled = !cart.length; btn.innerHTML = old; }
@@ -693,6 +775,41 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
     .custom-gold-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-gold-scrollbar::-webkit-scrollbar-thumb { background: #c5a059; border-radius: 10px; border: 2px solid #0a0a0a; }
     .custom-gold-scrollbar::-webkit-scrollbar-thumb:hover { background: #d4af37; }
+
+    /* ── Receipt Printing Styles ── */
+    #receipt-print { display: none; }
+    @media print {
+        @page { margin: 0; size: auto; }
+        body { visibility: hidden; background: white !important; }
+        #receipt-print { 
+            visibility: visible !important;
+            display: block !important; 
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 80mm; 
+            padding: 4mm; 
+            color: black !important;
+            font-family: 'Courier New', Courier, monospace !important;
+            font-size: 13px;
+            line-height: 1.3;
+        }
+        #receipt-print * { visibility: visible !important; color: black !important; }
+        .receipt-header { text-align: center; margin-bottom: 10px; }
+        .receipt-title { font-size: 20px; font-weight: 900; text-transform: uppercase; margin: 5px 0; }
+        .receipt-tagline { font-size: 11px; margin-bottom: 10px; }
+        .receipt-box { border: 2px solid black; padding: 3px 10px; display: inline-block !important; font-weight: 900; margin-bottom: 10px; }
+        .receipt-divider { border-bottom: 2px dashed black; margin: 10px 0; }
+        .receipt-row { display: flex !important; justify-content: space-between; margin-bottom: 4px; }
+        .receipt-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        .receipt-table th { text-align: left; border-bottom: 2px solid black; padding: 5px 0; font-size: 12px; }
+        .receipt-table td { padding: 5px 0; vertical-align: top; border-bottom: 1px dashed #eee; }
+        .receipt-total { font-size: 16px; font-weight: 900; margin-top: 10px; border-top: 2px dashed black; padding-top: 10px; }
+        .receipt-footer { text-align: center; margin-top: 20px; font-size: 11px; }
+    }
 </style>
+
+<!-- Receipt Template -->
+<div id="receipt-print"></div>
 
 <?php renderFooter(); ?>
