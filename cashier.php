@@ -615,6 +615,8 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
 
         const total = cart.reduce((a, i) => a + i.price * i.quantity, 0);
         document.getElementById('cart-total-val').textContent = Number(total).toLocaleString();
+        const totalTop = document.getElementById('cart-total');
+        if (totalTop) totalTop.textContent = fmt(total);
         lucide.createIcons();
     }
 

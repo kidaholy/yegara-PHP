@@ -163,9 +163,20 @@ try {
                 }
                 
                 if (!empty($patch)) {
+                    if ($id === 'all') {
+                        $patch['restockHistory'] = [];
+                    }
                     db('stocks')->update(['where' => ['id' => $s['id']], 'data' => $patch]);
                 }
             }
+
+            // If global wipe, clear the audit trails too
+            if ($id === 'all') {
+                db('storeLogs')->deleteMany(['where' => []]);
+                db('transferRequests')->deleteMany(['where' => []]);
+                // Optional: clear restock history in each stock item if needed, but array_merge happens in PUT.
+            }
+
             j(['message' => 'Requested quantities wiped']);
         }
 

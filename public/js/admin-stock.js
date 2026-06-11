@@ -95,7 +95,7 @@ function renderTable() {
             <span class="text-xs px-2 py-1 rounded-md bg-gray-800 border border-gray-700 font-semibold text-gray-400">${esc(i.category||'')}</span>
           </td>
           <td class="p-4">
-            <span class="text-lg font-bold ${qtyColor}">${qty}</span>
+            <span class="text-lg font-bold ${qtyColor}">${qty % 1 === 0 ? qty : parseFloat(qty.toFixed(2))}</span>
             <span class="text-xs text-gray-500 ml-1">${i.unit||''}</span>
           </td>
           <td class="p-4">${badge}</td>
@@ -177,9 +177,9 @@ window.exportCSV = function(filter) {
     const headers = ['Item Name','Category','Quantity','Unit','Status','Min Limit','Unit Cost','Total Value'];
     const data = rows.map(i => {
         let status = 'Ready';
-        if ((i.quantity||0) <= 0) status = 'Empty';
+        if (Math.round(i.quantity||0) <= 0) status = 'Empty';
         else if (i.trackQuantity && (i.quantity||0) <= (i.minLimit||0)) status = 'Low Stock';
-        return [i.name, i.category||'', i.quantity||0, i.unit||'pcs', status, i.minLimit||0, i.unitCost||0, ((i.quantity||0)*(i.unitCost||0)).toFixed(2)];
+        return [i.name, i.category||'', Math.round(i.quantity||0), i.unit||'pcs', status, Math.round(i.minLimit||0), Math.round(i.unitCost||0), Math.round((i.quantity||0)*(i.unitCost||0))];
     });
 
     const csv = [headers, ...data].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
@@ -204,7 +204,7 @@ function showLoader(show) {
     document.getElementById('stock-table-wrap')?.classList.toggle('hidden', show);
 }
 
-function fmt(n) { return Number(n||0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' Br'; }
+function fmt(n) { return Number(n||0).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0}) + ' Br'; }
 function setText(id, t) { const el = document.getElementById(id); if(el) el.textContent = t; }
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 window.handleSearch = function(e) { S.searchTerm = e.target.value; renderTable(); };

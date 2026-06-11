@@ -455,7 +455,7 @@ const ReportHub = {
                 <div class="p-8 rounded-2xl border border-gray-800 bg-[#111413] flex flex-col justify-center">
                     <p class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">${revLabel}</p>
                     <div class="flex items-baseline gap-2">
-                        <h4 class="text-4xl font-black text-[${resColor}]">${Number(activeRevenue).toLocaleString('en-US', {maximumFractionDigits:2})}</h4>
+                        <h4 class="text-4xl font-black text-[${resColor}]">${Number(activeRevenue).toLocaleString('en-US', {maximumFractionDigits:0})}</h4>
                         <span class="text-xl font-bold text-[${resColor}]/50">Br</span>
                     </div>
                     <p class="text-[10px] font-black text-gray-600 uppercase tracking-widest mt-4">${subLabel}</p>
@@ -570,8 +570,8 @@ const ReportHub = {
         }
         return json;
     },
-    fmt(n) { return Number(n||0).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2}) + ' Br'; },
-    fmtQty(n) { return Math.round(n||0).toLocaleString(); },
+    fmt(n) { return Number(n||0).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0}) + ' Br'; },
+    fmtQty(n) { const v = n||0; return (v % 1 === 0 ? v : parseFloat(v.toFixed(2))).toLocaleString(); },
     
     getQueryString() {
         const params = new URLSearchParams();
@@ -680,9 +680,9 @@ const ReportHub = {
                     o.tableNumber || 'Walking',
                     i.name,
                     i.category || 'General',
-                    i.quantity,
-                    i.price,
-                    (i.price * i.quantity),
+                    Math.round(i.quantity||0),
+                    Math.round(i.price||0),
+                    Math.round((i.price||0) * (i.quantity||0)),
                     o.createdBy?.name || '—',
                     o.floor || '—'
                 ]);
@@ -695,7 +695,7 @@ const ReportHub = {
         // Spec Headers: Item Name, Unit Cost, Quantity, Total Purchase, Consumed, Remains, Potential Rev, Status
         const u = this.stockUsageData?.stockAnalysis || [];
         const h = ['Item Name', 'Unit Cost', 'Quantity', 'Total Purchase', 'Consumed', 'Remains', 'Potential Rev', 'Status'];
-        const rows = u.map(i => [i.name, i.currentUnitCost, i.openingStock, (i.openingStock*i.weightedAvgCost), i.consumed, i.closingStock, (i.closingStock*i.currentUnitCost), i.isLowStock?'LOW':'OK']);
+        const rows = u.map(i => [i.name, Math.round(i.currentUnitCost||0), Math.round(i.openingStock||0), Math.round((i.openingStock||0)*(i.weightedAvgCost||0)), Math.round(i.consumed||0), Math.round(i.closingStock||0), Math.round((i.closingStock||0)*(i.currentUnitCost||0)), i.isLowStock?'LOW':'OK']);
         ReportExporter.toCSV(`Inventory-Investment-${this.timeRange}.csv`, h, rows);
     },
 
@@ -704,7 +704,7 @@ const ReportHub = {
         const stats = this.getCalculatedStats();
         const f = stats.menuItemSales.filter(i => i.mainCategory === this.menuSalesTab);
         const h = ['Menu Item', 'Cashier', 'Sub Category', 'Quantity Sold', 'Total Revenue'];
-        const rows = f.map(i => [i.name, i.cashier, i.category, i.quantity, i.revenue]);
+        const rows = f.map(i => [i.name, i.cashier, i.category, Math.round(i.quantity||0), Math.round(i.revenue||0)]);
         ReportExporter.toCSV(`Menu-Sales-${this.menuSalesTab}.csv`, h, rows);
     }
 };
@@ -722,7 +722,7 @@ const ReportExporter = {
         const tableHtml = `
             <table>
                 <tr><th>Metric</th><th>Type</th><th>Amount</th><th>Description</th></tr>
-                ${dataRows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${Number(r[2]||0).toLocaleString('en-US', {maximumFractionDigits:2})} Br</td><td>${r[3]}</td></tr>`).join('')}
+                ${dataRows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${Number(r[2]||0).toLocaleString('en-US', {maximumFractionDigits:0})} Br</td><td>${r[3]}</td></tr>`).join('')}
             </table>
         `;
         const header = `

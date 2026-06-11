@@ -17,11 +17,19 @@ try {
     $stocks = db('stocks')->findMany();
     $orders = db('orders')->findMany();
     $storeLogs = db('storeLogs')->findMany();
+    $allOrderItems = db('orderItems')->findMany(); // Added: Fetch separate items
 
     $stockMap = [];
     foreach ($stocks as $stock) {
         if ($stock['isDeleted'] ?? false) continue;
         $stockMap[$stock['id']] = $stock;
+    }
+
+    // Index items by orderId for fast lookup
+    $itemsByOrder = [];
+    foreach ($allOrderItems as $it) {
+        if ($it['isDeleted'] ?? false) continue;
+        $itemsByOrder[$it['orderId']][] = $it;
     }
 
     // Period consumption from order line items
@@ -34,14 +42,7 @@ try {
         if (($order['status'] ?? '') === 'cancelled') continue;
         if (!isWithinReportRange($order['createdAt'] ?? null, $start, $end)) continue;
 
-        $lineItems = [];
-        foreach ($order['items'] ?? [] as $item) {
-            if ($item['isDeleted'] ?? false) continue;
-            $lineItems[] = [
-                'menuItemId' => $item['menuItemId'] ?? null,
-                'quantity' => $item['quantity'] ?? 0,
-            ];
-        }
+        $lineItems = $itemsByOrder[$order['id']] ?? []; // Use indexed items
 
         $consumption = calculateStockConsumption($lineItems);
         foreach ($consumption as $stockId => $qty) {
