@@ -28,7 +28,8 @@ try {
     $categoryFilter = trim($_GET['category'] ?? '');
     $mainCategory = strtolower(trim($_GET['mainCategory'] ?? 'food'));
 
-    // If fetching Drinks, we must also include orders that are 'served' (food might be done)
+    // Drinks can be 'served' at POS but still visible in Bar queue for fulfillment.
+    // Food orders that are 'served' are considered finalized for the kitchen.
     $allowedOrderStatuses = ['pending', 'preparing'];
     if ($mainCategory === 'drinks') {
         $allowedOrderStatuses[] = 'served';

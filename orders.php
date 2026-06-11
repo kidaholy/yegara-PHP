@@ -214,10 +214,43 @@ if ($isCashierView) {
                         </div>
 
                         <div class="flex-1 min-w-0 md:px-6">
-                            <div class="flex flex-wrap gap-x-4 gap-y-1">
-                                <?php foreach ($o['items'] ?? [] as $item): ?>
+                            <?php 
+                                $food = array_filter($o['items'] ?? [], fn($i) => strtolower($i['mainCategory'] ?? '') === 'food');
+                                $drinks = array_filter($o['items'] ?? [], fn($i) => strtolower($i['mainCategory'] ?? '') === 'drinks');
+                                $others = array_filter($o['items'] ?? [], fn($i) => !in_array(strtolower($i['mainCategory'] ?? ''), ['food', 'drinks']));
+                            ?>
+                            <div class="flex flex-wrap items-center gap-3">
+                                <?php if($food): ?>
+                                <div class="flex items-center gap-2 pr-3 border-r border-gray-800/50 mr-1 last:border-0 last:mr-0">
+                                    <div class="p-1 rounded bg-emerald-500/10 text-emerald-500/70"><i data-lucide="utensils" class="w-3 h-3"></i></div>
+                                    <div class="flex flex-wrap gap-2">
+                                        <?php foreach ($food as $item): ?>
+                                        <span class="text-xs text-gray-400 bg-gray-800/40 px-2 py-1 rounded-lg border border-gray-700/30">
+                                            <span class="font-bold text-emerald-400/80"><?php echo (int)($item['quantity'] ?? 1); ?>×</span>
+                                            <?php echo htmlspecialchars($item['name'] ?? 'Item'); ?>
+                                        </span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                                <?php endif; ?>
+
+                                <?php if($drinks): ?>
+                                <div class="flex items-center gap-2 pr-3 border-r border-gray-800/50 mr-1 last:border-0 last:mr-0">
+                                    <div class="p-1 rounded bg-blue-500/10 text-blue-500/70"><i data-lucide="glass-water" class="w-3 h-3"></i></div>
+                                    <div class="flex flex-wrap gap-2">
+                                        <?php foreach ($drinks as $item): ?>
+                                        <span class="text-xs text-gray-400 bg-gray-800/40 px-2 py-1 rounded-lg border border-gray-700/30">
+                                            <span class="font-bold text-blue-400/80"><?php echo (int)($item['quantity'] ?? 1); ?>×</span>
+                                            <?php echo htmlspecialchars($item['name'] ?? 'Item'); ?>
+                                        </span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                                <?php endif; ?>
+
+                                <?php foreach ($others as $item): ?>
                                 <span class="text-xs text-gray-400 bg-gray-800/40 px-2 py-1 rounded-lg border border-gray-700/30">
-                                    <span class="font-bold text-blue-400/80"><?php echo (int)($item['quantity'] ?? 1); ?>×</span>
+                                    <span class="font-bold text-gray-300"><?php echo (int)($item['quantity'] ?? 1); ?>×</span>
                                     <?php echo htmlspecialchars($item['name'] ?? 'Item'); ?>
                                 </span>
                                 <?php endforeach; ?>
@@ -266,7 +299,9 @@ try {
     $itemsMap = [];
     foreach ($allOrderItems as $item) { $itemsMap[$item['orderId']][] = $item; }
     foreach ($allOrders as &$o) { $o['items'] = $itemsMap[$o['id']] ?? []; }
+    unset($o);
     foreach ($deletedOrders as &$o) { $o['items'] = $itemsMap[$o['id']] ?? []; }
+    unset($o);
 
     // --- Performance Metrics & Performance Monitoring ---
     $now = new DateTime();
@@ -292,6 +327,7 @@ try {
             if ($o['computedDelay'] > 0 && !in_array(strtolower($o['status'] ?? ''), ['served', 'completed', 'cancelled'])) {
                 $delayedOrders[] = $o;
             }
+            unset($o);
         }
     };
 
@@ -439,9 +475,7 @@ renderHeader($title);
                     $tabs = [
                         ['id'=>'all',       'label'=>__('admin_orders.all_orders'), 'icon'=>'clipboard-list', 'data'=>$stats['all'],       'color'=>'orange'],
                         ['id'=>'preparing', 'label'=>__('admin_orders.preparing'),  'icon'=>'flame',          'data'=>$stats['preparing'], 'color'=>'red'],
-                        ['id'=>'ready',     'label'=>__('admin_orders.ready'),      'icon'=>'check-circle-2', 'data'=>$stats['ready'],     'color'=>'green'],
                         ['id'=>'served',    'label'=>__('admin_orders.served'),     'icon'=>'package-check',  'data'=>$stats['served'],    'color'=>'blue'],
-                        ['id'=>'room',      'label'=>'ROOM SERVICE',                'icon'=>'door-open',      'data'=>$stats['room'],      'color'=>'amber'],
                         ['id'=>'cashier',   'label'=>'BY CASHIER',                  'icon'=>'users',          'data'=>['count'=>count($cashierNames)], 'color'=>'purple'],
                         ['id'=>'deleted',   'label'=>'DELETED HISTORY',             'icon'=>'trash-2',        'data'=>$stats['deleted'],   'color'=>'white'],
                     ];
@@ -625,15 +659,54 @@ renderHeader($title);
                                         <span class="w-1.5 h-1.5 rounded-full bg-gray-700"></span>
                                         <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider"><?php echo count($o['items']); ?> Items</span>
                                     </div>
-                                    <div class="flex flex-wrap gap-x-5 gap-y-2">
-                                        <?php foreach ($o['items'] as $item): $isVIP = !empty($item['menuTierName']) && strcasecmp($item['menuTierName'], 'Standard') !== 0; ?>
+                                    <div class="flex flex-wrap items-center gap-x-5 gap-y-3">
+                                        <?php 
+                                            $food = array_filter($o['items'] ?? [], fn($i) => strtolower($i['mainCategory'] ?? '') === 'food');
+                                            $drinks = array_filter($o['items'] ?? [], fn($i) => strtolower($i['mainCategory'] ?? '') === 'drinks');
+                                            $others = array_filter($o['items'] ?? [], fn($i) => !in_array(strtolower($i['mainCategory'] ?? ''), ['food', 'drinks']));
+                                        ?>
+
+                                        <?php if($food): ?>
+                                        <div class="flex items-center gap-3 pr-5 border-r border-gray-700/50 mr-1 last:border-0 last:mr-0">
+                                            <div class="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm"><i data-lucide="utensils" class="w-4 h-4"></i></div>
+                                            <div class="flex flex-wrap gap-x-5 gap-y-2">
+                                                <?php foreach ($food as $item): $isVIP = !empty($item['menuTierName']) && strcasecmp($item['menuTierName'], 'Standard') !== 0; ?>
+                                                <div class="flex items-center gap-2.5">
+                                                    <div class="w-6 h-6 rounded-md bg-gray-900 border border-gray-700 flex items-center justify-center text-xs font-bold text-emerald-400"><?php echo $item['quantity']; ?></div>
+                                                    <div class="relative flex items-center gap-2">
+                                                        <span class="text-sm font-semibold text-gray-200"><?php echo $item['name']; ?></span>
+                                                        <?php if($isVIP): ?><span class="text-[9px] bg-purple-500/20 text-purple-300 px-1 py-0.5 rounded font-bold"><?php echo htmlspecialchars($item['menuTierName'] ?? 'VIP'); ?></span><?php endif; ?>
+                                                    </div>
+                                                </div>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
+
+                                        <?php if($drinks): ?>
+                                        <div class="flex items-center gap-3 pr-5 border-r border-gray-700/50 mr-1 last:border-0 last:mr-0">
+                                            <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-sm"><i data-lucide="glass-water" class="w-4 h-4"></i></div>
+                                            <div class="flex flex-wrap gap-x-5 gap-y-2">
+                                                <?php foreach ($drinks as $item): $isVIP = !empty($item['menuTierName']) && strcasecmp($item['menuTierName'], 'Standard') !== 0; ?>
+                                                <div class="flex items-center gap-2.5">
+                                                    <div class="w-6 h-6 rounded-md bg-gray-900 border border-gray-700 flex items-center justify-center text-xs font-bold text-blue-400"><?php echo $item['quantity']; ?></div>
+                                                    <div class="relative flex items-center gap-2">
+                                                        <span class="text-sm font-semibold text-gray-200"><?php echo $item['name']; ?></span>
+                                                        <?php if($isVIP): ?><span class="text-[9px] bg-purple-500/20 text-purple-300 px-1 py-0.5 rounded font-bold"><?php echo htmlspecialchars($item['menuTierName'] ?? 'VIP'); ?></span><?php endif; ?>
+                                                    </div>
+                                                </div>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
+
+                                        <?php foreach ($others as $item): $isVIP = !empty($item['menuTierName']) && strcasecmp($item['menuTierName'], 'Standard') !== 0; ?>
                                         <div class="flex items-center gap-2.5">
                                             <div class="w-6 h-6 rounded-md bg-gray-900 border border-gray-700 flex items-center justify-center text-xs font-bold text-gray-400"><?php echo $item['quantity']; ?></div>
                                             <div class="relative flex items-center gap-2">
                                                 <span class="text-sm font-semibold text-gray-200"><?php echo $item['name']; ?></span>
                                                 <?php if($isVIP): ?><span class="text-[9px] bg-purple-500/20 text-purple-300 px-1 py-0.5 rounded font-bold"><?php echo htmlspecialchars($item['menuTierName'] ?? 'VIP'); ?></span><?php endif; ?>
                                             </div>
-                                            <span class="text-xs text-gray-500 font-medium"><?php echo $item['preparationTime'] ?? 0; ?>m</span>
                                         </div>
                                         <?php endforeach; ?>
                                     </div>

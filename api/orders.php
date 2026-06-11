@@ -255,6 +255,16 @@ try {
                 sendJson(['message' => $e->getMessage()], 400);
             }
 
+            // Determine initial status: 'served' if ONLY drinks, 'pending' if it has ANY food
+            $hasFood = false;
+            foreach ($orderItems as $it) {
+                if (strtolower($it['mainCategory'] ?? 'food') === 'food') {
+                    $hasFood = true;
+                    break;
+                }
+            }
+            $initialStatus = $hasFood ? 'pending' : 'served';
+
             // Create Order — daily sequence: 1, 2, 3… resets each day
             $orderNumber = nextDailyOrderNumber();
             $order = db('orders')->create(['data' => [
@@ -266,11 +276,12 @@ try {
                 'batchNumber' => $batchNumber,
                 'distributions' => is_array($distributions) ? $distributions : [],
                 'totalAmount' => $totalAmount,
-                'status' => 'pending', 
+                'status' => $initialStatus, 
                 'isDeleted' => false,
                 'createdBy' => ['id' => $user['id'] ?? 'pos', 'name' => $user['name'] ?? 'Cashier'],
                 'createdAt' => date('Y-m-d H:i:s'),
                 'updatedAt' => date('Y-m-d H:i:s'),
+                'servedAt' => ($initialStatus === 'served') ? date('Y-m-d H:i:s') : null,
                 'type' => 'cashier',
                 'menuTierId' => $menuTierId ?: null,
                 'menuTierName' => $menuTierName,
