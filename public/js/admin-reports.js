@@ -276,7 +276,7 @@ const ReportHub = {
         ];
         Object.entries(stats.cashierStats).forEach(([name, cStat]) => {
             const amt = cStat.amount;
-            const pct = stats.orderRevenue > 0 ? ((amt/stats.orderRevenue)*100).toFixed(1) : 0;
+            const pct = stats.orderRevenue > 0 ? Math.round((amt/stats.orderRevenue)*100) : 0;
             rows.push({ m: name, t: 'CASHIER SALES', v: amt, c: 'gray', d: `${pct}% of order contributions` });
         });
         rows.push(
@@ -326,19 +326,25 @@ const ReportHub = {
                 ${lowCount > 0 ? `<div class="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400"><i data-lucide="alert-triangle" class="w-4 h-4"></i><p class="text-xs font-bold uppercase tracking-wider">${lowCount} Low Stock items alert.</p></div>` : ''}
                 <div class="flex justify-between items-center px-2">
                     <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Inventory Turnover · ${u.length} Items</h3>
-                    <button onclick="ReportHub.exportInventoryCSV()" class="text-xs font-semibold uppercase text-gray-400 hover:text-white transition-colors flex items-center gap-2 outline-none"><i data-lucide="download" class="w-4 h-4"></i> Export CSV</button>
+                    <div class="flex items-center gap-4">
+                        <button onclick="ReportHub.confirmWipe('all_stock')" class="px-3 py-1.5 rounded-lg border border-red-500/20 bg-red-500/10 text-red-400 text-[10px] font-bold uppercase tracking-widest hover:bg-red-500/20 transition-all flex items-center gap-2">
+                            <i data-lucide="trash-2" class="w-3 h-3"></i>
+                            Clear Stock
+                        </button>
+                        <button onclick="ReportHub.exportInventoryCSV()" class="text-xs font-semibold uppercase text-gray-400 hover:text-white transition-colors flex items-center gap-2 outline-none"><i data-lucide="download" class="w-4 h-4"></i> Export CSV</button>
+                    </div>
                 </div>
                 <div class="hidden lg:block rounded-xl border border-gray-700/50 bg-gray-800/20 overflow-hidden">
                     <table class="w-full text-left text-sm">
                         <thead><tr class="text-xs font-semibold uppercase tracking-wider text-gray-500 bg-gray-800/50 border-b border-gray-700/50"><th class="px-6 py-4">Item Name</th><th class="px-6 py-4 text-right">Sell Price</th><th class="px-6 py-4 text-right">Remains</th><th class="px-6 py-4 text-right">Investment (@avg)</th><th class="px-6 py-4 text-right">Usage</th><th class="px-6 py-4 text-right">Potential Value</th><th class="px-6 py-4 text-center">Status</th></tr></thead>
                         <tbody class="divide-y divide-gray-700/30">
-                            ${u.filter(i => (i.openingStock||0) > 0 || (i.closingStock||0) > 0 || (i.consumed||0) > 0).map(i => `
+                            ${u.filter(i => Math.round(i.closingStock||0) > 0).map(i => `
                                 <tr class="${i.isLowStock ? 'bg-red-500/5' : ''} hover:bg-gray-800/50 transition-colors">
                                     <td class="px-6 py-4"><p class="font-bold text-gray-200">${i.name}</p><p class="text-xs text-gray-500 font-semibold mt-1">${i.category}</p></td>
                                     <td class="px-6 py-4 text-right font-bold text-gray-300">${this.fmt(i.currentUnitCost)}</td>
-                                    <td class="px-6 py-4 text-right font-bold text-gray-200">${i.closingStock} ${i.unit}</td>
+                                    <td class="px-6 py-4 text-right font-bold text-gray-200">${this.fmtQty(i.closingStock)} ${i.unit}</td>
                                     <td class="px-6 py-4 text-right font-bold text-[#c5a059]">${this.fmt(i.weightedAvgCost * i.closingStock)}</td>
-                                    <td class="px-6 py-4 text-right text-emerald-400 font-bold">-${i.consumed}</td>
+                                    <td class="px-6 py-4 text-right text-emerald-400 font-bold">-${this.fmtQty(i.consumed)}</td>
                                     <td class="px-6 py-4 text-right font-bold text-gray-200">${this.fmt(i.currentUnitCost * i.closingStock)}</td>
                                     <td class="px-6 py-4 text-center"><span class="px-2 py-1 rounded-md border text-xs font-bold ${i.isLowStock ? 'text-red-400 border-red-500/20 bg-red-500/10' : 'text-emerald-400 border-emerald-500/20 bg-emerald-500/10'}">${i.isLowStock ? 'LOW' : 'OK'}</span></td>
                                 </tr>`).join('')}
@@ -352,13 +358,24 @@ const ReportHub = {
         const u = this.stockUsageData?.stockAnalysis || [];
         return `
             <div class="space-y-6">
-                <div class="flex justify-between items-center px-2"><h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Store Investment Analytics</h3></div>
+                <div class="flex justify-between items-center px-2">
+                    <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Store Investment Analytics</h3>
+                    <div class="flex items-center gap-4">
+                        <button onclick="ReportHub.confirmWipe('all_store')" class="px-3 py-1.5 rounded-lg border border-red-500/20 bg-red-500/10 text-red-400 text-[10px] font-bold uppercase tracking-widest hover:bg-red-500/20 transition-all flex items-center gap-2">
+                            <i data-lucide="trash-2" class="w-3 h-3"></i>
+                            Clear Store
+                        </button>
+                        <button onclick="ReportHub.confirmWipe('all')" class="px-3 py-1.5 rounded-lg border border-gray-700/50 bg-gray-800/40 text-gray-400 text-[10px] font-bold uppercase tracking-widest hover:bg-gray-800 transition-all flex items-center gap-2">
+                            Wipe Global
+                        </button>
+                    </div>
+                </div>
                 <div class="hidden lg:block rounded-xl border border-gray-700/50 bg-gray-800/20 overflow-hidden">
                     <table class="w-full text-left text-sm">
-                        <thead><tr class="text-xs font-semibold uppercase tracking-wider text-gray-500 bg-gray-800/50 border-b border-gray-700/50"><th class="px-6 py-4">Item Name</th><th class="px-6 py-4 text-right">Unit Cost</th><th class="px-6 py-4 text-right">In Store</th><th class="px-6 py-4 text-right">Total Inv.</th><th class="px-6 py-4 text-right">Transferred</th><th class="px-6 py-4 text-center">Status</th></tr></thead>
+                        <thead><tr class="text-xs font-semibold uppercase tracking-wider text-gray-500 bg-gray-800/50 border-b border-gray-700/50"><th class="px-6 py-4">Item Name</th><th class="px-6 py-4 text-right">Unit Cost</th><th class="px-6 py-4 text-right">In Store</th><th class="px-6 py-4 text-right">IN (Period)</th><th class="px-6 py-4 text-right">OUT (Period)</th><th class="px-6 py-4 text-right">Total Inv.</th><th class="px-6 py-4 text-center">Status</th></tr></thead>
                         <tbody class="divide-y divide-gray-700/30">
-                            ${u.filter(i => (i.storeQuantity||0) > 0 || (i.transferred||0) > 0).map(i => `
-                                <tr class="hover:bg-gray-800/50 transition-colors"><td class="px-6 py-4"><p class="font-bold text-gray-200">${i.name}</p><p class="text-xs text-gray-500 font-semibold mt-1">${i.category}</p></td><td class="px-6 py-4 text-right font-bold text-gray-300">${this.fmt(i.weightedAvgCost).replace(' Br','')}</td><td class="px-6 py-4 text-right font-bold text-gray-200">${i.storeQuantity} ${i.unit}</td><td class="px-6 py-4 text-right font-bold text-[#c5a059]">${this.fmt(i.storeClosingValue)}</td><td class="px-6 py-4 text-right text-gray-400 font-bold">${i.transferred} ${i.unit}</td><td class="px-6 py-4 text-center"><span class="px-2 py-1 rounded-md border border-gray-600 bg-gray-700/50 text-[10px] font-bold uppercase text-gray-400">STORE_OK</span></td></tr>`).join('')}
+                            ${u.filter(i => (i.storeQuantity||0) > 0 || (i.storeIn||0) > 0 || (i.storeOut||0) > 0).map(i => `
+                                <tr class="hover:bg-gray-800/50 transition-colors"><td class="px-6 py-4"><p class="font-bold text-gray-200">${i.name}</p><p class="text-xs text-gray-500 font-semibold mt-1">${i.category}</p></td><td class="px-6 py-4 text-right font-bold text-gray-300">${this.fmt(i.weightedAvgCost).replace(' Br','')}</td><td class="px-6 py-4 text-right font-bold text-gray-200">${this.fmtQty(i.storeQuantity)} ${i.unit}</td><td class="px-6 py-4 text-right text-emerald-400 font-bold">+${this.fmtQty(i.storeIn)}</td><td class="px-6 py-4 text-right text-red-400 font-bold">-${this.fmtQty(i.storeOut)}</td><td class="px-6 py-4 text-right font-bold text-[#c5a059]">${this.fmt(i.storeClosingValue)}</td><td class="px-6 py-4 text-center"><span class="px-2 py-1 rounded-md border border-gray-600 bg-gray-700/50 text-[10px] font-bold uppercase text-gray-400">STORE_OK</span></td></tr>`).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -438,7 +455,7 @@ const ReportHub = {
                 <div class="p-8 rounded-2xl border border-gray-800 bg-[#111413] flex flex-col justify-center">
                     <p class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">${revLabel}</p>
                     <div class="flex items-baseline gap-2">
-                        <h4 class="text-4xl font-black text-[${resColor}]">${Math.round(activeRevenue).toLocaleString()}</h4>
+                        <h4 class="text-4xl font-black text-[${resColor}]">${Number(activeRevenue).toLocaleString('en-US', {maximumFractionDigits:2})}</h4>
                         <span class="text-xl font-bold text-[${resColor}]/50">Br</span>
                     </div>
                     <p class="text-[10px] font-black text-gray-600 uppercase tracking-widest mt-4">${subLabel}</p>
@@ -553,7 +570,8 @@ const ReportHub = {
         }
         return json;
     },
-    fmt(n) { return Number(n||0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' Br'; },
+    fmt(n) { return Number(n||0).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2}) + ' Br'; },
+    fmtQty(n) { return Math.round(n||0).toLocaleString(); },
     
     getQueryString() {
         const params = new URLSearchParams();
@@ -600,6 +618,31 @@ const ReportHub = {
         if (next < 0) next = 0;
         this.activeCashierIdx = next;
         this.renderActiveSlide();
+    },
+
+    async confirmWipe(type = 'all') {
+        const labels = {
+            'all_stock': 'ALL ACTIVE POS STOCK (Front House)',
+            'all_store': 'ALL BULK STORE QUANTITIES (Warehouse)',
+            'all': 'ABSOLUTELY EVERYTHING (Store + Stock)'
+        };
+        const label = labels[type] || 'everything';
+
+        if (!confirm(`CRITICAL ACTION: This will set ${label} to ZERO. Are you absolutely sure?`)) return;
+        if (!confirm('FINAL CONFIRMATION: This action is irreversible. Proceed?')) return;
+        
+        try {
+            const res = await fetch(`api/stock.php?id=${type}`, { method: 'DELETE' });
+            const json = await res.json();
+            if (res.ok) {
+                alert(`Success: ${label} has been wiped.`);
+                this.fetchAllData();
+            } else {
+                throw new Error(json.message || 'Failed to wipe quantities');
+            }
+        } catch (err) {
+            alert('Error: ' + err.message);
+        }
     },
 
     mobileStatCard(l, v, c) {
@@ -679,7 +722,7 @@ const ReportExporter = {
         const tableHtml = `
             <table>
                 <tr><th>Metric</th><th>Type</th><th>Amount</th><th>Description</th></tr>
-                ${dataRows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${Number(r[2]).toLocaleString()} Br</td><td>${r[3]}</td></tr>`).join('')}
+                ${dataRows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${Number(r[2]||0).toLocaleString('en-US', {maximumFractionDigits:2})} Br</td><td>${r[3]}</td></tr>`).join('')}
             </table>
         `;
         const header = `

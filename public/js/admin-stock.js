@@ -40,7 +40,7 @@ async function fetchStock() {
 // ─── STATS ────────────────────────────────────────────────────────────────────
 function renderStats() {
     const totalValue  = S.items.reduce((a, i) => a + (i.quantity||0) * (i.unitCost||0), 0);
-    const lowStock    = S.items.filter(i => i.trackQuantity && (i.quantity||0) <= (i.minLimit||0)).length;
+    const lowStock    = S.items.filter(i => i.trackQuantity && (i.quantity||0) <= (i.minLimit||0) && Math.round(i.quantity||0) > 0).length;
     const totalInStore= S.items.reduce((a, i) => a + (i.storeQuantity||0), 0);
 
     setText('stat-pos-value',   fmt(totalValue));
@@ -56,7 +56,7 @@ function renderTable() {
     const filtered = S.items.filter(i =>
         (i.name||'').toLowerCase().includes(S.searchTerm.toLowerCase()) ||
         (i.category||'').toLowerCase().includes(S.searchTerm.toLowerCase())
-    );
+    ).filter(i => Math.round(i.quantity||0) > 0);
 
     if (!filtered.length) {
         tbody.innerHTML = `

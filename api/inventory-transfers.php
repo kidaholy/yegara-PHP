@@ -51,6 +51,15 @@ try {
                     'quantity'      => $newActive,
                     'status'        => 'active',
                 ]]);
+
+                // Log movement for reports
+                db('storeLogs')->create(['data' => [
+                    'stockId' => $req['stockId'],
+                    'type' => 'TRANSFER_OUT',
+                    'quantity' => $qty,
+                    'date' => date('c'),
+                    'notes' => 'Store Transfer approved'
+                ]]);
             }
             db('transferRequests')->update(['where'=>['id'=>$id], 'data'=>['status'=>'approved','approvedAt'=>date('c')]]);
             j(['message'=>'Transfer approved and executed']);

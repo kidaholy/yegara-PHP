@@ -100,6 +100,16 @@ try {
                 'status'               => 'active',
                 'restockHistory'       => array_merge($item['restockHistory'] ?? [], [$entry]),
             ]]);
+
+            // Log movement for reports
+            db('storeLogs')->create(['data' => [
+                'stockId' => $id,
+                'type' => 'RESTOCK',
+                'quantity' => $added,
+                'date' => date('c'),
+                'notes' => 'Restock via Stock Management'
+            ]]);
+
             j(['message' => 'Restocked and price updated', 'item' => $updated]);
         }
 
@@ -118,20 +128,50 @@ try {
             j(['message' => 'Stock decreased and expense reduced', 'item' => $updated]);
         }
 
-        // Plain meta update (name, category, limits, unit cost, or manual qty)
+        // Plain meta update (name, category, unit, unitType, unitCost, minLimit, storeMinLimit, isVIP, vipLevel, quantity, storeQuantity, averagePurchasePrice, totalInvestment)
         $patch = [];
-        foreach (['name','category','unit','unitType','unitCost','minLimit','storeMinLimit','isVIP','vipLevel','quantity'] as $f) {
+        $fields = ['name','category','unit','unitType','unitCost','minLimit','storeMinLimit','isVIP','vipLevel','quantity','storeQuantity','averagePurchasePrice','totalInvestment','status'];
+        foreach ($fields as $f) {
             if (isset($d[$f])) $patch[$f] = is_numeric($d[$f]) ? floatval($d[$f]) : $d[$f];
         }
+
+        // Auto-status update logic
+        if (isset($patch['quantity'])) {
+            $patch['status'] = $patch['quantity'] > 0 ? 'active' : 'out_of_stock';
+        } else if (isset($patch['storeQuantity']) && !isset($patch['status'])) {
+             // If store has stuff but POS is 0, it might still be active if trackQuantity is off, 
+             // but here we usually follow the POS quantity for status.
+        }
+
         $updated = db('stocks')->update(['where' => ['id' => $id], 'data' => $patch]);
         j(['message' => 'Updated', 'item' => $updated]);
     }
 
     // ── DELETE ────────────────────────────────────────────────────────────────
     if ($method === 'DELETE') {
+        if ($id === 'all' || $id === 'all_store' || $id === 'all_stock') {
+            $stocks = db('stocks')->findMany();
+            foreach ($stocks as $s) {
+                $patch = [];
+                if ($id === 'all' || $id === 'all_store') {
+                    $patch['storeQuantity'] = 0;
+                    $patch['totalInvestment'] = 0;
+                }
+                if ($id === 'all' || $id === 'all_stock') {
+                    $patch['quantity'] = 0;
+                    $patch['status'] = 'out_of_stock';
+                }
+                
+                if (!empty($patch)) {
+                    db('stocks')->update(['where' => ['id' => $s['id']], 'data' => $patch]);
+                }
+            }
+            j(['message' => 'Requested quantities wiped']);
+        }
+
         if (!$id) j(['message' => 'ID required'], 400);
         if ($source === 'store') {
-            db('stocks')->update(['where' => ['id' => $id], 'data' => ['storeQuantity' => 0]]);
+            db('stocks')->update(['where' => ['id' => $id], 'data' => ['storeQuantity' => 0, 'totalInvestment' => 0]]);
             j(['message' => 'Removed from bulk store']);
         } else {
             db('stocks')->update(['where' => ['id' => $id], 'data' => ['quantity' => 0, 'status' => 'out_of_stock']]);

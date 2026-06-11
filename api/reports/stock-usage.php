@@ -53,15 +53,24 @@ try {
         }
     }
 
-    // Store transfers in period
-    $transferredByStock = [];
+    // Store movements in period
+    $storeInByStock = [];
+    $storeOutByStock = [];
     foreach ($storeLogs as $log) {
         $logDate = $log['date'] ?? $log['createdAt'] ?? null;
         if (!isWithinReportRange($logDate, $start, $end)) continue;
-        if (($log['type'] ?? '') !== 'TRANSFER_OUT') continue;
+        
         $stockId = $log['stockId'] ?? null;
         if (!$stockId) continue;
-        $transferredByStock[$stockId] = ($transferredByStock[$stockId] ?? 0) + (float)($log['quantity'] ?? 0);
+
+        $type = $log['type'] ?? '';
+        $qty = (float)($log['quantity'] ?? 0);
+
+        if ($type === 'RESTOCK' || $type === 'PURCHASE') {
+            $storeInByStock[$stockId] = ($storeInByStock[$stockId] ?? 0) + $qty;
+        } else if ($type === 'TRANSFER_OUT' || $type === 'TRANSFER') {
+            $storeOutByStock[$stockId] = ($storeOutByStock[$stockId] ?? 0) + $qty;
+        }
     }
 
     $analysis = [];
@@ -73,7 +82,8 @@ try {
         $currentUnitCost = (float)($stock['unitCost'] ?? $weightedAvgCost);
         $storeQuantity = (float)($stock['storeQuantity'] ?? 0);
         $minLimit = (float)($stock['minLimit'] ?? 0);
-        $transferred = (float)($transferredByStock[$stockId] ?? 0);
+        $storeIn = (float)($storeInByStock[$stockId] ?? 0);
+        $storeOut = (float)($storeOutByStock[$stockId] ?? 0);
 
         $analysis[] = [
             'id' => $stockId,
@@ -87,7 +97,9 @@ try {
             'currentUnitCost' => $currentUnitCost,
             'storeQuantity' => $storeQuantity,
             'storeClosingValue' => $storeQuantity * $weightedAvgCost,
-            'transferred' => $transferred,
+            'storeIn' => $storeIn,
+            'storeOut' => $storeOut,
+            'transferred' => $storeOut,
             'isLowStock' => $minLimit > 0 ? $closingStock <= $minLimit : $closingStock < 5,
             'quantity' => $consumed,
             'totalValue' => $consumed * $weightedAvgCost,
