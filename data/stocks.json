@@ -1692,7 +1692,7 @@
         "id": "69adbbeb9912e80b392cdecf",
         "name": "BEAFOF OX\/\u1235\u130b \u12e8\u1260\u122c",
         "category": "Meat",
-        "quantity": 77.25,
+        "quantity": 76.25,
         "storeQuantity": 0,
         "unit": "kg",
         "unitType": "weight",
@@ -1704,7 +1704,7 @@
         "showStatus": true,
         "status": "active",
         "totalPurchased": 340.5,
-        "totalConsumed": 787.2500000000017,
+        "totalConsumed": 788.2500000000017,
         "totalInvestment": 52000,
         "sellUnitEquivalent": 1,
         "isVIP": false,
@@ -1739,7 +1739,7 @@
             }
         ],
         "createdAt": "2026-03-08T18:11:55.167Z",
-        "updatedAt": "2026-06-11T11:44:01.000Z",
+        "updatedAt": "2026-06-11T12:38:00.000Z",
         "isDeleted": false
     },
     {

@@ -121,84 +121,129 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
             </div>
 
             <!-- Cart panel -->
-            <div class="lg:col-span-4 flex flex-col self-start w-full glass p-6 rounded-2xl border border-gray-700/50 bg-gray-800/60">
-                <div class="flex items-center justify-between mb-4 shrink-0">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-                            <i data-lucide="receipt" class="w-5 h-5"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-lg font-bold text-white">Order Cart</h2>
-                            <p class="text-xs text-gray-500 font-medium">Table &amp; distribution</p>
-                        </div>
+            <div class="lg:col-span-4 flex flex-col self-start w-full bg-[#0a0a0a] rounded-[2.5rem] border border-gray-800/80 shadow-2xl p-6 overflow-hidden">
+                <!-- Cart Header -->
+                <div class="flex items-center gap-4 mb-8 shrink-0">
+                    <div class="w-14 h-14 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center text-gray-500">
+                        <i data-lucide="shopping-cart" class="w-7 h-7"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold text-amber-500 italic leading-none" style="font-family: 'Playfair Display', serif;">Order Cart</h2>
+                        <p id="items-count-badge" class="text-[10px] font-black text-gray-600 uppercase tracking-widest mt-1.5">0 ITEMS</p>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-2 shrink-0 mb-4">
-                    <button type="button" id="cart-tab-food" data-tab="Food" class="cart-cat-tab py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider border transition-all">Food</button>
-                    <button type="button" id="cart-tab-drinks" data-tab="Drinks" class="cart-cat-tab py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider border transition-all">Drinks</button>
+                <!-- Tabs -->
+                <div class="flex gap-2 shrink-0 mb-6">
+                    <button type="button" id="cart-tab-food" data-tab="Food" class="cart-cat-tab flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-2">
+                        🥩 BUTCHER
+                    </button>
+                    <button type="button" id="cart-tab-drinks" data-tab="Drinks" class="cart-cat-tab flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-2">
+                        🥤 DRINKS
+                    </button>
                 </div>
 
-                <div class="space-y-3 shrink-0 mb-4 pb-4 border-b border-gray-700/50">
-                    <div>
-                        <label class="pos-label">Floor</label>
-                        <select id="floor-select" class="pos-inp w-full"></select>
-                    </div>
-                    <div>
-                        <label class="pos-label">Select Table</label>
-                        <button type="button" id="table-picker-btn" class="pos-inp w-full flex items-center justify-between text-left">
-                            <span id="table-picker-label">Buy & Go</span>
-                            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500 shrink-0"></i>
+                <!-- Input Boxes -->
+                <div class="space-y-3 mb-6">
+                    <!-- Hidden floor select (used by JS, not displayed) -->
+                    <select id="floor-select" class="hidden"></select>
+
+                    <button type="button" id="table-picker-btn" 
+                            class="w-full h-16 px-4 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-between text-left group hover:border-gray-600 transition-all">
+                        <div class="flex items-center gap-3">
+                            <span class="text-lg">🪑</span>
+                            <span id="table-picker-label" class="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">Select Table</span>
+                        </div>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-600"></i>
+                    </button>
+
+                    <!-- Custom Distribution Dropdown -->
+                    <div class="relative" id="dist-dropdown-wrap">
+                        <button type="button" id="dist-trigger"
+                                onclick="toggleDistDropdown()"
+                                class="w-full h-16 px-4 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-between text-left hover:border-gray-600 transition-all">
+                            <div class="flex items-center gap-3">
+                                <span class="text-lg">🚚</span>
+                                <span id="dist-label" class="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">All Distributions</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-600 transition-transform" id="dist-chevron"></i>
                         </button>
-                        <input type="hidden" id="table-number" value="Buy&Go">
-                        <input type="hidden" id="floor-id" value="">
-                        <input type="hidden" id="floor-number" value="">
+                        <!-- Hidden native select for form submission -->
+                        <select id="distribution-select" class="hidden"></select>
+                        <!-- Custom dropdown panel -->
+                        <div id="dist-panel" class="hidden absolute left-0 right-0 top-[calc(100%+8px)] z-50 bg-[#0d0d0d] border border-gray-800 rounded-2xl overflow-hidden shadow-2xl max-h-64 overflow-y-auto custom-gold-scrollbar">
+                            <div id="dist-list"></div>
+                        </div>
                     </div>
-                    <div>
-                        <label class="pos-label">Distribution</label>
-                        <select id="distribution-select" class="pos-inp w-full"><option value="">All Distributions</option></select>
+
+                    <div class="relative h-16 rounded-2xl bg-gray-900 border border-gray-800 flex items-center px-4">
+                        <span class="text-lg mr-3">🏷️</span>
+                        <input type="text" id="batch-number" placeholder="BATCH NUMBER" 
+                               class="bg-transparent text-[10px] font-black text-gray-400 uppercase tracking-widest w-full outline-none placeholder:text-gray-700">
                     </div>
-                    <div>
-                        <label class="pos-label">Batch Number</label>
-                        <input type="text" id="batch-number" placeholder="Optional..." class="pos-inp w-full">
+
+                    <input type="hidden" id="table-number" value="Buy&Go">
+                    <input type="hidden" id="floor-id" value="">
+                    <input type="hidden" id="floor-number" value="">
+                </div>
+
+                <div class="flex-1 min-h-[300px] overflow-y-auto custom-gold-scrollbar mb-6" id="cart-scroll">
+                    <div id="cart-container" class="space-y-3 hidden"></div>
+                    <div id="cart-empty" class="flex flex-col items-center justify-center text-center py-12">
+                        <div class="w-24 h-24 mb-6 opacity-20 relative">
+                            <i data-lucide="shopping-cart" class="w-full h-full text-gray-400"></i>
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent"></div>
+                        </div>
+                        <p class="text-xs font-black text-gray-600 uppercase tracking-widest" style="font-family: 'Playfair Display', serif;">Your cart is empty</p>
                     </div>
                 </div>
 
-                <div class="max-h-72 overflow-y-auto custom-scrollbar" id="cart-scroll">
-                    <div id="cart-container" class="space-y-2 hidden"></div>
-                    <div id="cart-empty" class="flex flex-col items-center justify-center text-center opacity-40 py-6">
-                        <i data-lucide="shopping-cart" class="w-12 h-12 mb-3 text-gray-600"></i>
-                        <p class="text-sm font-medium text-gray-500">Your cart is empty</p>
+                <!-- Cart Footer -->
+                <div class="pt-6 border-t border-gray-800/80">
+                    <div class="bg-gray-900/30 border border-gray-800/80 rounded-3xl p-6 mb-4">
+                        <div class="flex items-center justify-between">
+                            <p class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">TOTAL</p>
+                            <p class="text-3xl font-bold text-amber-500 italic" style="font-family: 'Playfair Display', serif;">
+                                <span id="cart-total-val">0</span> <span class="text-sm">ETB</span>
+                            </p>
+                        </div>
                     </div>
+                    <button id="place-order-btn" type="button" disabled
+                            class="w-full bg-[#c5a059] hover:bg-[#d4af37] text-black font-black py-5 rounded-[2rem] text-[11px] uppercase tracking-[0.3em] shadow-xl transition-all disabled:opacity-20 disabled:grayscale flex items-center justify-center gap-3">
+                        🚀 SEND TO KITCHEN
+                    </button>
                 </div>
-
-                <button id="place-order-btn" type="button" disabled
-                        class="w-full mt-3 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3.5 rounded-xl text-sm uppercase tracking-widest disabled:opacity-30 disabled:cursor-not-allowed transition-all shrink-0 flex items-center justify-center gap-2">
-                    <i data-lucide="send" class="w-4 h-4"></i> Send to Kitchen
-                </button>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Table picker modal -->
-<div id="table-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-    <div class="w-full max-w-lg glass border border-gray-700/50 bg-gray-900/95 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-        <div class="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
-            <h3 class="text-xl font-bold text-white tracking-wide">Select Table</h3>
-            <button type="button" id="table-modal-close" class="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-white hover:bg-white/5">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
+<div id="table-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+    <div class="w-full max-w-3xl bg-[#0a0a0a] border border-gray-800/80 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden max-h-[90vh] flex flex-col relative">
+        <!-- Close Button (Gold Square) -->
+        <button type="button" id="table-modal-close" 
+                class="absolute top-6 right-6 w-10 h-10 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-center text-gray-500 hover:text-white hover:border-amber-500/50 transition-all z-10">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+
+        <div class="px-8 pt-8 pb-4 shrink-0">
+            <h3 class="text-3xl font-bold text-amber-500 tracking-tight italic" style="font-family: 'Playfair Display', serif;">Select Table</h3>
         </div>
-        <div class="px-6 pb-3 shrink-0">
+
+        <div class="px-8 pb-4 shrink-0">
+            <div id="floor-tabs" class="flex flex-wrap items-center justify-center gap-2"></div>
+        </div>
+
+        <div class="px-8 pb-4 shrink-0">
             <button type="button" id="pick-buy-go"
-                    class="w-full py-2.5 mb-3 rounded-xl text-xs font-bold uppercase tracking-wider border border-gray-700 text-gray-400 hover:border-blue-500/40 hover:text-blue-400 transition-all">
-                Buy & Go (no table)
+                    class="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] bg-gray-900/50 border border-gray-800 text-gray-500 hover:border-amber-500/30 hover:text-amber-500 transition-all">
+                Buy & Go (Out Service)
             </button>
-            <div id="floor-tabs" class="hidden"></div>
         </div>
-        <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-6 pb-6">
-            <div id="table-grid" class="space-y-6"></div>
+
+        <div class="flex-1 min-h-0 overflow-y-auto custom-gold-scrollbar px-8 pb-8 mt-2">
+            <div id="table-grid"></div>
         </div>
     </div>
 </div>
@@ -249,8 +294,7 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
                 updateFloorInputs();
             }
 
-            document.getElementById('distribution-select').innerHTML = '<option value="">All Distributions</option>' +
-                distributions.map(d => `<option value="${esc(d.name)}">${esc(d.name)}</option>`).join('');
+            populateDistList(distributions);
 
             initTablePicker();
             renderAll();
@@ -259,6 +303,45 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
                 `<div class="col-span-full py-12 text-center text-red-400 text-sm">${esc(err.message)}</div>`;
         }
     }
+
+    /* ── Custom Distribution Dropdown ── */
+    function populateDistList(dists) {
+        const list = document.getElementById('dist-list');
+        const sel  = document.getElementById('distribution-select');
+        sel.innerHTML = '<option value="">All Distributions</option>' +
+            dists.map(d => `<option value="${esc(d.name)}">${esc(d.name)}</option>`).join('');
+
+        const items = [{ name: '', label: 'All Distributions' }, ...dists.map(d => ({ name: d.name, label: d.name }))];
+        list.innerHTML = items.map(item => `
+            <button type="button" onclick="selectDist('${item.name.replace(/'/g,"\\'")}', '${item.label.replace(/'/g,"\\'")}')"\
+                    class="w-full text-left px-5 py-4 text-[10px] font-black uppercase tracking-widest transition-all hover:bg-amber-500/10 hover:text-amber-400 text-gray-400 border-b border-gray-800/40 last:border-0">
+                ${esc(item.label)}
+            </button>`).join('');
+    }
+
+    function toggleDistDropdown() {
+        const panel   = document.getElementById('dist-panel');
+        const chevron = document.getElementById('dist-chevron');
+        const isOpen  = !panel.classList.contains('hidden');
+        panel.classList.toggle('hidden', isOpen);
+        chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+    }
+
+    function selectDist(value, label) {
+        document.getElementById('distribution-select').value = value;
+        document.getElementById('dist-label').textContent = label || 'All Distributions';
+        document.getElementById('dist-panel').classList.add('hidden');
+        document.getElementById('dist-chevron').style.transform = '';
+    }
+
+    document.addEventListener('click', e => {
+        const wrap = document.getElementById('dist-dropdown-wrap');
+        if (wrap && !wrap.contains(e.target)) {
+            document.getElementById('dist-panel')?.classList.add('hidden');
+            const ch = document.getElementById('dist-chevron');
+            if (ch) ch.style.transform = '';
+        }
+    });
 
     function getFilteredItems() {
         const nameQ = document.getElementById('search-name').value.toLowerCase().trim();
@@ -277,14 +360,11 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
 
     function renderFloorTabs() {
         const el = document.getElementById('floor-tabs');
-        if (!floorPlan.length) {
-            el.innerHTML = '<p class="col-span-3 text-xs text-muted-foreground text-center py-2">No floors configured</p>';
-            return;
-        }
+        if (!floorPlan.length) return;
         el.innerHTML = floorPlan.map(f => {
             const on = f.id === activeFloorId;
             return `<button type="button" data-floor="${esc(f.id)}"
-                class="floor-tab px-2 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wide border transition-all text-center leading-tight ${on ? 'bg-blue-500/15 text-blue-400 border-blue-500/40' : 'border-gray-700 text-gray-400 hover:text-white hover:border-gray-600'}">${esc(f.label)}</button>`;
+                class="floor-tab px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${on ? 'bg-[#151515] text-white border-gray-600 shadow-lg' : 'bg-gray-900/40 border-gray-800/50 text-gray-500 hover:text-gray-300'}">${esc(f.label)}</button>`;
         }).join('');
     }
 
@@ -293,22 +373,25 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
         const selectedNum = document.getElementById('table-number').value;
 
         if (!floorPlan.length) {
-            grid.innerHTML = '<p class="text-center text-xs text-muted-foreground py-8">No floors configured</p>';
+            grid.innerHTML = '<p class="col-span-4 text-center text-xs text-gray-600 py-12 uppercase tracking-widest font-black">No tables found</p>';
             return;
         }
 
-        grid.innerHTML = floorPlan.map(floor => `
-            <div class="space-y-3">
-                <h4 class="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] border-b border-gray-800 pb-2">${esc(floor.label)}</h4>
-                <div class="grid grid-cols-4 gap-2">
-                    ${floor.tables.map(t => {
-                        const on = selectedNum === t.tableNumber;
-                        return `<button type="button" data-table="${esc(t.tableNumber)}" data-floor-id="${esc(floor.id)}" data-floor-num="${esc(floor.floorNumber)}"
-                            class="table-pick py-3 rounded-lg text-xs font-bold border transition-all ${on ? 'bg-blue-500/20 text-blue-400 border-blue-500/40' : 'border-gray-700 text-gray-300 hover:border-blue-500/40 hover:text-blue-400'}">${esc(t.tableNumber)}</button>`;
-                    }).join('')}
-                </div>
-            </div>
-        `).join('');
+        grid.innerHTML = floorPlan.map(floor => {
+            if (!floor.tables || !floor.tables.length) return '';
+            return `
+                <div class="mb-8">
+                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-4 px-1 pb-2 border-b border-gray-800/60">${esc(floor.label)}</p>
+                    <div class="grid grid-cols-4 gap-3">
+                        ${floor.tables.map(t => {
+                            const on = selectedNum === t.tableNumber;
+                            const label = String(t.tableNumber).startsWith('T#') ? t.tableNumber : 'T#' + t.tableNumber;
+                            return `<button type="button" data-table="${esc(t.tableNumber)}" data-floor-id="${esc(floor.id)}" data-floor-num="${esc(floor.floorNumber)}"
+                                class="table-pick h-14 w-full flex items-center justify-center rounded-2xl text-sm font-black border transition-all ${on ? 'bg-amber-500/10 text-amber-400 border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.15)]' : 'bg-[#111] border-gray-800 text-gray-300 hover:border-gray-500 hover:text-white hover:bg-gray-900/50'}">${esc(label)}</button>`;
+                        }).join('')}
+                    </div>
+                </div>`;
+        }).join('');
     }
 
     function setTableSelection(tableNumber, floorId, floorNumber, label) {
@@ -347,21 +430,36 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
     function renderCategoryChips() {
         const bar = document.getElementById('category-chips');
         const cats = [...new Set(allItems.filter(i => i.mainCategory === activeTab).map(i => i.category).filter(Boolean))].sort();
-        bar.innerHTML = `<button type="button" data-cat="" class="cat-chip shrink-0 px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-wide border transition-all ${!selectedCategory ? 'bg-blue-500 text-white border-blue-500' : 'border-gray-700 text-gray-400 hover:text-white hover:border-gray-600'}">All Items</button>` +
-            cats.map(c => `<button type="button" data-cat="${esc(c)}" class="cat-chip shrink-0 px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-wide border transition-all ${selectedCategory === c ? 'bg-blue-500 text-white border-blue-500' : 'border-gray-700 text-gray-400 hover:text-white hover:border-gray-600'}">${esc(c)}</button>`).join('');
+        const genBtn = (label, cat, active) => `
+            <button type="button" data-cat="${esc(cat)}" 
+                    class="cat-chip shrink-0 px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${active ? 'bg-amber-500 text-black border-amber-500' : 'bg-gray-900/40 border-gray-800 text-gray-500 hover:text-gray-300'}">
+                ${esc(label)}
+            </button>`;
+            
+        bar.innerHTML = genBtn('All Items', '', !selectedCategory) +
+            cats.map(c => genBtn(c, c, selectedCategory === c)).join('');
     }
 
     function renderMainTabs() {
         const foodN = allItems.filter(i => i.mainCategory === 'Food').length;
         const drinkN = allItems.filter(i => i.mainCategory === 'Drinks').length;
-        document.getElementById('food-count').textContent = `(${foodN})`;
-        document.getElementById('drinks-count').textContent = `(${drinkN})`;
-
+        
         ['Food', 'Drinks'].forEach(tab => {
             const on = activeTab === tab;
-            const cls = on ? 'bg-blue-500/15 text-blue-400 border-blue-500/40' : 'border-gray-700 text-gray-400 hover:text-white hover:border-gray-600';
-            document.getElementById(tab === 'Food' ? 'main-tab-food' : 'main-tab-drinks').className = `main-cat-tab flex-1 py-3 rounded-xl text-sm font-bold border transition-all ${cls}`;
-            document.getElementById(tab === 'Food' ? 'cart-tab-food' : 'cart-tab-drinks').className = `cart-cat-tab py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider border transition-all ${cls}`;
+            const mainCls = on ? 'bg-white/10 text-white border-gray-600' : 'bg-gray-900/20 border-gray-800/50 text-gray-600 hover:text-gray-400';
+            const cartCls = on ? 'bg-gray-900 text-white border-gray-700 shadow-lg' : 'bg-[#1a1c1b]/30 border-gray-800/40 text-gray-600 hover:text-gray-400';
+            
+            const mainBtn = document.getElementById(tab === 'Food' ? 'main-tab-food' : 'main-tab-drinks');
+            if (mainBtn) {
+                mainBtn.className = `main-cat-tab flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border transition-all ${mainCls}`;
+                mainBtn.innerHTML = `${tab === 'Food' ? '🍔' : '🍹'} ${esc(tab)} <span class="opacity-30 ml-1">(${tab === 'Food' ? foodN : drinkN})</span>`;
+            }
+            
+            const cartBtn = document.getElementById(tab === 'Food' ? 'cart-tab-food' : 'cart-tab-drinks');
+            if (cartBtn) {
+                cartBtn.className = `cart-cat-tab flex-1 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-2 ${cartCls}`;
+                cartBtn.innerHTML = `${tab === 'Food' ? '🥩 BUTCHER' : '🥤 DRINKS'}`;
+            }
         });
     }
 
@@ -422,35 +520,39 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
         const btn = document.getElementById('place-order-btn');
         const totalItems = cart.reduce((a, i) => a + i.quantity, 0);
 
-        badge.textContent = totalItems + (totalItems === 1 ? ' Item' : ' Items');
+        badge.textContent = totalItems + (totalItems === 1 ? ' ITEM' : ' ITEMS');
+        document.getElementById('items-count-badge').textContent = badge.textContent;
         btn.disabled = !cart.length;
 
         if (!cart.length) {
             container.classList.add('hidden');
             empty.classList.remove('hidden');
-            document.getElementById('cart-total').textContent = '0 ETB';
+            document.getElementById('cart-total-val').textContent = '0';
             return;
         }
 
         empty.classList.add('hidden');
         container.classList.remove('hidden');
         container.innerHTML = cart.map((item, i) => `
-            <div class="flex items-center gap-2 p-3 rounded-xl bg-gray-900/60 border border-gray-700/50 hover:border-blue-500/30 transition-colors">
+            <div class="flex items-center gap-4 p-4 rounded-2xl bg-gray-900/50 border border-gray-800/50 hover:border-amber-500/30 transition-all group">
                 <div class="flex-1 min-w-0">
-                    <p class="text-xs font-bold text-white truncate">${esc(item.name)}</p>
-                    <p class="text-[10px] text-muted-foreground">${fmt(item.price)} &times; ${item.quantity}</p>
+                    <p class="text-[11px] font-black text-white uppercase tracking-wider truncate group-hover:text-amber-500 transition-colors">${esc(item.name)}</p>
+                    <p class="text-[9px] font-bold text-gray-500 mt-1 uppercase tracking-widest">${fmt(item.price)} &times; ${item.quantity}</p>
                 </div>
-                <div class="flex items-center bg-gray-800 rounded-lg border border-gray-700 shrink-0">
-                    <button type="button" data-qty="${i}" data-delta="-1" class="qty-btn w-7 h-7 text-sm font-bold text-muted-foreground hover:text-white">−</button>
-                    <span class="w-7 text-center text-xs font-bold">${item.quantity}</span>
-                    <button type="button" data-qty="${i}" data-delta="1" class="qty-btn w-7 h-7 text-sm font-bold text-muted-foreground hover:text-white">+</button>
+                <div class="flex items-center bg-black border border-gray-800 rounded-xl overflow-hidden shrink-0">
+                    <button type="button" data-qty="${i}" data-delta="-1" class="qty-btn w-8 h-8 text-xs font-black text-gray-400 hover:text-amber-500 transition-colors">－</button>
+                    <span class="w-8 text-center text-[10px] font-black text-white">${item.quantity}</span>
+                    <button type="button" data-qty="${i}" data-delta="1" class="qty-btn w-8 h-8 text-xs font-black text-gray-400 hover:text-amber-500 transition-colors">＋</button>
                 </div>
-                <button type="button" data-remove="${i}" class="text-red-400/50 hover:text-red-400 text-xs px-1">✕</button>
+                <button type="button" data-remove="${i}" class="text-red-500/30 hover:text-red-500 transition-colors px-1">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
             </div>
         `).join('');
 
         const total = cart.reduce((a, i) => a + i.price * i.quantity, 0);
-        document.getElementById('cart-total').textContent = Number(total).toLocaleString() + ' ETB';
+        document.getElementById('cart-total-val').textContent = Number(total).toLocaleString();
+        lucide.createIcons();
     }
 
     async function placeOrder() {
@@ -567,6 +669,8 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
 </script>
 
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&display=swap');
+
     .pos-inp {
         background: #111413;
         border: 1px solid #374151;
@@ -584,6 +688,11 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 999px; }
+    
+    .custom-gold-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-gold-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-gold-scrollbar::-webkit-scrollbar-thumb { background: #c5a059; border-radius: 10px; border: 2px solid #0a0a0a; }
+    .custom-gold-scrollbar::-webkit-scrollbar-thumb:hover { background: #d4af37; }
 </style>
 
 <?php renderFooter(); ?>

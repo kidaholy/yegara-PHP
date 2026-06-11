@@ -1,11 +1,11 @@
 [
     {
-        "id": "250c03191df1a545",
-        "createdAt": "2026-06-11T03:47:03+03:00",
-        "updatedAt": "2026-06-11T03:47:03.000Z",
+        "id": "8717dd3fdfcd2d29",
+        "createdAt": "2026-06-11T13:06:06+03:00",
+        "updatedAt": "2026-06-11T13:06:06.000Z",
         "isDeleted": false,
-        "name": "VVIP",
-        "percentage": 10,
-        "filePrefix": "vvip250c03191df1a545"
+        "name": "VIP 1",
+        "percentage": 30,
+        "filePrefix": "vip18717dd3fdfcd2d29"
     }
 ]

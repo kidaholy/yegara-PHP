@@ -28,7 +28,7 @@
     {
         "id": "4314093f9f162967e3bd",
         "createdAt": "2026-06-11 11:07:37",
-        "updatedAt": "2026-06-11T11:13:26.000Z",
+        "updatedAt": "2026-06-11T12:38:36.000Z",
         "isDeleted": false,
         "orderNumber": "2",
         "tableNumber": "T#02",
@@ -49,12 +49,12 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems",
-        "servedAt": "2026-06-11 11:13:26"
+        "servedAt": "2026-06-11 12:38:36"
     },
     {
         "id": "7e02699244948cc657c8",
         "createdAt": "2026-06-11 11:07:42",
-        "updatedAt": "2026-06-11T11:13:28.000Z",
+        "updatedAt": "2026-06-11T12:38:36.000Z",
         "isDeleted": false,
         "orderNumber": "3",
         "tableNumber": "T#02",
@@ -75,12 +75,12 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems",
-        "servedAt": "2026-06-11 11:13:28"
+        "servedAt": "2026-06-11 12:38:36"
     },
     {
         "id": "70e8b0e2b1de03f30ccc",
         "createdAt": "2026-06-11 11:07:53",
-        "updatedAt": "2026-06-11T11:13:30.000Z",
+        "updatedAt": "2026-06-11T12:38:36.000Z",
         "isDeleted": false,
         "orderNumber": "4",
         "tableNumber": "T#02",
@@ -101,12 +101,12 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems",
-        "servedAt": "2026-06-11 11:13:30"
+        "servedAt": "2026-06-11 12:38:36"
     },
     {
         "id": "1d8b89b653e396b0a204",
         "createdAt": "2026-06-11 11:08:12",
-        "updatedAt": "2026-06-11T11:13:32.000Z",
+        "updatedAt": "2026-06-11T12:38:36.000Z",
         "isDeleted": false,
         "orderNumber": "5",
         "tableNumber": "T#02",
@@ -127,12 +127,12 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems",
-        "servedAt": "2026-06-11 11:13:32"
+        "servedAt": "2026-06-11 12:38:36"
     },
     {
         "id": "15b6c5ae2af91b1381c3",
         "createdAt": "2026-06-11 11:08:16",
-        "updatedAt": "2026-06-11T11:13:33.000Z",
+        "updatedAt": "2026-06-11T12:38:36.000Z",
         "isDeleted": false,
         "orderNumber": "6",
         "tableNumber": "T#02",
@@ -153,12 +153,12 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems",
-        "servedAt": "2026-06-11 11:13:33"
+        "servedAt": "2026-06-11 12:38:36"
     },
     {
         "id": "a4e2bb3a69e20c0da6bf",
         "createdAt": "2026-06-11 11:08:21",
-        "updatedAt": "2026-06-11T11:13:35.000Z",
+        "updatedAt": "2026-06-11T12:38:36.000Z",
         "isDeleted": false,
         "orderNumber": "7",
         "tableNumber": "T#02",
@@ -179,12 +179,12 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems",
-        "servedAt": "2026-06-11 11:13:35"
+        "servedAt": "2026-06-11 12:38:36"
     },
     {
         "id": "2b0a8f7309b7025047e7",
         "createdAt": "2026-06-11 11:09:51",
-        "updatedAt": "2026-06-11T11:13:37.000Z",
+        "updatedAt": "2026-06-11T12:38:36.000Z",
         "isDeleted": false,
         "orderNumber": "8",
         "tableNumber": "T#02",
@@ -205,12 +205,12 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems",
-        "servedAt": "2026-06-11 11:13:37"
+        "servedAt": "2026-06-11 12:38:36"
     },
     {
         "id": "24afa729028aec963cbd",
         "createdAt": "2026-06-11 11:18:45",
-        "updatedAt": "2026-06-11T11:38:11.000Z",
+        "updatedAt": "2026-06-11T12:38:36.000Z",
         "isDeleted": false,
         "orderNumber": "9",
         "tableNumber": "Buy&Go",
@@ -229,12 +229,12 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems",
-        "servedAt": "2026-06-11 11:38:10"
+        "servedAt": "2026-06-11 12:38:36"
     },
     {
         "id": "df83c942ab5399dab79b",
         "createdAt": "2026-06-11 11:18:47",
-        "updatedAt": "2026-06-11T11:40:08.000Z",
+        "updatedAt": "2026-06-11T12:38:36.000Z",
         "isDeleted": false,
         "orderNumber": "10",
         "tableNumber": "Buy&Go",
@@ -253,12 +253,12 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems",
-        "servedAt": "2026-06-11 11:40:08"
+        "servedAt": "2026-06-11 12:38:36"
     },
     {
         "id": "91a0124a8d36bee37979",
         "createdAt": "2026-06-11 11:18:51",
-        "updatedAt": "2026-06-11T11:40:12.000Z",
+        "updatedAt": "2026-06-11T12:38:36.000Z",
         "isDeleted": false,
         "orderNumber": "11",
         "tableNumber": "Buy&Go",
@@ -277,12 +277,12 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems",
-        "servedAt": "2026-06-11 11:40:12"
+        "servedAt": "2026-06-11 12:38:36"
     },
     {
         "id": "6c0f6ae49afb4e7a11eb",
         "createdAt": "2026-06-11 11:18:55",
-        "updatedAt": "2026-06-11T11:40:19.000Z",
+        "updatedAt": "2026-06-11T12:38:36.000Z",
         "isDeleted": false,
         "orderNumber": "12",
         "tableNumber": "Buy&Go",
@@ -301,12 +301,12 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems",
-        "servedAt": "2026-06-11 11:40:19"
+        "servedAt": "2026-06-11 12:38:36"
     },
     {
         "id": "1abba7e4c9d1011d34be",
         "createdAt": "2026-06-11 11:18:57",
-        "updatedAt": "2026-06-11T11:40:20.000Z",
+        "updatedAt": "2026-06-11T12:38:36.000Z",
         "isDeleted": false,
         "orderNumber": "13",
         "tableNumber": "Buy&Go",
@@ -325,12 +325,12 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems",
-        "servedAt": "2026-06-11 11:40:19"
+        "servedAt": "2026-06-11 12:38:36"
     },
     {
         "id": "f66dd3dca8c249f88a63",
         "createdAt": "2026-06-11 11:19:02",
-        "updatedAt": "2026-06-11T11:40:20.000Z",
+        "updatedAt": "2026-06-11T12:38:36.000Z",
         "isDeleted": false,
         "orderNumber": "14",
         "tableNumber": "Buy&Go",
@@ -349,12 +349,12 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems",
-        "servedAt": "2026-06-11 11:40:20"
+        "servedAt": "2026-06-11 12:38:36"
     },
     {
         "id": "1dc771ec225bc5b78524",
         "createdAt": "2026-06-11 11:20:20",
-        "updatedAt": "2026-06-11T11:40:20.000Z",
+        "updatedAt": "2026-06-11T12:38:36.000Z",
         "isDeleted": false,
         "orderNumber": "15",
         "tableNumber": "Buy&Go",
@@ -373,12 +373,12 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems",
-        "servedAt": "2026-06-11 11:40:20"
+        "servedAt": "2026-06-11 12:38:36"
     },
     {
         "id": "74ccf21e69f8fcb3c4c1",
         "createdAt": "2026-06-11 11:20:25",
-        "updatedAt": "2026-06-11T11:40:21.000Z",
+        "updatedAt": "2026-06-11T12:38:36.000Z",
         "isDeleted": false,
         "orderNumber": "16",
         "tableNumber": "Buy&Go",
@@ -397,12 +397,12 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems",
-        "servedAt": "2026-06-11 11:40:21"
+        "servedAt": "2026-06-11 12:38:36"
     },
     {
         "id": "a292253a63f193f9c6d2",
         "createdAt": "2026-06-11 11:44:01",
-        "updatedAt": "2026-06-11T12:07:33.000Z",
+        "updatedAt": "2026-06-11T12:38:36.000Z",
         "isDeleted": false,
         "orderNumber": "17",
         "tableNumber": "T#01",
@@ -421,12 +421,12 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems",
-        "servedAt": "2026-06-11 12:07:33"
+        "servedAt": "2026-06-11 12:38:36"
     },
     {
         "id": "e51995e79012b98120cf",
         "createdAt": "2026-06-11 11:58:26",
-        "updatedAt": "2026-06-11T12:07:27.000Z",
+        "updatedAt": "2026-06-11T12:38:36.000Z",
         "isDeleted": false,
         "orderNumber": "18",
         "tableNumber": "Buy&Go",
@@ -445,12 +445,12 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems",
-        "servedAt": "2026-06-11 12:07:27"
+        "servedAt": "2026-06-11 12:38:36"
     },
     {
         "id": "814c4366b4af920ce909",
         "createdAt": "2026-06-11 12:01:43",
-        "updatedAt": "2026-06-11T12:07:28.000Z",
+        "updatedAt": "2026-06-11T12:38:36.000Z",
         "isDeleted": false,
         "orderNumber": "19",
         "tableNumber": "T#01",
@@ -469,6 +469,30 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems",
-        "servedAt": "2026-06-11 12:07:28"
+        "servedAt": "2026-06-11 12:38:36"
+    },
+    {
+        "id": "c6ee640345dc9948e8eb",
+        "createdAt": "2026-06-11 12:38:00",
+        "updatedAt": "2026-06-11T12:38:36.000Z",
+        "isDeleted": false,
+        "orderNumber": "20",
+        "tableNumber": "T#15",
+        "floorId": "69c6a7e2140cb91738d34fe3",
+        "floorNumber": "GROUND",
+        "paymentMethod": "cash",
+        "batchNumber": null,
+        "distributions": [],
+        "totalAmount": 2600,
+        "status": "served",
+        "createdBy": {
+            "id": "69c506a6733d5342b5d87c57",
+            "name": "GROUND FLOOR (SOSINA ABERA) CASHIER 1"
+        },
+        "type": "cashier",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuCollection": "menuItems",
+        "servedAt": "2026-06-11 12:38:36"
     }
 ]
