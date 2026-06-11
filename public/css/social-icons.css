@@ -1,0 +1,174 @@
+/* Branded social media icons — gradient blend mode badges */
+
+.social-icon-badge {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 9999px;
+    overflow: hidden;
+    isolation: isolate;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.social-icon-sm { width: 2.25rem; height: 2.25rem; }
+.social-icon-md { width: 2.75rem; height: 2.75rem; }
+.social-icon-lg { width: 3.25rem; height: 3.25rem; }
+
+.social-icon-sm .social-icon-glyph { width: 1rem; height: 1rem; }
+.social-icon-md .social-icon-glyph { width: 1.25rem; height: 1.25rem; }
+.social-icon-lg .social-icon-glyph { width: 1.4rem; height: 1.4rem; }
+
+.social-icon-glow,
+.social-icon-surface {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+.social-icon-glow {
+    opacity: 0;
+    filter: blur(12px);
+    transform: scale(1.2);
+    transition: opacity 0.35s ease;
+}
+
+.social-icon-surface {
+    opacity: 1;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.social-icon-glyph {
+    position: relative;
+    z-index: 2;
+    color: #fff;
+    fill: currentColor;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+}
+
+/* Muted (picker unselected) */
+.social-icon-muted .social-icon-surface { opacity: 0.35; }
+.social-icon-muted .social-icon-glyph { opacity: 0.7; }
+
+/* Active / hover */
+.social-icon-active .social-icon-glow,
+.social-icon-badge:hover .social-icon-glow,
+a:hover .social-icon-badge .social-icon-glow {
+    opacity: 0.75;
+}
+
+.social-icon-active,
+.social-icon-badge:hover,
+a:hover .social-icon-badge {
+    transform: scale(1.06);
+}
+
+.social-icon-active .social-icon-surface,
+.social-icon-badge:hover .social-icon-surface,
+a:hover .social-icon-badge .social-icon-surface {
+    opacity: 1;
+}
+
+/* Brand gradients */
+.social-brand-facebook .social-icon-surface,
+.social-brand-facebook .social-icon-glow {
+    background: linear-gradient(135deg, #1877f2 0%, #0d5bb5 100%);
+}
+
+.social-brand-instagram .social-icon-surface,
+.social-brand-instagram .social-icon-glow {
+    background: linear-gradient(135deg, #f58529 0%, #dd2a7b 45%, #8134af 75%, #515bd4 100%);
+}
+
+.social-brand-twitter .social-icon-surface,
+.social-brand-twitter .social-icon-glow {
+    background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
+}
+
+.social-brand-youtube .social-icon-surface,
+.social-brand-youtube .social-icon-glow {
+    background: linear-gradient(135deg, #ff3333 0%, #cc0000 100%);
+}
+
+.social-brand-linkedin .social-icon-surface,
+.social-brand-linkedin .social-icon-glow {
+    background: linear-gradient(135deg, #0a66c2 0%, #004182 100%);
+}
+
+.social-brand-tiktok .social-icon-surface,
+.social-brand-tiktok .social-icon-glow {
+    background: linear-gradient(135deg, #25f4ee 0%, #000 45%, #fe2c55 100%);
+}
+
+.social-brand-telegram .social-icon-surface,
+.social-brand-telegram .social-icon-glow {
+    background: linear-gradient(135deg, #2aabee 0%, #229ed9 100%);
+}
+
+.social-brand-whatsapp .social-icon-surface,
+.social-brand-whatsapp .social-icon-glow {
+    background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+}
+
+.social-brand-website .social-icon-surface,
+.social-brand-website .social-icon-glow {
+    background: linear-gradient(135deg, #c5a059 0%, #8a6d2f 100%);
+}
+
+.social-brand-email .social-icon-surface,
+.social-brand-email .social-icon-glow {
+    background: linear-gradient(135deg, #6b7280 0%, #374151 100%);
+}
+
+/* Admin picker card with brand tint when selected */
+.social-pick-card {
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.social-pick-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+}
+
+.social-pick-card.is-active {
+    border-color: transparent !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.social-pick-card.is-active::before {
+    opacity: 0.12;
+}
+
+.social-pick-card.social-brand-facebook.is-active::before { background: #1877f2; }
+.social-pick-card.social-brand-instagram.is-active::before { background: linear-gradient(135deg, #f58529, #dd2a7b); }
+.social-pick-card.social-brand-twitter.is-active::before { background: #000; }
+.social-pick-card.social-brand-youtube.is-active::before { background: #ff0000; }
+.social-pick-card.social-brand-linkedin.is-active::before { background: #0a66c2; }
+.social-pick-card.social-brand-tiktok.is-active::before { background: linear-gradient(135deg, #25f4ee, #fe2c55); }
+.social-pick-card.social-brand-telegram.is-active::before { background: #2aabee; }
+.social-pick-card.social-brand-whatsapp.is-active::before { background: #25d366; }
+.social-pick-card.social-brand-website.is-active::before { background: #c5a059; }
+.social-pick-card.social-brand-email.is-active::before { background: #6b7280; }
+
+/* Public site link wrapper */
+.social-link-item {
+    display: inline-flex;
+    text-decoration: none;
+}
+
+.social-link-item .social-icon-badge {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.social-link-item:hover .social-icon-badge {
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}

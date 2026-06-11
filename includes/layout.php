@@ -226,6 +226,7 @@ function renderTopNavLinks($role) {
         ['name' => 'Stock',     'url' => 'stock.php',    'roles' => ['admin']],
         ['name' => 'Reports',   'url' => 'reports.php',  'roles' => ['admin']],
         ['name' => 'Services',  'url' => 'services.php','roles' => ['admin', 'reception']],
+        ['name' => 'Website CMS', 'url' => 'website_cms.php', 'roles' => ['admin']],
         ['name' => 'Settings',  'url' => 'settings.php', 'roles' => ['admin']],
     ];
 

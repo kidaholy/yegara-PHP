@@ -1,0 +1,84 @@
+<?php
+/**
+ * CMS API - Handle static website content management
+ */
+require_once '../includes/auth.php';
+require_once '../includes/cms.php';
+
+requireAuth(['admin']);
+
+$cmsFile = __DIR__ . '/../data/cms.json';
+
+if (!file_exists($cmsFile)) {
+    file_put_contents($cmsFile, json_encode(getDefaultCmsData(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+}
+
+$method = $_SERVER['REQUEST_METHOD'];
+
+if ($method === 'GET') {
+    header('Content-Type: application/json');
+    echo json_encode(getCmsData());
+    exit;
+}
+
+if ($method === 'POST') {
+    $data = getCmsData();
+
+    if (isset($_FILES['image'])) {
+        $uploadDir = __DIR__ . '/../assets/cms/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+        $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+        if (!in_array($ext, $allowed, true)) {
+            echo json_encode(['success' => false, 'message' => 'Invalid image type']);
+            exit;
+        }
+
+        $fileName = time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+        $targetPath = $uploadDir . $fileName;
+
+        if (move_uploaded_file($_FILES['image']['tmp_name'], $targetPath)) {
+            echo json_encode(['success' => true, 'path' => 'assets/cms/' . $fileName]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Upload failed']);
+        }
+        exit;
+    }
+
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (is_array($input)) {
+        header('Content-Type: application/json');
+
+        if (($input['action'] ?? '') === 'reset_defaults') {
+            $defaults = resetCmsToDefaults();
+            echo json_encode(['success' => true, 'data' => $defaults, 'message' => 'Default content loaded']);
+            exit;
+        }
+
+        // Reject clearly broken payloads (missing core keys)
+        $required = ['hero', 'about', 'services', 'contact', 'social', 'gallery', 'sections'];
+        foreach ($required as $key) {
+            if (!array_key_exists($key, $input)) {
+                echo json_encode(['success' => false, 'message' => "Incomplete save — missing \"$key\" section. Please refresh and try again."]);
+                exit;
+            }
+        }
+
+        $merged = saveCmsPayload($input);
+        if (writeCmsData($merged)) {
+            echo json_encode(['success' => true, 'data' => $merged]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to save data']);
+        }
+        exit;
+    }
+
+    echo json_encode(['success' => false, 'message' => 'Invalid request']);
+    exit;
+}
+
+http_response_code(405);
+echo json_encode(['success' => false, 'message' => 'Method not allowed']);
