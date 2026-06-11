@@ -48,5 +48,29 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems"
+    },
+    {
+        "id": "99523fe30a32bab222f1",
+        "createdAt": "2026-06-11 15:54:34",
+        "updatedAt": "2026-06-11 15:54:34",
+        "isDeleted": false,
+        "orderNumber": "3",
+        "tableNumber": "Buy&Go",
+        "floorId": "69c6a7e2140cb91738d34fe3",
+        "floorNumber": "GROUND",
+        "paymentMethod": "cash",
+        "batchNumber": null,
+        "distributions": [],
+        "totalAmount": 70,
+        "status": "served",
+        "createdBy": {
+            "id": "69c506a6733d5342b5d87c57",
+            "name": "GROUND FLOOR (SOSINA ABERA) CASHIER 1"
+        },
+        "servedAt": "2026-06-11 15:54:34",
+        "type": "cashier",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuCollection": "menuItems"
     }
 ]

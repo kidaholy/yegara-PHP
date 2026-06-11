@@ -49,6 +49,9 @@ try {
             $o['createdBy'] = ['name' => 'Unknown Cashier'];
         }
 
+        // Attach items for reports (Menu Sales logic needs this)
+        $o['items'] = db('orderItems')->findMany(['where' => ['orderId' => $o['id']]]);
+
         $filtered[] = $o;
     }
 

@@ -29,8 +29,7 @@ const ReportHub = {
     receptionRevenue: 0,   // from /api/reports/bedroom-revenue
     
     // UI Local State
-    orderHistoryTab: 'All',
-    menuSalesTab: 'Food',
+    menuSalesTab: 'All',
     menuSearchTerm: '',
     menuCashierFilter: 'All',
     activeCashierIdx: 0,
@@ -120,8 +119,8 @@ const ReportHub = {
         this.orders.forEach(o => {
             if (o.status === 'cancelled' || o.isDeleted) return;
             (o.items || []).forEach(item => {
-                if (item.mainCategory === 'Food') foodRev += (item.price * item.quantity);
-                if (item.mainCategory === 'Drinks') drinksRev += (item.price * item.quantity);
+                if (item.mainCategory && item.mainCategory.toLowerCase() === 'food') foodRev += (item.price * item.quantity);
+                if (item.mainCategory && item.mainCategory.toLowerCase() === 'drinks') drinksRev += (item.price * item.quantity);
             });
         });
 
@@ -130,13 +129,14 @@ const ReportHub = {
         this.orders.forEach(o => {
             if (o.status === 'cancelled' || o.isDeleted) return;
             (o.items || []).forEach(item => {
-                const key = `${item.name}|${o.createdBy?.name || 'Unknown'}`;
+                const cashierName = o.createdBy?.name || 'Unknown';
+                const key = `${item.name}|${cashierName}`;
                 if (!menuSales[key]) {
                     menuSales[key] = { 
                         name: item.name, 
-                        cashier: o.createdBy?.name || 'Unknown',
+                        cashier: cashierName,
                         category: item.category,
-                        mainCategory: item.mainCategory,
+                        mainCategory: item.mainCategory || 'Food',
                         quantity: 0,
                         revenue: 0 
                     };
@@ -146,12 +146,49 @@ const ReportHub = {
             });
         });
 
+        // Cashier Stats (Detailed)
+        const cashierStats = {};
+        let totalOrdersCount = 0;
+        let foodOrdersCount = 0;
+        let drinksOrdersCount = 0;
+
+        this.orders.forEach(o => {
+            if (o.status === 'cancelled' || o.isDeleted) return;
+            totalOrdersCount++;
+            
+            let hasFood = false;
+            let hasDrinks = false;
+            (o.items||[]).forEach(i => {
+                if ((i.mainCategory||'').toLowerCase() === 'food') hasFood = true;
+                if ((i.mainCategory||'').toLowerCase() === 'drinks') hasDrinks = true;
+            });
+            if (hasFood) foodOrdersCount++;
+            if (hasDrinks) drinksOrdersCount++;
+
+            const name = o.createdBy?.name || 'Unknown Cashier';
+            if (!cashierStats[name]) cashierStats[name] = { amount: 0, count: 0, food: 0, drinks: 0, foodCount: 0, drinksCount: 0 };
+            cashierStats[name].amount += parseFloat(o.totalAmount || 0);
+            cashierStats[name].count++;
+            if (hasFood) cashierStats[name].foodCount++;
+            if (hasDrinks) cashierStats[name].drinksCount++;
+
+            (o.items || []).forEach(item => {
+                const cat = (item.mainCategory || '').toLowerCase();
+                const itemRev = (item.price * item.quantity);
+                if (cat === 'food') cashierStats[name].food += itemRev;
+                else if (cat === 'drinks') cashierStats[name].drinks += itemRev;
+            });
+        });
+
         return { 
             totalRevenue: totalRev, 
             orderRevenue: rev,
             foodRevenue: foodRev, 
             drinksRevenue: drinksRev,
-            cashierRevenue: cashierMap,
+            cashierStats: cashierStats,
+            totalOrdersCount: totalOrdersCount,
+            foodOrdersCount: foodOrdersCount,
+            drinksOrdersCount: drinksOrdersCount,
             menuItemSales: Object.values(menuSales),
             periodInvestment: periodInvest,
             periodProfit: totalRev - (s.totalOperationalExpenses || 0) - periodInvest,
@@ -220,11 +257,9 @@ const ReportHub = {
         let html = '';
         switch(slide.id) {
             case 'financial': html = this.renderFinancial(); break;
-            case 'orders': html = this.renderOrders(); break;
             case 'inventory': html = this.renderInventory(); break;
             case 'store': html = this.renderStore(); break;
             case 'menu-sales': html = this.renderMenuSales(); break;
-            case 'cashier-insights': html = this.renderCashierInsights(); break;
             default: html = `<div class="p-20 text-center">Section ${slide.label} Content</div>`;
         }
         panel.innerHTML = `<div class="${animClass}">${html}</div>`;
@@ -239,7 +274,8 @@ const ReportHub = {
             { m: 'Food Revenue',   t: 'BREAKDOWN', v: stats.foodRevenue, c: 'gold',  d: 'Total Food Sales from Orders' },
             { m: 'Drinks Revenue', t: 'BREAKDOWN', v: stats.drinksRevenue, c: 'gold',  d: 'Total Drinks Sales from Orders' },
         ];
-        Object.entries(stats.cashierRevenue).forEach(([name, amt]) => {
+        Object.entries(stats.cashierStats).forEach(([name, cStat]) => {
+            const amt = cStat.amount;
             const pct = stats.orderRevenue > 0 ? ((amt/stats.orderRevenue)*100).toFixed(1) : 0;
             rows.push({ m: name, t: 'CASHIER SALES', v: amt, c: 'gray', d: `${pct}% of order contributions` });
         });
@@ -281,44 +317,6 @@ const ReportHub = {
         `;
     },
 
-    renderOrders() {
-        const filtered = this.orders.filter(o => {
-            if (this.orderHistoryTab === 'Food') return (o.items||[]).some(i => i.mainCategory === 'Food');
-            if (this.orderHistoryTab === 'Drinks') return (o.items||[]).some(i => i.mainCategory === 'Drinks');
-            return true;
-        });
-
-        return `
-            <div class="space-y-6">
-                <div class="flex items-center justify-between pb-4 border-b border-gray-700/50">
-                    <div class="flex gap-4">
-                        ${['All','Food','Drinks'].map(t => `<button onclick="ReportHub.setOrderTab('${t}')" class="text-xs font-bold uppercase tracking-wider pb-4 -mb-[17px] border-b-2 transition-colors ${this.orderHistoryTab === t ? 'text-[#c5a059] border-[#c5a059]' : 'text-gray-500 border-transparent hover:text-white'}">${t} Orders</button>`).join('')}
-                    </div>
-                    <div class="flex gap-3">
-                        <button onclick="ReportHub.exportOrdersCSV('${this.orderHistoryTab}')" class="text-xs font-semibold uppercase text-gray-500 hover:text-[#c5a059] transition-colors flex items-center gap-2 outline-none">
-                             <i data-lucide="download" class="w-4 h-4"></i> Export CSV
-                        </button>
-                    </div>
-                </div>
-                <div class="rounded-xl border border-gray-700/50 bg-gray-800/20 overflow-hidden max-h-[600px] overflow-y-auto">
-                    <table class="w-full text-left">
-                        <thead class="sticky top-0 bg-gray-800 z-20"><tr class="text-xs font-semibold uppercase tracking-wider text-gray-500 border-b border-gray-700/50"><th class="px-6 py-4">Order# | Table</th><th class="px-6 py-4">Items Breakdown</th><th class="px-6 py-4 text-right">Payment</th><th class="px-6 py-4 text-center">Status</th></tr></thead>
-                        <tbody class="divide-y divide-gray-700/30 text-sm">
-                            ${filtered.length ? filtered.map(o => {
-                                // Spec: row total = sum of matching items only
-                                let tabTotal = 0;
-                                (o.items||[]).forEach(i => {
-                                    if (this.orderHistoryTab === 'All' || i.mainCategory === this.orderHistoryTab) {
-                                        tabTotal += (i.price * i.quantity);
-                                    }
-                                });
-                                return `<tr class="hover:bg-gray-800/50"><td class="px-6 py-4"><p class="font-bold text-gray-200 text-sm">#${o.orderNumber}</p><p class="text-xs text-gray-500 font-semibold mt-1">${o.tableNumber || 'Walking'} · ${new Date(o.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p></td><td class="px-6 py-4"><div class="max-w-[300px] text-gray-400 space-y-1">${(o.items||[]).map(i => `<p class="truncate"><span class="text-gray-200 font-bold">${i.quantity}</span> x ${i.name}</p>`).join('')}</div></td><td class="px-6 py-4 text-right"><p class="font-bold text-[#c5a059] text-sm">${this.fmt(tabTotal)}</p><p class="uppercase text-xs text-gray-500 font-semibold mt-1">${o.paymentMethod || 'cash'}</p></td><td class="px-6 py-4 text-center"><span class="px-2.5 py-1 rounded-md border text-xs font-bold uppercase ${o.status==='cancelled'?'bg-red-500/10 text-red-400 border-red-500/20':'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}">${o.status}</span></td></tr>`;
-                            }).join('') : `<tr><td colspan="4" class="px-6 py-16 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">No orders in this period</td></tr>`}
-                        </tbody>
-                    </table>
-                </div>
-            </div>`;
-    },
 
     renderInventory() {
         const u = this.stockUsageData?.stockAnalysis || [];
@@ -370,65 +368,173 @@ const ReportHub = {
     renderMenuSales() {
         const stats = this.getCalculatedStats();
         const filtered = stats.menuItemSales.filter(s => {
-            if (s.mainCategory !== this.menuSalesTab) return false;
+            const currentTab = this.menuSalesTab.toLowerCase();
+            const itemMainCat = (s.mainCategory || '').toLowerCase();
+            if (currentTab !== 'all' && itemMainCat !== currentTab) return false;
             if (this.menuCashierFilter !== 'All' && s.cashier !== this.menuCashierFilter) return false;
             if (this.menuSearchTerm && !s.name.toLowerCase().includes(this.menuSearchTerm.toLowerCase())) return false;
             return true;
         });
         const cashiers = ['All', ...new Set(stats.menuItemSales.map(m => m.cashier))];
+        
+        // Cashier Summary Cards
+        let summaryHtml = '';
+        const isAllCashier = this.menuCashierFilter === 'All';
+        const currentTab = this.menuSalesTab; // 'All', 'Food', 'Drinks'
+        
+        const rawStat = isAllCashier 
+            ? { 
+                amount: stats.orderRevenue, 
+                count: stats.totalOrdersCount, 
+                food: stats.foodRevenue, 
+                drinks: stats.drinksRevenue,
+                foodCount: stats.foodOrdersCount,
+                drinksCount: stats.drinksOrdersCount
+              }
+            : (stats.cashierStats[this.menuCashierFilter] || { amount: 0, count: 0, food: 0, drinks: 0, foodCount: 0, drinksCount: 0 });
+        
+        // Active display metrics based on ALL/FOOD/DRINKS tab
+        let activeRevenue = rawStat.amount;
+        let activeCount = rawStat.count;
+        let revLabel = 'Total Revenue';
+        let resColor = 'emerald-400';
+        let subLabel = isAllCashier ? 'CONSOLIDATED EARNINGS' : 'Contribution to Revenue';
 
-        return `
-            <div class="space-y-6">
-                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-4 border-b border-gray-700/50">
-                    <div class="flex gap-4">
-                        ${['Food','Drinks'].map(t => `<button onclick="ReportHub.setMenuTab('${t}')" class="text-xs font-bold uppercase tracking-wider pb-4 -mb-[17px] border-b-2 transition-colors ${this.menuSalesTab === t ? 'text-[#c5a059] border-[#c5a059]' : 'text-gray-500 border-transparent hover:text-white'}">${t} Sales</button>`).join('')}
+        if (currentTab === 'Food') {
+            activeRevenue = rawStat.food;
+            activeCount = rawStat.foodCount;
+            revLabel = 'Food Revenue';
+            resColor = '#c5a059'; // Gold
+            subLabel = 'Culinary Performance';
+        } else if (currentTab === 'Drinks') {
+            activeRevenue = rawStat.drinks;
+            activeCount = rawStat.drinksCount;
+            revLabel = 'Drinks Revenue';
+            resColor = 'blue-400';
+            subLabel = 'Beverage Sales';
+        }
+
+        const displayName = isAllCashier ? 'ALL STAFF MEMBERS' : this.menuCashierFilter;
+        const consistencyText = isAllCashier ? 'SYSTEM STABILITY OK' : 'CONSISTENCY OK';
+
+        summaryHtml = `
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <!-- Staff Member Card -->
+                <div class="p-8 rounded-2xl border border-gray-800 bg-[#111413] relative overflow-hidden group">
+                    <div class="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                        <i data-lucide="${isAllCashier ? 'users' : 'user'}" class="w-32 h-32"></i>
                     </div>
-                    <div class="flex flex-wrap items-center gap-3">
-                         <div class="relative group"><i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i><input type="text" oninput="ReportHub.setMenuSearch(this.value)" placeholder="Search item..." class="bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-sm text-gray-200 outline-none w-52 focus:border-[#c5a059]"></div>
-                         <select onchange="ReportHub.setMenuCashier(this.value)" class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm font-semibold text-gray-300 outline-none w-48">${cashiers.map(c => `<option value="${c}" ${this.menuCashierFilter === c ? 'selected' : ''}>${c}</option>`).join('')}</select>
-                         <button onclick="ReportHub.exportMenuCSV()" class="w-10 h-10 rounded-lg bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 outline-none"><i data-lucide="download" class="w-4 h-4"></i></button>
+                    <div class="relative z-10">
+                        <p class="text-[10px] font-black text-[#c5a059] uppercase tracking-[0.2em] mb-4">${isAllCashier ? 'Organization' : 'Staff Member'}</p>
+                        <h4 class="text-2xl font-serif italic font-bold text-gray-100 leading-tight mb-6 uppercase">${displayName}</h4>
+                        <div class="flex items-center gap-2 text-emerald-500">
+                            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <p class="text-[10px] font-bold uppercase tracking-widest">Active · ${currentTab}</p>
+                        </div>
                     </div>
                 </div>
-                <div class="rounded-xl border border-gray-700/50 bg-gray-800/20 overflow-hidden">
-                    <table class="w-full text-left text-sm">
-                        <thead><tr class="text-xs font-semibold uppercase tracking-wider text-gray-500 bg-gray-800/50 border-b border-gray-700/50"><th class="px-6 py-4">Menu Item</th><th class="px-6 py-4">Aggregated Cashier</th><th class="px-6 py-4 text-right">Quantity Sold</th><th class="px-6 py-4 text-right">Revenue Generated</th></tr></thead>
-                        <tbody class="divide-y divide-gray-700/30">
-                            ${filtered.sort((a,b)=>b.revenue-a.revenue).map(s => `<tr class="hover:bg-gray-800/50 transition-colors"><td class="px-6 py-4"><p class="font-bold text-gray-200">${s.name}</p><p class="text-xs text-gray-500 font-semibold mt-1">${s.category}</p></td><td class="px-6 py-4 text-gray-400 font-bold">${s.cashier}</td><td class="px-6 py-4 text-right font-bold text-gray-200">${s.quantity}</td><td class="px-6 py-4 text-right font-bold text-[#c5a059]">${this.fmt(s.revenue)}</td></tr>`).join('')}
+
+                <!-- Dynamic Revenue Card -->
+                <div class="p-8 rounded-2xl border border-gray-800 bg-[#111413] flex flex-col justify-center">
+                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">${revLabel}</p>
+                    <div class="flex items-baseline gap-2">
+                        <h4 class="text-4xl font-black text-[${resColor}]">${Math.round(activeRevenue).toLocaleString()}</h4>
+                        <span class="text-xl font-bold text-[${resColor}]/50">Br</span>
+                    </div>
+                    <p class="text-[10px] font-black text-gray-600 uppercase tracking-widest mt-4">${subLabel}</p>
+                </div>
+
+                <!-- Dynamic Orders Card -->
+                <div class="p-8 rounded-2xl border border-gray-800 bg-[#111413] flex flex-col justify-center">
+                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">Orders Handled</p>
+                    <h4 class="text-4xl font-black text-gray-100">${activeCount}</h4>
+                    <div class="flex items-center gap-2 text-[#c5a059] mt-4">
+                        <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+                        <p class="text-[10px] font-black uppercase tracking-widest">${consistencyText}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        return `
+            <div class="space-y-8">
+                <!-- Header with Icon & Title -->
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-[#c5a059] shadow-lg shadow-black/20">
+                            <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                        </div>
+                        <h2 class="text-2xl font-serif italic font-bold text-gray-100">Menu Item Sales</h2>
+                    </div>
+                    
+                    <div class="relative group">
+                        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+                        <input type="text" oninput="ReportHub.setMenuSearch(this.value)" 
+                            placeholder="Search menu items..." 
+                            class="bg-[#111413] border border-gray-800 rounded-xl pl-12 pr-6 py-3 text-sm text-gray-200 outline-none w-full lg:w-80 focus:border-[#c5a059]/50 transition-all placeholder:text-gray-600">
+                    </div>
+                </div>
+
+                <!-- Filters & Tabs -->
+                <div class="flex flex-wrap items-center gap-4">
+                    <div class="flex bg-gray-900/50 p-1 rounded-xl border border-gray-800">
+                        ${['All', 'Food', 'Drinks'].map(t => `
+                            <button onclick="ReportHub.setMenuTab('${t}')" 
+                                class="px-6 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${this.menuSalesTab === t ? 'bg-[#c5a059]/10 text-[#c5a059] shadow-inner shadow-black/20' : 'text-gray-500 hover:text-gray-300'}">
+                                ${t}
+                            </button>`).join('')}
+                    </div>
+
+                    <select onchange="ReportHub.setMenuCashier(this.value)" 
+                        class="bg-[#111413] border border-gray-800 rounded-xl px-5 py-2.5 text-xs font-black uppercase tracking-wider text-gray-400 outline-none focus:border-[#c5a059]/50 transition-all min-w-[240px]">
+                        ${cashiers.map(c => `<option value="${c}" ${this.menuCashierFilter === c ? 'selected' : ''}>${c.toUpperCase()}</option>`).join('')}
+                    </select>
+
+                    <button onclick="ReportHub.exportMenuCSV()" 
+                        class="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-500 text-[11px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all shadow-lg shadow-emerald-950/20">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i> CSV
+                    </button>
+                </div>
+
+                <!-- Summary Stats -->
+                ${summaryHtml}
+
+                <!-- Table Content -->
+                <div class="rounded-2xl border border-gray-800/50 bg-[#111413]/30 overflow-hidden backdrop-blur-sm shadow-2xl">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-[10px] font-black uppercase tracking-[0.15em] border-b border-gray-800/50 bg-gray-900/20">
+                                <th class="px-8 py-5 text-gray-500">Menu Item</th>
+                                <th class="px-8 py-5 text-gray-500">Cashier</th>
+                                <th class="px-8 py-5 text-emerald-400 text-right">Quantity Sold</th>
+                                <th class="px-8 py-5 text-[#c5a059] text-right">Revenue Generated</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-800/30">
+                            ${filtered.sort((a,b)=>b.quantity-a.quantity).map(s => `
+                                <tr class="hover:bg-gray-800/20 transition-all group">
+                                    <td class="px-8 py-6">
+                                        <p class="font-bold text-gray-200 text-sm group-hover:text-white">${s.name}</p>
+                                        <p class="text-[9px] font-black text-[#c5a059] uppercase tracking-widest mt-1.5 opacity-60 group-hover:opacity-100 transition-opacity">${s.category}</p>
+                                    </td>
+                                    <td class="px-8 py-6">
+                                        <p class="text-[11px] font-bold text-gray-500 uppercase tracking-tight group-hover:text-gray-400">${s.cashier}</p>
+                                    </td>
+                                    <td class="px-8 py-6 text-right">
+                                        <p class="text-lg font-black text-emerald-400 flex items-center justify-end gap-1.5">
+                                            ${Math.round(s.quantity)}
+                                            <span class="text-[9px] text-emerald-400/50 tracking-widest">SOLD</span>
+                                        </p>
+                                    </td>
+                                    <td class="px-8 py-6 text-right">
+                                        <p class="text-base font-black text-gray-200 flex items-center justify-end gap-1.5">
+                                            ${this.fmt(s.revenue).replace(' Br','')}
+                                            <span class="text-[9px] text-[#c5a059] tracking-widest font-black">BR</span>
+                                        </p>
+                                    </td>
+                                </tr>`).join('') || `<tr><td colspan="4" class="py-20 text-center text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">No matching sales found</td></tr>`}
                         </tbody>
                     </table>
-                </div>
-            </div>`;
-    },
-
-    renderCashierInsights() {
-        const stats = this.getCalculatedStats();
-        const cashiers = Object.entries(stats.cashierRevenue).map(([name, amt]) => {
-            const count = this.orders.filter(o => (o.createdBy?.name || 'Unknown Cashier') === name && o.status !=='cancelled').length;
-             const items = stats.menuItemSales.filter(m => m.cashier === name);
-             return { name, amount: amt, count, items };
-        });
-        if (!cashiers.length) return `<div class="py-40 text-center text-[10px] uppercase font-black text-gray-600 tracking-[0.4em]">No cashier data available for this period</div>`;
-        const active = cashiers[this.activeCashierIdx % cashiers.length];
-        const pct = stats.orderRevenue > 0 ? ((active.amount/stats.orderRevenue)*100).toFixed(1) : 0;
-
-        return `
-            <div class="space-y-6">
-                <div class="flex items-center justify-between px-2">
-                    <button onclick="ReportHub.navCashier(-1)" class="w-10 h-10 rounded-lg bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-colors outline-none"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">${this.activeCashierIdx + 1} / ${cashiers.length} Staff Members</p>
-                    <button onclick="ReportHub.navCashier(1)" class="w-10 h-10 rounded-lg bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-colors outline-none"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="p-8 rounded-2xl border border-gray-700/50 bg-gray-800/80 text-center"><div class="w-16 h-16 rounded-full bg-gray-700 border border-gray-600 flex items-center justify-center mx-auto mb-6 text-gray-300"><i data-lucide="user" class="w-8 h-8"></i></div><h4 class="text-xl font-bold text-gray-200 mb-1 line-clamp-1">${active.name}</h4><p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Active this period</p></div>
-                    <div class="p-8 rounded-2xl bg-[#c5a059]/10 border border-[#c5a059]/20 text-center"><p class="text-xs font-semibold uppercase tracking-wider text-[#c5a059] mb-4">Total Contribution</p><h4 class="text-3xl font-bold text-gray-200 mb-2">${this.fmt(active.amount)}</h4><p class="text-sm font-semibold text-[#c5a059]/80">${pct}% of order revenue</p></div>
-                    <div class="p-8 rounded-2xl border border-gray-700/50 bg-gray-800/80 text-center"><p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-4">Orders Handled</p><h4 class="text-3xl font-bold text-gray-200">${active.count}</h4><p class="text-sm font-semibold text-gray-500 mt-2">Closed Transactions</p></div>
-                </div>
-                <div class="p-8 rounded-2xl border border-gray-700/50 bg-gray-800/50">
-                    <h5 class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-6 border-b border-gray-700/50 pb-4">Items Sold by Staff</h5>
-                    <div class="space-y-4">
-                        ${(active.items || []).sort((a,b)=>b.revenue-a.revenue).slice(0,10).map(i => `
-                            <div class="flex items-center justify-between pb-4 border-b border-gray-700/30"><div><p class="font-bold text-gray-200 text-sm">${i.name}</p><p class="text-xs font-semibold text-gray-500 mt-1">${i.category}</p></div><div class="text-right"><p class="text-[#c5a059] font-bold">${this.fmt(i.revenue)}</p><p class="text-xs text-gray-400 font-semibold mt-1">${i.quantity} units</p></div></div>`).join('')}
-                    </div>
                 </div>
             </div>`;
     },

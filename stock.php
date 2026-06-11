@@ -80,7 +80,11 @@ renderHeader("Active Stock");
                 class="bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:border-[#c5a059] outline-none w-52 transition-colors placeholder:text-gray-500">
             </div>
             <!-- Export Dropdown -->
-            <div id="export-btn-wrap" class="relative">
+            <div id="export-btn-wrap" class="relative flex items-center gap-2">
+              <button onclick="clearAllStockQuantities()"
+                class="flex items-center gap-2 px-3 py-2 rounded-lg border border-red-500/20 bg-red-500/10 text-xs font-semibold text-red-500 hover:bg-red-500 hover:text-white transition-colors">
+                <i data-lucide="trash-2" class="w-4 h-4"></i> Clear All
+              </button>
               <button id="export-btn" onclick="toggleExport()"
                 class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-700 bg-gray-800 text-xs font-semibold text-gray-400 hover:text-white transition-colors">
                 <i data-lucide="download" class="w-4 h-4"></i> Export

@@ -18,11 +18,9 @@ $userPermissions = $user['permissions'] ?? [];
 
 $allSlides = [
     ['id' => "financial", 'label' => "Financial Summary", 'permission' => "reports:financial_summary", 'icon' => 'trending-up'],
-    ['id' => "orders", 'label' => "Order History", 'permission' => "reports:order_history", 'icon' => 'shopping-bag'],
     ['id' => "inventory", 'label' => "Inventory Investment", 'permission' => "reports:inventory_investment", 'icon' => 'package'],
     ['id' => "store", 'label' => "Store Investment", 'permission' => "reports:store_investment", 'icon' => 'warehouse'],
     ['id' => "menu-sales", 'label' => "Menu Item Sales", 'permission' => "reports:menu_item_sales", 'icon' => 'bar-chart-2'],
-    ['id' => "cashier-insights", 'label' => "Cashier Insights", 'permission' => "reports:cashier_insights", 'icon' => 'users'],
 ];
 
 $slides = [];

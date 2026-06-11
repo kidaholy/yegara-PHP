@@ -247,5 +247,25 @@
         "menuTier": "Standard",
         "menuCollection": "menuItems",
         "status": "pending"
+    },
+    {
+        "id": "78baf1a5efa68c32aefe",
+        "createdAt": "2026-06-11T15:54:34.000Z",
+        "updatedAt": "2026-06-11T15:54:34.000Z",
+        "isDeleted": false,
+        "orderId": "99523fe30a32bab222f1",
+        "menuItemId": "69ada302d661b3f94ac72f82",
+        "menuId": "35",
+        "name": "7 up",
+        "quantity": 1,
+        "price": 70,
+        "notes": "",
+        "category": "LESLASA\/\u1208\u1235\u120b\u1233",
+        "mainCategory": "Drinks",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuTier": "Standard",
+        "menuCollection": "menuItems",
+        "status": "served"
     }
 ]
