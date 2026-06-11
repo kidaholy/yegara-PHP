@@ -7,7 +7,6 @@ require_once __DIR__ . '/includes/cms.php';
 require_once __DIR__ . '/includes/social-icons.php';
 require_once __DIR__ . '/includes/SettingsManager.php';
 
-$user = getCurrentUser();
 $manager = new SettingsManager();
 extract($manager->getBrandingVars());
 
@@ -63,8 +62,8 @@ renderSocialIconsStylesheet();
                 <button type="button" id="mobileMenuBtn" class="md:hidden p-2 text-white/60 hover:text-[#c5a059]">
                     <i data-lucide="menu" class="w-6 h-6"></i>
                 </button>
-                <a href="<?php echo $user ? 'admin.php' : 'login.php'; ?>" class="hidden sm:inline-flex px-6 py-2.5 border border-[#c5a059]/60 text-[#c5a059] text-[10px] font-black uppercase tracking-[0.2em] rounded-sm hover:bg-[#c5a059] hover:text-black transition-all">
-                    <?php echo $user ? 'Dashboard' : 'Staff Login'; ?>
+                <a href="login.php" class="hidden sm:inline-flex px-6 py-2.5 border border-[#c5a059]/60 text-[#c5a059] text-[10px] font-black uppercase tracking-[0.2em] rounded-sm hover:bg-[#c5a059] hover:text-black transition-all">
+                    Login
                 </a>
             </div>
         </header>
@@ -291,8 +290,8 @@ renderSocialIconsStylesheet();
                 <p class="text-[10px] font-bold text-white/25 uppercase tracking-[0.35em]">
                     &copy; <?php echo date('Y'); ?> <?php echo htmlspecialchars($appName); ?>. All rights reserved.
                 </p>
-                <a href="<?php echo $user ? 'admin.php' : 'login.php'; ?>" class="text-[10px] font-bold text-white/20 uppercase tracking-widest hover:text-[#c5a059] transition-colors">
-                    Staff Portal
+                <a href="login.php" class="text-[10px] font-bold text-white/20 uppercase tracking-widest hover:text-[#c5a059] transition-colors">
+                    Login
                 </a>
             </div>
         </div>
