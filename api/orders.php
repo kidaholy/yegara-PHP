@@ -224,6 +224,8 @@ try {
         // --- CREATE ORDER (No action provided) ---
         if (!$action) {
             $tableNumber = $input['tableNumber'] ?? 'Buy&Go';
+            $roomNumber = trim($input['roomNumber'] ?? '') ?: null;
+            $guestName = trim($input['guestName'] ?? '') ?: null;
             $floorId = $input['floorId'] ?? null;
             $floorNumber = $input['floorNumber'] ?? null;
             $paymentMethod = $input['paymentMethod'] ?? 'cash';
@@ -270,6 +272,8 @@ try {
             $order = db('orders')->create(['data' => [
                 'orderNumber' => $orderNumber,
                 'tableNumber' => $tableNumber,
+                'roomNumber' => $roomNumber,
+                'guestName' => $guestName,
                 'floorId' => $floorId,
                 'floorNumber' => $floorNumber,
                 'paymentMethod' => $paymentMethod,

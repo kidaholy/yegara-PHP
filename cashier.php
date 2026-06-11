@@ -136,10 +136,10 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
                 <!-- Tabs -->
                 <div class="flex gap-2 shrink-0 mb-6">
                     <button type="button" id="cart-tab-food" data-tab="Food" class="cart-cat-tab flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-2">
-                        🥩 BUTCHER
+                        <i data-lucide="utensils-crossed" class="w-3.5 h-3.5"></i> BUTCHER
                     </button>
                     <button type="button" id="cart-tab-drinks" data-tab="Drinks" class="cart-cat-tab flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-2">
-                        🥤 DRINKS
+                        <i data-lucide="wine" class="w-3.5 h-3.5"></i> DRINKS
                     </button>
                 </div>
 
@@ -148,22 +148,38 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
                     <!-- Hidden floor select (used by JS, not displayed) -->
                     <select id="floor-select" class="hidden"></select>
 
-                    <button type="button" id="table-picker-btn" 
-                            class="w-full h-16 px-4 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-between text-left group hover:border-gray-600 transition-all">
-                        <div class="flex items-center gap-3">
-                            <span class="text-lg">🪑</span>
-                            <span id="table-picker-label" class="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">Select Table</span>
-                        </div>
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-600"></i>
-                    </button>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button type="button" id="table-picker-btn" 
+                                class="w-full h-16 px-4 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-between text-left group hover:border-gray-600 transition-all">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="w-9 h-9 rounded-xl bg-gray-800/80 border border-gray-700/60 flex items-center justify-center text-amber-500/90 shrink-0">
+                                    <i data-lucide="armchair" class="w-4 h-4"></i>
+                                </span>
+                                <span id="table-picker-label" class="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">Select Table</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-600 shrink-0"></i>
+                        </button>
+                        <button type="button" id="room-picker-btn"
+                                class="w-full h-16 px-4 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-between text-left group hover:border-gray-600 transition-all">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="w-9 h-9 rounded-xl bg-gray-800/80 border border-gray-700/60 flex items-center justify-center text-amber-500/90 shrink-0">
+                                    <i data-lucide="bed-double" class="w-4 h-4"></i>
+                                </span>
+                                <span id="room-picker-label" class="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">Checked-in Room</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-600 shrink-0"></i>
+                        </button>
+                    </div>
 
                     <!-- Custom Distribution Dropdown -->
                     <div class="relative" id="dist-dropdown-wrap">
                         <button type="button" id="dist-trigger"
                                 onclick="toggleDistDropdown()"
                                 class="w-full h-16 px-4 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-between text-left hover:border-gray-600 transition-all">
-                            <div class="flex items-center gap-3">
-                                <span class="text-lg">🚚</span>
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="w-9 h-9 rounded-xl bg-gray-800/80 border border-gray-700/60 flex items-center justify-center text-amber-500/90 shrink-0">
+                                    <i data-lucide="truck" class="w-4 h-4"></i>
+                                </span>
                                 <span id="dist-label" class="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">All Distributions</span>
                             </div>
                             <i data-lucide="chevron-down" class="w-4 h-4 text-gray-600 transition-transform" id="dist-chevron"></i>
@@ -176,13 +192,17 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
                         </div>
                     </div>
 
-                    <div class="relative h-16 rounded-2xl bg-gray-900 border border-gray-800 flex items-center px-4">
-                        <span class="text-lg mr-3">🏷️</span>
+                    <div class="relative h-16 rounded-2xl bg-gray-900 border border-gray-800 flex items-center px-4 gap-3">
+                        <span class="w-9 h-9 rounded-xl bg-gray-800/80 border border-gray-700/60 flex items-center justify-center text-amber-500/90 shrink-0">
+                            <i data-lucide="hash" class="w-4 h-4"></i>
+                        </span>
                         <input type="text" id="batch-number" placeholder="BATCH NUMBER" 
                                class="bg-transparent text-[10px] font-black text-gray-400 uppercase tracking-widest w-full outline-none placeholder:text-gray-700">
                     </div>
 
                     <input type="hidden" id="table-number" value="Buy&Go">
+                    <input type="hidden" id="room-number" value="">
+                    <input type="hidden" id="room-id" value="">
                     <input type="hidden" id="floor-id" value="">
                     <input type="hidden" id="floor-number" value="">
                 </div>
@@ -210,10 +230,33 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
                     </div>
                     <button id="place-order-btn" type="button" disabled
                             class="w-full bg-[#c5a059] hover:bg-[#d4af37] text-black font-black py-5 rounded-[2rem] text-[11px] uppercase tracking-[0.3em] shadow-xl transition-all disabled:opacity-20 disabled:grayscale flex items-center justify-center gap-3">
-                        🚀 SEND TO KITCHEN
+                        <i data-lucide="chef-hat" class="w-4 h-4"></i> SEND TO KITCHEN
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Room picker modal -->
+<div id="room-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+    <div class="w-full max-w-3xl bg-[#0a0a0a] border border-gray-800/80 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden max-h-[90vh] flex flex-col relative">
+        <button type="button" id="room-modal-close"
+                class="absolute top-6 right-6 w-10 h-10 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-center text-gray-500 hover:text-white hover:border-amber-500/50 transition-all z-10">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <div class="px-8 pt-8 pb-4 shrink-0">
+            <h3 class="text-3xl font-bold text-amber-500 tracking-tight italic" style="font-family: 'Playfair Display', serif;">Checked-in Rooms</h3>
+            <p class="text-[10px] font-black text-gray-500 uppercase tracking-[0.25em] mt-2">Select a guest room</p>
+        </div>
+        <div class="px-8 pb-4 shrink-0">
+            <button type="button" id="clear-room-pick"
+                    class="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] bg-gray-900/50 border border-gray-800 text-gray-500 hover:border-amber-500/30 hover:text-amber-500 transition-all">
+                Clear Room Selection
+            </button>
+        </div>
+        <div class="flex-1 min-h-0 overflow-y-auto custom-gold-scrollbar px-8 pb-8 mt-2">
+            <div id="room-grid"></div>
         </div>
     </div>
 </div>
@@ -258,6 +301,7 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
     let categories = [];
     let distributions = [];
     let floorPlan = [];
+    let allRooms = [];
     let cart = [];
     let activeTab = 'Food';
     let selectedCategory = '';
@@ -267,6 +311,27 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
 
     function esc(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
     function fmt(n) { return Number(n).toLocaleString() + ' ETB'; }
+
+    function getSavedFloorId() {
+        return document.getElementById('floor-id')?.value || activeFloorId || '';
+    }
+
+    function resolveFloorId() {
+        const saved = getSavedFloorId();
+        if (saved && floorPlan.find(f => f.id === saved)) return saved;
+        if (USER_FLOOR_ID && floorPlan.find(f => f.id === USER_FLOOR_ID)) return USER_FLOOR_ID;
+        return floorPlan.find(f => /ground/i.test(f.floorNumber))?.id || floorPlan[0]?.id || '';
+    }
+
+    function syncFloorSelection(floorId) {
+        if (!floorId) return;
+        const floor = floorPlan.find(f => f.id === floorId);
+        if (!floor) return;
+        activeFloorId = floor.id;
+        document.getElementById('floor-select').value = floor.id;
+        document.getElementById('floor-id').value = floor.id;
+        document.getElementById('floor-number').value = floor.floorNumber;
+    }
 
     async function loadData() {
         try {
@@ -280,23 +345,20 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
             categories = data.categories || [];
             distributions = data.distributions || [];
             floorPlan = data.floorPlan || [];
+            allRooms = data.rooms || [];
             appName = data.branding?.app_name || appName;
 
             const floorSelect = document.getElementById('floor-select');
             floorSelect.innerHTML = floorPlan.map(f => `<option value="${esc(f.id)}">${esc(f.label)}</option>`).join('');
 
             if (floorPlan.length) {
-                activeFloorId = floorPlan.find(f => f.id === USER_FLOOR_ID)?.id
-                    || floorPlan.find(f => /ground/i.test(f.floorNumber))?.id
-                    || floorPlan[0].id;
-                
-                floorSelect.value = activeFloorId;
-                updateFloorInputs();
+                syncFloorSelection(resolveFloorId());
             }
 
             populateDistList(distributions);
 
             initTablePicker();
+            initRoomPicker();
             renderAll();
         } catch (err) {
             document.getElementById('items-grid').innerHTML =
@@ -304,10 +366,49 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
         }
     }
 
-    function printReceipt(order, typeLabel = 'Kitchen Copy') {
+    function getFloorDisplayLabel(floorId, floorNumber) {
+        const floor = floorPlan.find(f => f.id === floorId);
+        if (floor) return floor.label.replace('FLOOR #', 'Floor ');
+        if (floorNumber) return `Floor ${floorNumber}`;
+        return '';
+    }
+
+    function buildOrderReceiptData(orderNumber, cartItems, totalAmount) {
+        const roomNum = document.getElementById('room-number').value;
+        const tableNum = document.getElementById('table-number').value;
+        const floorId = document.getElementById('floor-id').value;
+        const floorNumber = document.getElementById('floor-number').value;
+        const room = roomNum ? allRooms.find(r => r.roomNumber === roomNum) : null;
+        const distribution = document.getElementById('distribution-select').value.trim() || null;
+        const batchNumber = document.getElementById('batch-number').value.trim() || null;
+        const isRoomOrder = !!roomNum;
+        const isBuyAndGo = !isRoomOrder && tableNum === 'Buy&Go';
+
+        return {
+            orderNumber,
+            roomNumber: roomNum || null,
+            guestName: room?.guestName || null,
+            tableNumber: isRoomOrder ? null : tableNum,
+            isBuyAndGo,
+            floorLabel: isRoomOrder
+                ? null
+                : (isBuyAndGo ? null : getFloorDisplayLabel(floorId, floorNumber) || null),
+            distribution,
+            batchNumber,
+            items: cartItems,
+            totalAmount
+        };
+    }
+
+    function receiptRow(label, value) {
+        if (!value) return '';
+        return `<div class="receipt-row"><span>${esc(label)}</span><span>${esc(value)}</span></div>`;
+    }
+
+    function printReceipt(order) {
         const dateStr = new Date().toLocaleString();
         const receipt = document.getElementById('receipt-print');
-        
+
         let itemsHtml = order.items.map(i => `
             <tr>
                 <td style="width: 50%">${esc(i.name)}</td>
@@ -316,29 +417,26 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
             </tr>
         `).join('');
 
+        const metaRows = [
+            receiptRow('Order #:', String(order.orderNumber)),
+            receiptRow('Date:', dateStr),
+            order.roomNumber ? receiptRow('Room:', `Room ${order.roomNumber}`) : '',
+            order.guestName ? receiptRow('Guest:', order.guestName) : '',
+            !order.roomNumber && order.isBuyAndGo ? receiptRow('Service:', 'Buy & Go') : '',
+            !order.roomNumber && !order.isBuyAndGo && order.tableNumber
+                ? receiptRow('Table:', order.tableNumber) : '',
+            order.floorLabel ? receiptRow('Floor:', order.floorLabel) : '',
+            order.distribution ? receiptRow('Distribution:', order.distribution) : '',
+            order.batchNumber ? receiptRow('Batch #:', order.batchNumber) : '',
+        ].join('');
+
         receipt.innerHTML = `
             <div class="receipt-header">
-                <div class="receipt-box uppercase">${esc(typeLabel)}</div>
                 <div class="receipt-title uppercase">${esc(appName)}</div>
                 <p class="receipt-tagline">Hotel Management System</p>
             </div>
             <div class="receipt-divider"></div>
-            <div class="receipt-row">
-                <span>Order #:</span>
-                <span style="font-weight: bold">${esc(order.orderNumber)}</span>
-            </div>
-            <div class="receipt-row">
-                <span>Date:</span>
-                <span>${dateStr}</span>
-            </div>
-            <div class="receipt-row">
-                <span>Table:</span>
-                <span style="font-weight: bold">${esc(order.tableNumber)}</span>
-            </div>
-            <div class="receipt-row">
-                <span>Floor:</span>
-                <span style="font-weight: bold">${esc(order.floorLabel || order.floorNumber || 'Ground')}</span>
-            </div>
+            ${metaRows}
             <div class="receipt-divider"></div>
             <table class="receipt-table">
                 <thead>
@@ -358,9 +456,8 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
             </div>
             <div class="receipt-divider"></div>
             <div class="receipt-footer">
-                <p style="font-weight: bold; font-size: 11px; margin-bottom: 4px;">THANK YOU!</p>
+                <p>THANK YOU!</p>
                 <p>Please visit us again</p>
-                <p style="margin-top: 10px; font-size: 9px; opacity: 0.8;">Powered by Prime Addis POS</p>
             </div>
         `;
 
@@ -416,70 +513,170 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
         return list;
     }
 
+    function getOrderDestination() {
+        const room = document.getElementById('room-number').value;
+        if (room) return `Room ${room}`;
+        return document.getElementById('table-number').value;
+    }
+
+    function clearRoomSelection() {
+        document.getElementById('room-number').value = '';
+        document.getElementById('room-id').value = '';
+        document.getElementById('room-picker-label').textContent = 'Checked-in Room';
+    }
+
     function initTablePicker() {
         renderFloorTabs();
         renderTableGrid();
     }
 
-    function renderFloorTabs() {
-        const el = document.getElementById('floor-tabs');
-        if (!floorPlan.length) return;
+    function initRoomPicker() {
+        renderRoomGrid();
+    }
+
+    function getActiveFloor() {
+        return floorPlan.find(f => f.id === activeFloorId) || floorPlan[0] || null;
+    }
+
+    function getUniversalTables() {
+        const seen = new Map();
+        floorPlan.forEach(floor => {
+            (floor.tables || []).forEach(t => {
+                if (!seen.has(String(t.tableNumber))) {
+                    seen.set(String(t.tableNumber), t);
+                }
+            });
+        });
+        return [...seen.values()].sort((a, b) =>
+            String(a.tableNumber).localeCompare(String(b.tableNumber), undefined, { numeric: true, sensitivity: 'base' })
+        );
+    }
+
+    function renderPickerFloorTabs(containerId) {
+        const el = document.getElementById(containerId);
+        if (!el || !floorPlan.length) return;
         el.innerHTML = floorPlan.map(f => {
             const on = f.id === activeFloorId;
             return `<button type="button" data-floor="${esc(f.id)}"
-                class="floor-tab px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${on ? 'bg-[#151515] text-white border-gray-600 shadow-lg' : 'bg-gray-900/40 border-gray-800/50 text-gray-500 hover:text-gray-300'}">${esc(f.label)}</button>`;
+                class="picker-floor-tab px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${on ? 'bg-[#151515] text-white border-gray-600 shadow-lg' : 'bg-gray-900/40 border-gray-800/50 text-gray-500 hover:text-gray-300'}">${esc(f.label)}</button>`;
         }).join('');
+    }
+
+    function renderFloorTabs() {
+        renderPickerFloorTabs('floor-tabs');
+    }
+
+    function getUniversalRooms() {
+        return [...allRooms].sort((a, b) =>
+            String(a.roomNumber).localeCompare(String(b.roomNumber), undefined, { numeric: true, sensitivity: 'base' })
+        );
+    }
+
+    function renderRoomGrid() {
+        const grid = document.getElementById('room-grid');
+        if (!grid) return;
+        const selectedRoom = document.getElementById('room-number').value;
+        const rooms = getUniversalRooms();
+
+        if (!rooms.length) {
+            grid.innerHTML = '<p class="text-center text-xs text-gray-600 py-12 uppercase tracking-widest font-black">No checked-in guests</p>';
+            return;
+        }
+
+        grid.innerHTML = `<div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                ${rooms.map(r => {
+                    const on = selectedRoom === r.roomNumber;
+                    const stay = r.checkIn && r.checkOut
+                        ? `${r.checkIn.slice(0, 10)} → ${r.checkOut.slice(0, 10)}`
+                        : '';
+                    return `<button type="button" data-room-id="${esc(r.id)}" data-room-num="${esc(r.roomNumber)}"
+                        class="room-pick min-h-[5.5rem] w-full flex flex-col items-center justify-center rounded-2xl text-sm font-black border transition-all px-2 py-3 ${on ? 'bg-amber-500/10 text-amber-400 border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.15)]' : 'bg-[#111] border-gray-800 text-gray-300 hover:border-gray-500 hover:text-white hover:bg-gray-900/50'}">
+                        <span class="text-base">${esc('Room ' + r.roomNumber)}</span>
+                        <span class="text-[9px] text-emerald-400 mt-1 uppercase tracking-wider truncate max-w-full">${esc(r.guestName || 'Guest')}</span>
+                        ${stay ? `<span class="text-[8px] text-gray-500 mt-1">${esc(stay)}</span>` : ''}
+                    </button>`;
+                }).join('')}
+            </div>`;
+    }
+
+    function setRoomSelection(room) {
+        if (!room) return;
+        document.getElementById('room-number').value = room.roomNumber;
+        document.getElementById('room-id').value = room.id;
+        document.getElementById('table-number').value = 'Buy&Go';
+        document.getElementById('table-picker-label').textContent = 'Buy & Go';
+        if (room.floorId) syncFloorSelection(room.floorId);
+        const guestLabel = room.guestName ? ` · ${room.guestName}` : '';
+        document.getElementById('room-picker-label').textContent = `Room ${room.roomNumber}${guestLabel}`;
+        closeRoomModal();
+    }
+
+    function openRoomModal() {
+        const savedFloorId = getSavedFloorId();
+        if (savedFloorId && floorPlan.find(f => f.id === savedFloorId)) {
+            activeFloorId = savedFloorId;
+        } else if (!activeFloorId) {
+            activeFloorId = resolveFloorId();
+        }
+        document.getElementById('room-modal').classList.remove('hidden');
+        renderRoomGrid();
+        lucide.createIcons();
+    }
+
+    function closeRoomModal() {
+        document.getElementById('room-modal').classList.add('hidden');
     }
 
     function renderTableGrid() {
         const grid = document.getElementById('table-grid');
         const selectedNum = document.getElementById('table-number').value;
+        const tables = getUniversalTables();
+        const activeFloor = getActiveFloor();
 
-        if (!floorPlan.length) {
-            grid.innerHTML = '<p class="col-span-4 text-center text-xs text-gray-600 py-12 uppercase tracking-widest font-black">No tables found</p>';
+        if (!tables.length) {
+            grid.innerHTML = '<p class="text-center text-xs text-gray-600 py-12 uppercase tracking-widest font-black">No tables found</p>';
             return;
         }
 
-        grid.innerHTML = floorPlan.map(floor => {
-            if (!floor.tables || !floor.tables.length) return '';
-            return `
-                <div class="mb-8">
-                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-4 px-1 pb-2 border-b border-gray-800/60">${esc(floor.label)}</p>
-                    <div class="grid grid-cols-4 gap-3">
-                        ${floor.tables.map(t => {
-                            const on = selectedNum === t.tableNumber;
-                            const label = String(t.tableNumber).startsWith('T#') ? t.tableNumber : 'T#' + t.tableNumber;
-                            return `<button type="button" data-table="${esc(t.tableNumber)}" data-floor-id="${esc(floor.id)}" data-floor-num="${esc(floor.floorNumber)}"
-                                class="table-pick h-14 w-full flex items-center justify-center rounded-2xl text-sm font-black border transition-all ${on ? 'bg-amber-500/10 text-amber-400 border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.15)]' : 'bg-[#111] border-gray-800 text-gray-300 hover:border-gray-500 hover:text-white hover:bg-gray-900/50'}">${esc(label)}</button>`;
-                        }).join('')}
-                    </div>
-                </div>`;
-        }).join('');
+        const floorHint = activeFloor
+            ? `<p class="text-[10px] font-black text-amber-500/80 uppercase tracking-[0.25em] mb-4 px-1">Serving ${esc(activeFloor.label)} · all tables available</p>`
+            : '';
+
+        grid.innerHTML = `${floorHint}
+            <div class="grid grid-cols-4 gap-3">
+                ${tables.map(t => {
+                    const on = selectedNum === t.tableNumber;
+                    const label = String(t.tableNumber).startsWith('T#') ? t.tableNumber : 'T#' + t.tableNumber;
+                    return `<button type="button" data-table="${esc(t.tableNumber)}"
+                        class="table-pick h-14 w-full flex items-center justify-center rounded-2xl text-sm font-black border transition-all ${on ? 'bg-amber-500/10 text-amber-400 border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.15)]' : 'bg-[#111] border-gray-800 text-gray-300 hover:border-gray-500 hover:text-white hover:bg-gray-900/50'}">${esc(label)}</button>`;
+                }).join('')}
+            </div>`;
     }
 
     function setTableSelection(tableNumber, floorId, floorNumber, label) {
+        clearRoomSelection();
         document.getElementById('table-number').value = tableNumber;
-        document.getElementById('floor-id').value = floorId || '';
-        document.getElementById('floor-number').value = floorNumber || '';
         if (floorId) {
-            document.getElementById('floor-select').value = floorId;
-            activeFloorId = floorId;
+            syncFloorSelection(floorId);
+        } else {
+            document.getElementById('floor-id').value = '';
+            document.getElementById('floor-number').value = '';
         }
         document.getElementById('table-picker-label').textContent = label;
         closeTableModal();
     }
 
     function updateFloorInputs() {
-        const floorId = document.getElementById('floor-select').value;
-        const floor = floorPlan.find(f => f.id === floorId);
-        if (floor) {
-            document.getElementById('floor-id').value = floor.id;
-            document.getElementById('floor-number').value = floor.floorNumber;
-            activeFloorId = floor.id;
-        }
+        syncFloorSelection(document.getElementById('floor-select').value);
     }
 
     function openTableModal() {
+        const savedFloorId = getSavedFloorId();
+        if (savedFloorId && floorPlan.find(f => f.id === savedFloorId)) {
+            activeFloorId = savedFloorId;
+        } else if (!activeFloorId) {
+            activeFloorId = resolveFloorId();
+        }
         document.getElementById('table-modal').classList.remove('hidden');
         renderFloorTabs();
         renderTableGrid();
@@ -515,15 +712,19 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
             const mainBtn = document.getElementById(tab === 'Food' ? 'main-tab-food' : 'main-tab-drinks');
             if (mainBtn) {
                 mainBtn.className = `main-cat-tab flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border transition-all ${mainCls}`;
-                mainBtn.innerHTML = `${tab === 'Food' ? '🍔' : '🍹'} ${esc(tab)} <span class="opacity-30 ml-1">(${tab === 'Food' ? foodN : drinkN})</span>`;
+                const mainIcon = tab === 'Food' ? 'utensils-crossed' : 'wine';
+                mainBtn.innerHTML = `<span class="inline-flex items-center gap-2"><i data-lucide="${mainIcon}" class="w-3.5 h-3.5"></i>${esc(tab)}</span> <span class="opacity-30 ml-1">(${tab === 'Food' ? foodN : drinkN})</span>`;
             }
             
             const cartBtn = document.getElementById(tab === 'Food' ? 'cart-tab-food' : 'cart-tab-drinks');
             if (cartBtn) {
                 cartBtn.className = `cart-cat-tab flex-1 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-2 ${cartCls}`;
-                cartBtn.innerHTML = `${tab === 'Food' ? '🥩 BUTCHER' : '🥤 DRINKS'}`;
+                const cartIcon = tab === 'Food' ? 'utensils-crossed' : 'wine';
+                const cartLabel = tab === 'Food' ? 'BUTCHER' : 'DRINKS';
+                cartBtn.innerHTML = `<i data-lucide="${cartIcon}" class="w-3.5 h-3.5"></i> ${cartLabel}`;
             }
         });
+        lucide.createIcons();
     }
 
     function renderGrid() {
@@ -559,6 +760,7 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
         renderMainTabs();
         renderCategoryChips();
         renderGrid();
+        lucide.createIcons();
     }
 
     function setActiveTab(tab) {
@@ -631,7 +833,14 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    tableNumber: document.getElementById('table-number').value,
+                    tableNumber: getOrderDestination(),
+                    roomNumber: document.getElementById('room-number').value || null,
+                    guestName: (() => {
+                        const rn = document.getElementById('room-number').value;
+                        if (!rn) return null;
+                        const room = allRooms.find(r => r.roomNumber === rn);
+                        return room?.guestName || null;
+                    })(),
                     floorId: document.getElementById('floor-id').value || null,
                     floorNumber: document.getElementById('floor-number').value || null,
                     paymentMethod: 'cash',
@@ -655,28 +864,21 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
             });
             const result = await resp.json();
             if (resp.ok) {
-                const orderData = {
-                    orderNumber: result.orderNumber,
-                    tableNumber: document.getElementById('table-number').value,
-                    floorLabel: document.getElementById('table-picker-label').textContent.split(' · ')[1] || null,
-                    floorNumber: document.getElementById('floor-number').value,
-                    items: cart,
-                    totalAmount: cart.reduce((a, i) => a + i.price * i.quantity, 0)
-                };
-                
+                const totalAmount = cart.reduce((a, i) => a + i.price * i.quantity, 0);
+                const orderData = buildOrderReceiptData(result.orderNumber, [...cart], totalAmount);
+
                 cart = [];
                 document.getElementById('batch-number').value = '';
+                clearRoomSelection();
                 renderCart();
-                
-                // Trigger sequential printing for Kitchen and Table copies
+
                 setTimeout(() => {
                     const receipt = document.getElementById('receipt-print');
                     if (receipt.parentElement !== document.body) {
                         document.body.appendChild(receipt);
                     }
-                    // Sequential calls: standard browsers will wait for first dialog to close
-                    printReceipt(orderData, 'Kitchen Copy');
-                    printReceipt(orderData, 'Table Copy');
+                    printReceipt(orderData);
+                    printReceipt(orderData);
                 }, 150);
             } else alert('Error: ' + (result.message || 'Failed'));
         } catch { alert('Server error.'); }
@@ -715,31 +917,49 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
 
     document.getElementById('floor-select').onchange = () => {
         updateFloorInputs();
-        // Clear table if it doesn't belong to the new floor
-        const currentTable = document.getElementById('table-number').value;
-        if (currentTable !== 'Buy&Go') {
-            setTableSelection('Buy&Go', '', '', 'Buy & Go');
-        }
+        renderFloorTabs();
+        renderTableGrid();
     };
 
     document.getElementById('table-picker-btn').onclick = openTableModal;
+    document.getElementById('room-picker-btn').onclick = openRoomModal;
+    document.getElementById('room-modal-close').onclick = closeRoomModal;
+    document.getElementById('room-modal').addEventListener('click', e => {
+        if (e.target.id === 'room-modal') closeRoomModal();
+    });
+    document.getElementById('clear-room-pick').onclick = () => {
+        clearRoomSelection();
+        closeRoomModal();
+    };
     document.getElementById('table-modal-close').onclick = closeTableModal;
     document.getElementById('table-modal').addEventListener('click', e => {
         if (e.target.id === 'table-modal') closeTableModal();
     });
     document.getElementById('pick-buy-go').onclick = () => setTableSelection('Buy&Go', '', '', 'Buy & Go');
 
-    document.getElementById('floor-tabs').addEventListener('click', e => {
-        const tab = e.target.closest('[data-floor]');
-        if (tab) { activeFloorId = tab.dataset.floor; renderFloorTabs(); renderTableGrid(); }
+    document.addEventListener('click', e => {
+        const tab = e.target.closest('.picker-floor-tab');
+        if (!tab) return;
+        syncFloorSelection(tab.dataset.floor);
+        renderFloorTabs();
+        renderTableGrid();
     });
 
     document.getElementById('table-grid').addEventListener('click', e => {
         const btn = e.target.closest('.table-pick');
         if (!btn) return;
-        const floor = floorPlan.find(f => f.id === btn.dataset.floorId);
-        const label = btn.dataset.table + (floor ? ' · ' + floor.label.replace('FLOOR #', 'Floor ') : '');
-        setTableSelection(btn.dataset.table, btn.dataset.floorId, btn.dataset.floorNum, label);
+        const floor = getActiveFloor();
+        const tableNum = btn.dataset.table;
+        const floorLabel = floor ? floor.label.replace('FLOOR #', 'Floor ') : '';
+        const label = tableNum + (floorLabel ? ' · ' + floorLabel : '');
+        setTableSelection(tableNum, floor?.id || '', floor?.floorNumber || '', label);
+    });
+
+    document.getElementById('room-grid').addEventListener('click', e => {
+        const btn = e.target.closest('.room-pick');
+        if (!btn) return;
+        const room = allRooms.find(r => r.id === btn.dataset.roomId);
+        if (room) setRoomSelection(room);
     });
 
     ['search-name', 'search-id'].forEach(id => {
@@ -796,17 +1016,16 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
             font-size: 13px;
             line-height: 1.3;
         }
-        #receipt-print * { visibility: visible !important; color: black !important; }
+        #receipt-print, #receipt-print * { visibility: visible !important; color: black !important; font-weight: bold !important; }
         .receipt-header { text-align: center; margin-bottom: 10px; }
-        .receipt-title { font-size: 20px; font-weight: 900; text-transform: uppercase; margin: 5px 0; }
+        .receipt-title { font-size: 20px; text-transform: uppercase; margin: 5px 0; }
         .receipt-tagline { font-size: 11px; margin-bottom: 10px; }
-        .receipt-box { border: 2px solid black; padding: 3px 10px; display: inline-block !important; font-weight: 900; margin-bottom: 10px; }
         .receipt-divider { border-bottom: 2px dashed black; margin: 10px 0; }
         .receipt-row { display: flex !important; justify-content: space-between; margin-bottom: 4px; }
         .receipt-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
         .receipt-table th { text-align: left; border-bottom: 2px solid black; padding: 5px 0; font-size: 12px; }
-        .receipt-table td { padding: 5px 0; vertical-align: top; border-bottom: 1px dashed #eee; }
-        .receipt-total { font-size: 16px; font-weight: 900; margin-top: 10px; border-top: 2px dashed black; padding-top: 10px; }
+        .receipt-table td { padding: 5px 0; vertical-align: top; border-bottom: 1px dashed #ccc; }
+        .receipt-total { font-size: 16px; margin-top: 10px; border-top: 2px dashed black; padding-top: 10px; }
         .receipt-footer { text-align: center; margin-top: 20px; font-size: 11px; }
     }
 </style>

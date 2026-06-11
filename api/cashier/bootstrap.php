@@ -3,6 +3,7 @@
  * Lightweight bootstrap for cashier POS — matches admin standard menu filtering.
  */
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/JsonDB.php';
 require_once __DIR__ . '/../../includes/SettingsManager.php';
 require_once __DIR__ . '/../../includes/menu-tiers.php';
 
@@ -177,6 +178,50 @@ try {
 
     $tables = array_map(fn($t) => $t['tableNumber'], $allTables);
 
+    $hotelRooms = array_values(array_filter(
+        db('rooms')->findMany(['where' => ['isDeleted' => false]]),
+        fn($r) => ($r['isActive'] ?? true) !== false && trim($r['roomNumber'] ?? '') !== ''
+    ));
+    usort($hotelRooms, fn($a, $b) => strnatcasecmp((string)($a['roomNumber'] ?? ''), (string)($b['roomNumber'] ?? '')));
+
+    $floorLabelMap = [];
+    foreach ($floors as $floor) {
+        $floorLabelMap[$floor['id'] ?? ''] = 'FLOOR #' . strtoupper($floor['floorNumber'] ?? '');
+    }
+
+    $checkedInGuests = array_values(array_filter(
+        db('receptionRequests')->findMany(['where' => ['isDeleted' => false]]),
+        fn($g) => ($g['status'] ?? '') === 'CHECKIN_APPROVED' && trim((string)($g['roomNumber'] ?? '')) !== ''
+    ));
+
+    $guestByRoom = [];
+    foreach ($checkedInGuests as $guest) {
+        $key = ltrim((string)($guest['roomNumber'] ?? ''), '0') ?: '0';
+        $guestByRoom[$key] = $guest;
+        $guestByRoom[(string)($guest['roomNumber'] ?? '')] = $guest;
+    }
+
+    $rooms = [];
+    foreach ($hotelRooms as $room) {
+        $roomNum = (string)$room['roomNumber'];
+        $guest = $guestByRoom[$roomNum] ?? $guestByRoom[ltrim($roomNum, '0') ?: '0'] ?? null;
+        if (!$guest) continue;
+
+        $floorId = $room['floorId'] ?? '';
+        $rooms[] = [
+            'id' => $room['id'],
+            'roomNumber' => $roomNum,
+            'floorId' => $floorId,
+            'floorLabel' => $floorLabelMap[$floorId] ?? '',
+            'category' => $room['category'] ?? '',
+            'guestName' => $guest['guestName'] ?? 'Guest',
+            'guestId' => $guest['id'] ?? '',
+            'checkIn' => $guest['checkIn'] ?? null,
+            'checkOut' => $guest['checkOut'] ?? null,
+        ];
+    }
+    usort($rooms, fn($a, $b) => strnatcasecmp($a['roomNumber'], $b['roomNumber']));
+
     $tierMeta = null;
     if ($tierId !== '') {
         $tier = getMenuTierById($tierId);
@@ -196,6 +241,7 @@ try {
         'categories' => $categories,
         'distributions' => $distributions,
         'floorPlan' => $floorPlan,
+        'rooms' => $rooms,
         'tables' => $tables,
         'branding' => [
             'app_name' => $branding['app_name'] ?? 'ABE HOTEL',
