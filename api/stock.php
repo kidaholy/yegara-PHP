@@ -7,7 +7,7 @@ require_once '../includes/auth.php';
 
 header('Content-Type: application/json');
 
-if (!isAuthenticated()) { http_response_code(401); echo json_encode(['message' => 'Unauthorized']); exit; }
+requireApiAuth(['admin', 'store', 'store_keeper']);
 
 function j($data, $code = 200) { http_response_code($code); echo json_encode($data); exit; }
 

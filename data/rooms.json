@@ -11,7 +11,7 @@
         "isActive": true,
         "roomServiceMenuTier": "standard",
         "createdAt": "2026-03-27T16:00:07.214Z",
-        "updatedAt": "2026-06-02T22:00:27.000Z",
+        "updatedAt": "2026-06-11T23:55:51.000Z",
         "isDeleted": false
     },
     {
@@ -22,11 +22,11 @@
         "type": "standard",
         "category": "VIP",
         "price": 2500,
-        "status": "available",
+        "status": "occupied",
         "isActive": true,
         "roomServiceMenuTier": "standard",
         "createdAt": "2026-03-27T16:00:37.239Z",
-        "updatedAt": "2026-05-02T19:32:52.866Z",
+        "updatedAt": "2026-06-11T23:58:16.000Z",
         "isDeleted": false
     },
     {

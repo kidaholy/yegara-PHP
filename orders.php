@@ -5,7 +5,7 @@
  */
 require_once 'includes/layout.php';
 require_once 'includes/order-utils.php';
-requireAuth(['admin', 'cashier', 'chef', 'reception', 'receptionist', 'store_keeper']);
+requireAuth(['admin', 'cashier', 'chef', 'reception', 'receptionist', 'store', 'store_keeper']);
 
 $user = getCurrentUser();
 $userRole = $user['role'] ?? '';

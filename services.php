@@ -11,13 +11,57 @@ $menuTiers = file_exists($tiersDataPath) ? json_decode(file_get_contents($tiersD
 
 <style>
     @keyframes slideInUp { from { transform: translateY(18px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     .tab-content-anim { animation: slideInUp .45s cubic-bezier(.4,0,.2,1) both; }
+
+    :root {
+        --reception-gold: #c5a059;
+        --reception-dark: #0f1110;
+        --reception-panel: #121413;
+    }
+
+    /* Premium Typography */
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,900;1,900&display=swap');
+    .font-serif-premium { font-family: 'Playfair Display', serif; }
 
     /* Tab active state */
     .services-tab-btn { transition: all .25s; border-bottom-width: 2px; }
-    .services-tab-btn.active-tab { color: #c5a059; border-bottom-color: #c5a059; }
+    .services-tab-btn.active-tab { color: var(--reception-gold); border-bottom-color: var(--reception-gold); }
     .services-tab-btn:not(.active-tab) { color: #9ca3af; border-bottom-color: transparent; }
     .services-tab-btn:not(.active-tab):hover { color: #f3f4f6; }
+
+    /* Custom Input Styles for Reception Spec */
+    .ci-input-group { border-bottom: 1px solid rgba(55, 65, 81, 0.5); padding-bottom: 0.5rem; }
+    .ci-label { display: block; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.15em; color: #6b7280; margin-bottom: 0.375rem; }
+    .ci-field { width: 100%; background: transparent; border: none; font-size: 0.875rem; color: white; outline: none; padding: 0.125rem 0; }
+    .ci-field option { background-color: #121413; color: white; }
+    .ci-field::placeholder { color: #374151; }
+
+    /* Stay Summary Box */
+    .summary-box { background: rgba(18, 20, 19, 0.6); border: 1px solid rgba(197, 160, 89, 0.15); border-radius: 1rem; padding: 1.5rem; position: relative; }
+    .summary-metric { text-align: center; }
+    .summary-val { font-size: 1.5rem; font-weight: 900; color: white; }
+    .summary-unit { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #6b7280; margin-top: 0.25rem; }
+
+    /* Payment Buttons */
+    .pay-btn { cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; padding: 1rem 0.5rem; border: 1px solid #1f2937; border-radius: 0.75rem; transition: all 0.2s; }
+    .pay-btn-icon { width: 1.25rem; height: 1.25rem; color: #6b7280; transition: color 0.2s; }
+    .pay-btn-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #6b7280; text-align: center; }
+    
+    .pay-radio:checked + .pay-btn { background: rgba(197, 160, 89, 0.1); border-color: rgba(197, 160, 89, 0.5); }
+    .pay-radio:checked + .pay-btn .pay-btn-icon { color: var(--reception-gold); }
+    .pay-radio:checked + .pay-btn .pay-btn-label { color: var(--reception-gold); }
+
+    /* ID Upload Previews */
+    .id-preview-box { background: #0f1110; border: 1px solid #1f2937; border-radius: 0.75rem; overflow: hidden; position: relative; }
+    .id-preview-img { width: 100%; height: 6rem; object-cover: cover; }
+    .id-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); font-size: 9px; font-weight: 700; color: var(--reception-gold); text-align: center; padding: 0.25rem 0; text-transform: uppercase; letter-spacing: 0.1em; }
+    .id-remove { position: absolute; top: 0.5rem; right: 0.5rem; width: 1.25rem; height: 1.25rem; background: #ef4444; color: white; border-radius: 99px; display: flex; items-center: center; justify-content: center; font-size: 10px; cursor: pointer; }
+
+    /* Gold Gradient Button */
+    .btn-gold { background: linear-gradient(to right, #c5a059, #b59048); color: #0f1110; transition: transform 0.2s, box-shadow 0.2s; }
+    .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(197, 160, 89, 0.3); }
+    .btn-gold:active { transform: translateY(0); }
 </style>
 
 <div class="max-w-screen-2xl w-full flex flex-col h-[calc(100vh-theme(space.4))] overflow-hidden bg-[#0f1110] rounded-2xl mt-2 mb-2 lg:ml-2">
@@ -248,6 +292,38 @@ $menuTiers = file_exists($tiersDataPath) ? json_decode(file_get_contents($tiersD
             </button>
         </div>
         <div id="rec-detail-body" class="text-gray-300 space-y-4"></div>
+    </div>
+</div>
+
+<!-- Receipt Full Preview Modal -->
+<div id="receipt-full-modal" class="hidden fixed inset-0 z-[120] bg-gray-900/95 backdrop-blur-sm flex flex-col p-4 md:p-6">
+    <div class="flex items-center justify-between gap-4 mb-4 shrink-0">
+        <div class="min-w-0">
+            <h3 id="receipt-full-title" class="text-lg font-bold text-gray-200 truncate">Receipt Preview</h3>
+            <p class="text-[10px] uppercase font-bold tracking-widest text-gray-500 mt-1">Full page view</p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+            <a id="receipt-full-external" href="#" target="_blank" rel="noopener"
+                class="px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-[10px] font-black uppercase tracking-widest text-[#c5a059] hover:text-white transition-colors">
+                Open in Tab
+            </a>
+            <button type="button" onclick="AdminServices.closeReceiptFull()"
+                class="w-10 h-10 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 hover:text-white transition-colors flex items-center justify-center">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </div>
+    <div id="receipt-full-embed-wrap" class="flex-1 min-h-0 rounded-2xl overflow-hidden border border-gray-700 bg-white shadow-2xl">
+        <iframe id="receipt-full-iframe" class="w-full h-full" title="Receipt full preview" src="about:blank"></iframe>
+    </div>
+    <div id="receipt-full-fallback" class="hidden flex-1 min-h-0 rounded-2xl border border-gray-700 bg-gray-800 shadow-2xl flex flex-col items-center justify-center text-center p-8">
+        <div class="w-16 h-16 rounded-2xl bg-[#c5a059]/10 border border-[#c5a059]/30 flex items-center justify-center text-[#c5a059] mb-6">
+            <i data-lucide="external-link" class="w-8 h-8"></i>
+        </div>
+        <p class="text-sm font-bold text-gray-200 mb-2">Receipt opens in a new browser tab</p>
+        <p class="text-xs text-gray-500 max-w-md mb-6">Banking receipt pages cannot be embedded here. Use the button below to view the full receipt page.</p>
+        <a id="receipt-full-fallback-link" href="#" target="_blank" rel="noopener"
+            class="px-6 py-3 bg-[#c5a059] text-gray-900 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#b59048] transition-colors">Open Receipt Page</a>
     </div>
 </div>
 

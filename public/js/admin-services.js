@@ -13,10 +13,9 @@ const AdminServices = {
     // Reception
     receptionSubView: 'status',   // status | check-in
     receptionRequests: [],
-    receptionFilter: 'all',       // all | pending | checked-in | denied | checked-out
+    receptionFilter: 'all',       // all | pending | checked-in | rejected | checked-out
+    checkoutAlertShown: false,
     receptionSearch: '',
-    receptionDateFilter: 'all',   // all | today | week | year | custom
-    receptionCustomDate: '',
     prevReceptionCount: 0,
     
     // VIP Tiers
@@ -49,8 +48,26 @@ const AdminServices = {
             this.prevReceptionCount = pendingCount;
             this.receptionRequests = recs;
 
-            if (this.activeTab === 'reception') this._renderReceptionContent();
+            if (this.activeTab === 'reception') {
+                this._renderReceptionContent();
+                this._checkCheckoutDueAlert();
+            }
         } catch (e) { console.warn('Poll error', e); }
+    },
+
+    _checkCheckoutDueAlert() {
+        const isReception = ['reception', 'receptionist'].includes(window.USER_ROLE);
+        if (!isReception) return;
+        const today = new Date().toISOString().slice(0, 10);
+        const dueGuests = this.receptionRequests.filter(r =>
+            r.status === 'CHECKIN_APPROVED' && r.checkOut && r.checkOut.slice(0, 10) <= today
+        );
+        if (dueGuests.length > 0 && !this.checkoutAlertShown) {
+            this.checkoutAlertShown = true;
+            const names = dueGuests.map(g => g.guestName).join(', ');
+            alert(`Checkout due today!\n\nPlease submit checkout requests for: ${names}\n\nGo to Guest Status → Checked In to request checkout from admin.`);
+        }
+        if (dueGuests.length === 0) this.checkoutAlertShown = false;
     },
 
     _playAlert() {
@@ -305,40 +322,87 @@ const AdminServices = {
     // ─── TAB 3: RECEPTION ──────────────────────────────────────────────────────
     setReceptionSubView(v) {
         const isAdmin = window.USER_ROLE === 'admin';
-        // Enforce role-based view restrictions
         if (isAdmin && v !== 'status') return;
-        if (!isAdmin && v !== 'check-in') return;
-        
+        if (!isAdmin && !['check-in', 'status'].includes(v)) return;
+
         this.receptionSubView = v;
         this._renderPanel();
     },
 
+    _isReceptionStaff() {
+        return ['reception', 'receptionist'].includes(window.USER_ROLE);
+    },
+
     _buildReceptionShellHTML() {
         const isAdmin = window.USER_ROLE === 'admin';
-        // Enforce role-based view default
-        if (isAdmin && this.receptionSubView !== 'status') {
-            this.receptionSubView = 'status';
-        } else if (!isAdmin && this.receptionSubView !== 'check-in') {
-            this.receptionSubView = 'check-in';
-        }
+        // Default views based on role if not set
+        if (isAdmin && !this.receptionSubView) this.receptionSubView = 'status';
+        if (!isAdmin && !this.receptionSubView) this.receptionSubView = 'check-in';
 
+        const isCheckIn = this.receptionSubView === 'check-in';
         const isStatus = this.receptionSubView === 'status';
-        
+
+        const receptionTabs = isAdmin ? `
+                    <button onclick="AdminServices.setReceptionSubView('status')" 
+                        class="px-5 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2
+                        ${isStatus ? 'bg-[#c5a059] text-[#0f1110] shadow-lg shadow-[#c5a059]/20' : 'bg-transparent text-gray-500 border border-gray-700 hover:text-gray-300'}">
+                        <i data-lucide="users" class="w-4 h-4"></i> Guest Status
+                    </button>` : `
+                    <button onclick="AdminServices.setReceptionSubView('check-in')" 
+                        class="px-5 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2
+                        ${isCheckIn ? 'bg-[#c5a059] text-[#0f1110] shadow-lg shadow-[#c5a059]/20' : 'bg-gray-800/50 text-gray-500 border border-gray-700 hover:text-gray-300'}">
+                        <i data-lucide="file-plus" class="w-4 h-4"></i> New Check-in
+                    </button>
+                    <button onclick="AdminServices.setReceptionSubView('status')" 
+                        class="px-5 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2
+                        ${isStatus ? 'bg-[#c5a059] text-[#0f1110] shadow-lg shadow-[#c5a059]/20' : 'bg-transparent text-gray-500 border border-gray-700 hover:text-gray-300'}">
+                        <i data-lucide="users" class="w-4 h-4"></i> Guest Status
+                    </button>`;
+
+        const viewContent = isStatus ? this._buildReceptionStatusHTML() : this._buildReceptionCheckInHTML();
+
         return `
         <div class="space-y-6">
-            <!-- Dynamic View Area -->
-            <div id="reception-view-area">
-                ${isStatus ? this._buildReceptionStatusHTML() : this._buildReceptionCheckInHTML()}
+            <div class="flex items-center justify-between bg-[#121413] border border-[#1a2c1a] rounded-2xl p-6 shadow-xl mb-8">
+                <div class="flex items-center gap-6">
+                    <div class="w-16 h-16 rounded-2xl bg-[#c5a059]/10 border border-[#c5a059]/30 flex items-center justify-center text-[#c5a059] shadow-inner">
+                        <i data-lucide="bell" class="w-8 h-8"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-serif-premium italic text-[#c5a059] tracking-tight">Reception Desk</h2>
+                        <p class="text-[10px] font-black uppercase tracking-[0.25em] text-gray-500 mt-1">${isAdmin ? 'Admin — Guest Approvals' : 'Reception — Guest Management'}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">${receptionTabs}</div>
             </div>
+
+            <div id="reception-view-area" class="animate-in fade-in duration-500">${viewContent}</div>
         </div>`;
     },
 
+    _statusFilterPillsHTML(activeKey = 'all') {
+        return [
+            { key: 'pending', label: 'Pending', icon: 'clock' },
+            { key: 'checked-in', label: 'Checked In', icon: 'check-square' },
+            { key: 'checked-out', label: 'Checked Out', icon: 'log-out' },
+            { key: 'rejected', label: 'Rejected', icon: 'x-circle' },
+            { key: 'all', label: 'All', icon: 'users' }
+        ].map(s => `
+            <button onclick="AdminServices._setStatusFilter('${s.key}')"
+                class="rec-status-pill flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider px-4 py-2 rounded-lg border transition-all ${s.key === activeKey ? 'bg-[#c5a059]/10 text-[#c5a059] border-[#c5a059]/30' : 'border-transparent text-gray-500 hover:text-gray-300'}"
+                data-status="${s.key}">
+                <i data-lucide="${s.icon}" class="w-3.5 h-3.5"></i>
+                ${s.label} (<span class="rec-count-${s.key}">0</span>)
+            </button>`).join('');
+    },
+
     _buildReceptionStatusHTML() {
+        const activeFilter = this.receptionFilter || 'all';
         return `
         <div class="space-y-6">
-            <!-- Search & Filters Row -->
-            <div class="flex flex-wrap gap-4 items-center bg-gray-800/40 p-2 rounded-xl border border-gray-700/30">
-                <div class="relative flex-1 min-w-[280px]">
+            <!-- Search Row -->
+            <div class="bg-gray-800/40 p-2 rounded-xl border border-gray-700/30">
+                <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <i data-lucide="search" class="w-4 h-4 text-gray-500"></i>
                     </div>
@@ -346,16 +410,15 @@ const AdminServices = {
                         oninput="AdminServices.receptionSearch = this.value; AdminServices._renderReceptionContent()"
                         class="w-full bg-gray-900/50 border border-transparent rounded-lg py-3 pl-11 pr-4 text-xs font-bold uppercase tracking-widest text-gray-200 outline-none focus:border-[#c5a059]/50 focus:bg-gray-800 transition-colors placeholder:text-gray-600">
                 </div>
-                
-                <div class="flex items-center gap-2 pr-2" id="rec-date-pills">
-                    ${['all','today','week','year'].map(d => `
-                    <button onclick="AdminServices._setDateFilter('${d}')"
-                        class="rec-date-pill text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-lg transition-all ${d === 'all' ? 'bg-[#1a1c1a] text-[#c5a059] border border-[#c5a059]/30' : 'text-gray-500 hover:text-gray-300'}"
-                        data-date="${d}">${d === 'all' ? 'All Time' : d.charAt(0).toUpperCase()+d.slice(1)}</button>
-                    `).join('')}
-                    <button class="text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-lg text-gray-500 hover:text-gray-300 flex items-center gap-2">
-                        <i data-lucide="calendar" class="w-4 h-4"></i> Pick Date
-                    </button>
+            </div>
+
+            <div id="rec-checkout-banner" class="hidden bg-orange-500/10 border border-orange-500/30 rounded-2xl p-5 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center text-orange-400 shrink-0">
+                    <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-black text-orange-300 uppercase tracking-widest">Checkout Due Today</p>
+                    <p class="text-xs text-orange-400/80 mt-1">Submit checkout requests to admin for guests whose stay ends today.</p>
                 </div>
             </div>
 
@@ -363,42 +426,35 @@ const AdminServices = {
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div class="bg-[#121413] border border-[#1a1c1a] rounded-2xl p-6 text-center hover:border-[#c5a059]/20 transition-colors">
                     <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#c5a059]/70 mb-2">Total Revenue</p>
-                    <h3 id="stat-revenue" class="text-3xl font-black font-playfair italic text-[#c5a059]">0</h3>
+                    <h3 id="stat-revenue" class="text-3xl font-black font-serif-premium italic text-[#c5a059]">0</h3>
                     <p class="text-[10px] text-gray-500 mt-2 uppercase tracking-wider">ETB · All Time</p>
                 </div>
                 <div class="bg-[#121413] border border-[#1a1c1a] rounded-2xl p-6 text-center hover:border-gray-700 transition-colors">
                     <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#c5a059]/70 mb-2">Approved Guests</p>
-                    <h3 id="stat-guests" class="text-3xl font-black font-playfair italic text-white">0</h3>
+                    <h3 id="stat-guests" class="text-3xl font-black font-serif-premium italic text-white">0</h3>
                     <p class="text-[10px] text-gray-500 mt-2 uppercase tracking-wider">Checked In / Active</p>
                 </div>
                 <div class="bg-[#121413] border border-[#1a1c1a] rounded-2xl p-6 text-center hover:border-gray-700 transition-colors">
                     <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#c5a059]/70 mb-2">Avg. Stay</p>
-                    <h3 id="stat-stay" class="text-3xl font-black font-playfair italic text-white">—</h3>
+                    <h3 id="stat-stay" class="text-3xl font-black font-serif-premium italic text-white">—</h3>
                     <p class="text-[10px] text-gray-500 mt-2 uppercase tracking-wider">Nights per Guest</p>
                 </div>
             </div>
 
             <!-- Status Pills -->
-            <div class="flex items-center justify-between border-b border-gray-800 pb-4">
-                <div class="flex gap-3 flex-wrap" id="rec-status-pills">
-                    ${[
-                        {key:'pending', label:'Checkin Waiting', icon:'clock'},
-                        {key:'checked-in', label:'Checked In', icon:'check-square'},
-                        {key:'denied', label:'Denied', icon:'x-circle'},
-                        {key:'checked-out', label:'Checkout', icon:'log-out'},
-                        {key:'all', label:'All', icon:'users'} // Changed label all to just All
-                    ].map(s => `
-                    <button onclick="AdminServices._setStatusFilter('${s.key}')"
-                        class="rec-status-pill flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider px-4 py-2 rounded-lg border transition-all ${s.key === 'pending' ? 'bg-[#c5a059]/10 text-[#c5a059] border-[#c5a059]/30' : 'border-transparent text-gray-500 hover:text-gray-300'}"
-                        data-status="${s.key}">
-                        <i data-lucide="${s.icon}" class="w-3.5 h-3.5"></i>
-                        ${s.label} (<span class="rec-count-${s.key}">0</span>)
-                    </button>
-                    `).join('')}
+            <div class="flex items-center justify-between border-b border-gray-800 pb-4 gap-4">
+                <div class="flex gap-2 sm:gap-3 flex-wrap" id="rec-status-pills">
+                    ${this._statusFilterPillsHTML(activeFilter)}
                 </div>
-                <button onclick="AdminServices.fetchQueueData()" class="text-gray-500 hover:text-[#c5a059] transition-colors p-2 shrink-0">
-                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                </button>
+                <div class="flex items-center gap-3">
+                    ${window.USER_ROLE === 'admin' ? `
+                    <button onclick="AdminServices.wipeReception()" class="px-4 py-2 bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear All
+                    </button>` : ''}
+                    <button onclick="AdminServices.fetchQueueData()" class="text-gray-500 hover:text-[#c5a059] transition-colors p-2 shrink-0">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    </button>
+                </div>
             </div>
 
             <!-- Cards Container -->
@@ -409,173 +465,247 @@ const AdminServices = {
     _buildReceptionCheckInHTML() {
         const activeFloors = (this.floors || []).filter(f => !f.isDeleted);
         return `
-        <div class="bg-gray-800/40 border border-gray-700/50 rounded-2xl p-8 max-w-5xl mx-auto">
-            <h3 class="text-sm font-bold uppercase tracking-widest text-[#c5a059] flex items-center gap-2 mb-8"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i> New Check-In</h3>
-            
+        <div class="max-w-6xl mx-auto">
+            <p class="text-[10px] font-black uppercase tracking-[0.3em] text-[#c5a059] mb-8 flex items-center gap-2">
+                <i data-lucide="edit-3" class="w-3 h-3"></i> New Check-in
+            </p>
+
             <!-- Hidden file inputs -->
             <input type="file" id="ci-photo-file" accept="image/*" class="sr-only" onchange="AdminServices._ciProfileFileChange(this)">
-            <input type="file" id="ci-id-front-file" accept="image/*,application/pdf" class="sr-only" onchange="AdminServices._ciIdUpload(this,'front')">
-            <input type="file" id="ci-id-back-file"  accept="image/*,application/pdf" class="sr-only" onchange="AdminServices._ciIdUpload(this,'back')">
+            <input type="file" id="ci-id-front-file" accept="image/*" class="sr-only" onchange="AdminServices._ciIdUpload(this,'front')">
+            <input type="file" id="ci-id-back-file"  accept="image/*" class="sr-only" onchange="AdminServices._ciIdUpload(this,'back')">
+            <input type="file" id="ci-receipt-file" accept="application/pdf,.pdf" class="sr-only" onchange="AdminServices._ciReceiptFileChange(this)">
 
-            <form onsubmit="AdminServices.submitNewCheckIn(event)" class="space-y-8">
-                <!-- Row 1: Core details -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="space-y-4">
-                        <div class="space-y-1.5 border-b border-gray-700/50 pb-2">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Guest Name *</label>
-                            <input type="text" id="ci-name" required class="w-full bg-transparent border-none text-sm text-white focus:outline-none placeholder:text-gray-700" placeholder="Full name">
-                        </div>
-                        <div class="grid grid-cols-2 gap-6">
-                            <div class="space-y-1.5 border-b border-gray-700/50 pb-2">
-                                <label class="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-1.5"><i data-lucide="credit-card" class="w-3 h-3"></i> Fayda ID (FAN)</label>
-                                <input type="text" id="ci-fayda" class="w-full bg-transparent border-none text-sm text-white focus:outline-none placeholder:text-gray-700" placeholder="16-digit FAN number">
-                            </div>
-                            <div class="space-y-1.5 border-b border-gray-700/50 pb-2">
-                                <label class="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-1.5"><i data-lucide="phone" class="w-3 h-3"></i> Phone</label>
-                                <input type="text" id="ci-phone" class="w-full bg-transparent border-none text-sm text-white focus:outline-none placeholder:text-gray-700" placeholder="+251 9XX XXX XXX">
-                            </div>
-                        </div>
-                        
-                        <div class="bg-gray-900/40 rounded-xl p-5 border border-gray-800 space-y-5 mt-6">
-                            <h4 class="text-[10px] font-black uppercase tracking-widest text-[#c5a059] flex items-center gap-2"><i data-lucide="camera" class="w-3 h-3"></i> Guest Photos &amp; ID</h4>
-                            
-                            <!-- 1. Profile Photo -->
-                            <div class="space-y-2">
-                                <label class="text-[9px] font-black uppercase tracking-widest text-gray-500">1. Guest Profile Photo (URL or File Upload)</label>
-                                <div class="flex gap-2 items-center">
-                                    <input type="text" id="ci-photo-url"
-                                        oninput="AdminServices._ciProfileUrlChange(this.value)"
-                                        class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-xs text-white focus:border-[#c5a059]/50 outline-none transition-colors"
-                                        placeholder="https://example.com/photo.jpg or paste URL">
-                                    <button type="button" onclick="document.getElementById('ci-photo-file').click()"
-                                        class="shrink-0 px-4 py-2 border border-gray-600 rounded-lg text-xs font-bold uppercase tracking-wider text-gray-400 hover:text-white hover:border-gray-500 flex items-center gap-2 transition-colors">
-                                        <i data-lucide="upload" class="w-3 h-3"></i> Upload File
-                                    </button>
-                                </div>
-                                <!-- Profile Preview -->
-                                <div id="ci-photo-preview" class="hidden mt-2">
-                                    <div class="flex items-center gap-4 bg-gray-800 rounded-xl p-3 border border-gray-700">
-                                        <img id="ci-photo-img" src="" alt="Profile" class="w-16 h-16 rounded-full object-cover border-2 border-[#c5a059]/40">
-                                        <div>
-                                            <p class="text-xs font-bold text-white">Profile Preview</p>
-                                            <p class="text-[10px] text-gray-500 mt-0.5">This image will be saved as the guest profile.</p>
-                                            <button type="button" onclick="AdminServices._ciClearProfile()" class="text-[10px] text-red-400 hover:text-red-300 mt-1">✕ Remove</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 2. ID Card Upload -->
-                            <div class="space-y-2">
-                                <label class="text-[9px] font-black uppercase tracking-widest text-gray-500">2. ID Card Upload *</label>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <!-- Front -->
-                                    <div>
-                                        <div id="ci-id-front-btn" onclick="document.getElementById('ci-id-front-file').click()"
-                                            class="h-24 border-2 border-dashed border-gray-700 rounded-xl flex flex-col items-center justify-center text-gray-500 hover:border-[#c5a059]/40 hover:text-[#c5a059] transition-colors cursor-pointer">
-                                            <i data-lucide="upload" class="w-5 h-5 mb-1"></i>
-                                            <span class="text-[9px] font-bold uppercase tracking-wider">Upload Front</span>
-                                        </div>
-                                        <div id="ci-id-front-preview" class="hidden mt-2 relative group rounded-xl overflow-hidden border border-gray-700">
-                                            <img id="ci-id-front-img" src="" class="w-full h-28 object-cover">
-                                            <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                                <button type="button" onclick="AdminServices._ciClearId('front')" class="text-white text-xs font-bold bg-red-600 px-3 py-1 rounded-lg">✕ Remove</button>
-                                            </div>
-                                            <div class="absolute bottom-0 left-0 right-0 bg-black/70 text-[9px] text-[#c5a059] font-bold text-center py-1 uppercase tracking-wider">Front</div>
-                                        </div>
-                                    </div>
-                                    <!-- Back -->
-                                    <div>
-                                        <div id="ci-id-back-btn" onclick="document.getElementById('ci-id-back-file').click()"
-                                            class="h-24 border-2 border-dashed border-gray-700 rounded-xl flex flex-col items-center justify-center text-gray-500 hover:border-[#c5a059]/40 hover:text-[#c5a059] transition-colors cursor-pointer">
-                                            <i data-lucide="upload" class="w-5 h-5 mb-1"></i>
-                                            <span class="text-[9px] font-bold uppercase tracking-wider">Upload Back</span>
-                                        </div>
-                                        <div id="ci-id-back-preview" class="hidden mt-2 relative group rounded-xl overflow-hidden border border-gray-700">
-                                            <img id="ci-id-back-img" src="" class="w-full h-28 object-cover">
-                                            <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                                <button type="button" onclick="AdminServices._ciClearId('back')" class="text-white text-xs font-bold bg-red-600 px-3 py-1 rounded-lg">✕ Remove</button>
-                                            </div>
-                                            <div class="absolute bottom-0 left-0 right-0 bg-black/70 text-[9px] text-[#c5a059] font-bold text-center py-1 uppercase tracking-wider">Back</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
+            <form onsubmit="AdminServices.submitNewCheckIn(event)" class="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-10">
+                
+                <!-- LEFT COLUMN: GUEST DATA -->
+                <div class="space-y-8">
+                    <div class="ci-input-group">
+                        <label class="ci-label">Guest Name *</label>
+                        <input type="text" id="ci-name" required class="ci-field" placeholder="Kidus Yosef">
                     </div>
 
-                    <div class="space-y-6">
-                        <div class="grid grid-cols-2 gap-6 border-b border-gray-700/50 pb-2">
-                            <div class="space-y-1.5">
-                                <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Floor</label>
-                                <select id="ci-floor" onchange="AdminServices._ciFloorChange(this.value)" class="w-full bg-transparent border-none text-sm text-white focus:outline-none appearance-none">
-                                    <option value="" class="bg-gray-800">Select Floor...</option>
-                                    ${activeFloors.map(f => `<option value="${f.id}" class="bg-gray-800">Floor ${f.floorNumber}</option>`).join('')}
-                                </select>
-                            </div>
-                            <div class="space-y-1.5">
-                                <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Room *</label>
-                                <select id="ci-room" class="w-full bg-transparent border-none text-sm text-white focus:outline-none appearance-none">
-                                    <option value="" class="bg-gray-800">Select a floor first</option>
-                                </select>
-                            </div>
+                    <div class="grid grid-cols-2 gap-8">
+                        <div class="ci-input-group">
+                            <label class="ci-label">Fayda ID (FAN)</label>
+                            <input type="text" id="ci-fayda" class="ci-field" placeholder="1283478638648345">
                         </div>
-
-                        <div class="space-y-1.5 border-b border-gray-700/50 pb-2">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Number of Guests</label>
-                            <input type="number" id="ci-guests" min="1" value="1" class="w-full bg-transparent border-none text-sm text-white focus:outline-none">
+                        <div class="ci-input-group">
+                            <label class="ci-label">Phone</label>
+                            <input type="text" id="ci-phone" class="ci-field" placeholder="+251978574875">
                         </div>
+                    </div>
 
-                        <div class="space-y-1.5 border-b border-gray-700/50 pb-2">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Stay Duration (Days) *</label>
-                            <input type="number" id="ci-duration" required min="1" class="w-full bg-transparent border-none text-sm text-white focus:outline-none placeholder:text-gray-700" placeholder="How many days?">
+                    <!-- 1. Guest Profile Photo (URL + File) -->
+                    <div class="space-y-3">
+                        <p class="ci-label text-[#c5a059] flex items-center gap-2">
+                            <i data-lucide="user-circle" class="w-3.5 h-3.5"></i> 1. Guest Profile Photo
+                        </p>
+                        <div class="flex gap-2">
+                            <input type="text" id="ci-photo-url" oninput="AdminServices._ciProfileUrlChange(this.value)" 
+                                class="flex-1 bg-gray-800/30 border border-gray-700 rounded-lg px-4 py-2.5 text-xs text-white focus:border-[#c5a059]/50 outline-none transition-colors" 
+                                placeholder="Paste image URL or data-uri...">
+                            <button type="button" onclick="document.getElementById('ci-photo-file').click()" 
+                                class="shrink-0 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white flex items-center gap-2 transition-colors">
+                                <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+                            </button>
                         </div>
-
-                        <div class="space-y-3 pt-2">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Payment Method</label>
-                            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                                ${['CASH', 'MOBILE BANKING', 'TELEBIRR', 'CHEQUE'].map((method, idx) => `
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="ci-payment" value="${method}" ${idx===0?'checked':''} class="peer sr-only">
-                                    <div class="text-[9px] font-bold tracking-widest uppercase text-center border border-gray-700 text-gray-400 rounded-lg py-3 hover:bg-gray-800 peer-checked:bg-[#c5a059]/10 peer-checked:border-[#c5a059]/50 peer-checked:text-[#c5a059] transition-all flex items-center justify-center gap-1.5">
-                                        <i data-lucide="${method==='CASH'?'banknote':method==='MOBILE BANKING'?'smartphone':method==='TELEBIRR'?'phone-call':'credit-card'}" class="w-3 h-3"></i> ${method}
-                                    </div>
-                                </label>
-                                `).join('')}
-                            </div>
+                        <div id="ci-photo-preview" class="hidden relative w-32 h-32 mt-2">
+                             <img id="ci-photo-img" src="" class="w-full h-full object-cover rounded-2xl border border-gray-700 shadow-2xl">
+                             <div onclick="AdminServices._ciClearProfile()" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs cursor-pointer shadow-lg hover:bg-red-600 transition-colors">✕</div>
                         </div>
+                    </div>
 
-                        <!-- Receipt Number / PDF URL -->
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Receipt Number or URL</label>
-                            <div class="border-b border-gray-700/50 pb-2">
-                                <input type="text" id="ci-receipt"
-                                    oninput="AdminServices._ciReceiptChange(this.value)"
-                                    class="w-full bg-transparent border-none text-sm text-white focus:outline-none placeholder:text-gray-700"
-                                    placeholder="Enter receipt number or paste PDF link">
-                            </div>
-                            <!-- PDF Embed Preview -->
-                            <div id="ci-receipt-pdf-preview" class="hidden rounded-xl overflow-hidden border border-gray-700 mt-2">
-                                <div class="bg-gray-900 px-4 py-2 flex items-center justify-between">
-                                    <span class="text-[10px] font-bold uppercase tracking-widest text-[#c5a059]">📄 Receipt PDF Preview</span>
-                                    <button type="button" onclick="AdminServices._ciClearReceipt()" class="text-[10px] text-gray-400 hover:text-red-400">✕ Clear</button>
+                    <!-- 2. ID Card Upload (4 Grids) -->
+                    <div class="space-y-4 pt-6">
+                        <p class="ci-label text-[#c5a059] flex items-center gap-2">
+                            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> 2. ID Card Upload *
+                        </p>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <!-- ID Front -->
+                            <div class="relative group">
+                                <div id="ci-id-front-placeholder" onclick="document.getElementById('ci-id-front-file').click()" 
+                                    class="h-28 bg-gray-800/30 border border-dashed border-gray-700 rounded-2xl flex flex-col items-center justify-center text-gray-600 hover:text-gray-400 hover:border-[#c5a059]/30 transition-all cursor-pointer">
+                                    <i data-lucide="image" class="w-5 h-5 mb-1"></i>
+                                    <span class="text-[8px] font-bold uppercase tracking-widest">ID Front Side</span>
                                 </div>
-                                <iframe id="ci-receipt-iframe" src="" class="w-full h-64 bg-white" frameborder="0"></iframe>
+                                <div id="ci-id-front-preview" class="hidden h-28 bg-[#0f1110] border border-gray-700 rounded-2xl overflow-hidden relative shadow-2xl">
+                                    <img id="ci-id-front-img" src="" class="w-full h-full object-cover">
+                                    <div class="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-md py-1.5 text-center">
+                                        <span class="text-[9px] font-black uppercase tracking-widest text-[#c5a059]">ID Front Saved</span>
+                                    </div>
+                                    <div onclick="AdminServices._ciClearId('front')" class="absolute top-2 right-2 w-5 h-5 bg-red-500/80 hover:bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] cursor-pointer transition-colors">✕</div>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="space-y-1.5 border-b border-gray-700/50 pb-2 h-[88px]">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-gray-400">Notes</label>
-                            <textarea id="ci-notes" class="w-full bg-transparent border-none text-sm text-white focus:outline-none placeholder:text-gray-700 h-full resize-none" placeholder="Additional details or remarks..."></textarea>
+                            <!-- ID Back -->
+                            <div class="relative group">
+                                <div id="ci-id-back-placeholder" onclick="document.getElementById('ci-id-back-file').click()" 
+                                    class="h-28 bg-gray-800/30 border border-dashed border-gray-700 rounded-2xl flex flex-col items-center justify-center text-gray-600 hover:text-gray-400 hover:border-[#c5a059]/30 transition-all cursor-pointer">
+                                    <i data-lucide="image" class="w-5 h-5 mb-1"></i>
+                                    <span class="text-[8px] font-bold uppercase tracking-widest">ID Back Side</span>
+                                </div>
+                                <div id="ci-id-back-preview" class="hidden h-28 bg-[#0f1110] border border-gray-700 rounded-2xl overflow-hidden relative shadow-2xl">
+                                    <img id="ci-id-back-img" src="" class="w-full h-full object-cover">
+                                    <div class="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-md py-1.5 text-center">
+                                        <span class="text-[9px] font-black uppercase tracking-widest text-[#c5a059]">ID Back Saved</span>
+                                    </div>
+                                    <div onclick="AdminServices._ciClearId('back')" class="absolute top-2 right-2 w-5 h-5 bg-red-500/80 hover:bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] cursor-pointer transition-colors">✕</div>
+                                </div>
+                            </div>
+
+                            <!-- Extra 1 -->
+                            <div class="h-28 bg-gray-800/10 border border-gray-700/30 rounded-2xl flex flex-col items-center justify-center text-gray-800 cursor-default opacity-40">
+                                <i data-lucide="plus" class="w-5 h-5 mb-1"></i>
+                                <span class="text-[8px] font-black uppercase tracking-widest">Extra Doc</span>
+                            </div>
+                            <!-- Extra 2 -->
+                            <div class="h-28 bg-gray-800/10 border border-gray-700/30 rounded-2xl flex flex-col items-center justify-center text-gray-800 cursor-default opacity-40">
+                                <i data-lucide="plus" class="w-5 h-5 mb-1"></i>
+                                <span class="text-[8px] font-black uppercase tracking-widest">Extra Doc</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="pt-4 border-t border-[#c5a059]/20">
-                    <button type="submit" class="w-full bg-[#c5a059] text-gray-900 py-5 rounded-xl text-sm font-black uppercase tracking-widest hover:bg-[#b59048] transition-colors shadow-[0_4px_20px_rgba(197,160,89,0.3)] flex justify-center items-center gap-2">
+                <!-- RIGHT COLUMN: STAY & PAYMENT -->
+                <div class="space-y-8">
+                    <div class="grid grid-cols-2 gap-8">
+                        <div class="ci-input-group">
+                            <label class="ci-label">Floor</label>
+                            <select id="ci-floor" onchange="AdminServices._ciFloorChange(this.value)" class="ci-field appearance-none bg-[#121413]">
+                                <option value="">Select Floor...</option>
+                                ${activeFloors.map(f => `<option value="${f.id}">Floor ${f.floorNumber} ${f.name || ''}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="ci-input-group">
+                            <label class="ci-label">Room *</label>
+                            <select id="ci-room" onchange="AdminServices._updateStaySummary()" class="ci-field appearance-none bg-[#121413]">
+                                <option value="">Select Room...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-8">
+                        <div class="ci-input-group">
+                            <label class="ci-label">Room Price (ETB)</label>
+                            <input type="text" id="ci-room-price-display" readonly class="ci-field text-[#c5a059] font-bold" placeholder="0">
+                        </div>
+                        <div class="ci-input-group">
+                            <label class="ci-label">Number of Guests</label>
+                            <select id="ci-guests" class="ci-field bg-[#121413]">
+                                <option value="1">1 Guest</option>
+                                <option value="2">2 Guests</option>
+                                <option value="3">3 Guests</option>
+                                <option value="4">4 Guests</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="ci-input-group">
+                        <label class="ci-label">Stay Duration (Days) *</label>
+                        <input type="number" id="ci-duration" required min="1" value="1" oninput="AdminServices._updateStaySummary()" class="ci-field" placeholder="1">
+                    </div>
+
+                    <!-- LIVE SUMMARY BOX -->
+                    <div class="summary-box">
+                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-[#c5a059] mb-6 flex items-center gap-2">
+                            <i data-lucide="calendar" class="w-3.5 h-3.5"></i> Stay Summary
+                        </p>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="summary-metric">
+                                <p id="summary-nights" class="summary-val">1</p>
+                                <p class="summary-unit">Nights</p>
+                            </div>
+                            <div class="summary-metric border-x border-gray-800">
+                                <p id="summary-hours" class="summary-val">24h</p>
+                                <p class="summary-unit">Total Hours</p>
+                                <p id="summary-calc-info" class="text-[8px] text-gray-700 mt-1 uppercase">0 ETB/night × 1</p>
+                            </div>
+                            <div class="summary-metric">
+                                <p id="summary-total" class="summary-val text-[#c5a059]">0</p>
+                                <p class="summary-unit">ETB Total</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PAYMENT SECTION -->
+                    <div class="space-y-4">
+                        <label class="ci-label">Payment Method</label>
+                        <div class="grid grid-cols-4 gap-2">
+                            ${[
+                                {key:'CASH', icon:'banknote'},
+                                {key:'MOBILE BANKING', icon:'smartphone'},
+                                {key:'TELEBIRR', icon:'phone-call'},
+                                {key:'CHEQUE', icon:'credit-card'}
+                            ].map(p => `
+                            <label class="flex-1">
+                                <input type="radio" name="ci-payment" value="${p.key}" class="pay-radio sr-only" ${p.key==='CASH'?'checked':''} onchange="AdminServices._togglePaymentFields()">
+                                <div class="pay-btn">
+                                    <i data-lucide="${p.icon}" class="pay-btn-icon"></i>
+                                    <span class="pay-btn-label">${p.key}</span>
+                                </div>
+                            </label>`).join('')}
+                        </div>
+                    </div>
+
+                    <div id="payment-extra-fields" class="hidden animate-in slide-in-from-top-2 duration-300 space-y-6">
+                        <div class="ci-input-group">
+                            <label class="ci-label">Transaction Number</label>
+                            <input type="text" id="ci-transaction" class="ci-field" placeholder="Enter transaction number">
+                        </div>
+                        <div class="ci-input-group">
+                            <label class="ci-label">Mobile Banking Receipt URL *</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="ci-receipt-url" oninput="AdminServices._ciReceiptChange(this.value)" class="ci-field flex-1" placeholder="https://receipt.dashensuperapp.com/...">
+                                <button type="button" onclick="document.getElementById('ci-receipt-file').click()"
+                                    class="shrink-0 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white flex items-center gap-2 transition-colors">
+                                    <i data-lucide="upload" class="w-3.5 h-3.5"></i> PDF
+                                </button>
+                            </div>
+                        </div>
+                        <div id="ci-receipt-pdf-preview" class="hidden bg-gray-800 rounded-xl p-4 border border-gray-700 animate-in fade-in space-y-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-[#c5a059]/10 flex items-center justify-center text-[#c5a059] shrink-0">
+                                    <i data-lucide="file-text" class="w-5 h-5"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-bold text-white truncate" id="receipt-filename">Receipt Preview</p>
+                                    <p class="text-[9px] text-gray-500 uppercase mt-0.5">Receipt document preview</p>
+                                </div>
+                                <button type="button" onclick="AdminServices.openReceiptFull()"
+                                    class="px-3 py-1.5 bg-[#c5a059]/10 border border-[#c5a059]/30 rounded-lg text-[9px] font-black uppercase tracking-widest text-[#c5a059] hover:bg-[#c5a059] hover:text-gray-900 transition-colors shrink-0">Open Full</button>
+                                <button type="button" onclick="AdminServices._ciClearReceipt()"
+                                    class="w-7 h-7 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center shrink-0">✕</button>
+                            </div>
+                            <div id="ci-receipt-embed-wrap" class="hidden rounded-xl overflow-hidden border border-gray-700 bg-gray-900 h-80 relative group cursor-pointer"
+                                onclick="AdminServices.openReceiptFull()" title="Click to open full preview">
+                                <iframe id="ci-receipt-iframe" class="w-full h-full bg-white pointer-events-none" title="Receipt preview" src="about:blank"></iframe>
+                                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                    <span class="px-4 py-2 bg-[#c5a059] text-gray-900 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg">Open Full</span>
+                                </div>
+                            </div>
+                            <div id="ci-receipt-link-wrap" class="hidden rounded-xl border border-gray-700 bg-gray-900 h-48 flex flex-col items-center justify-center text-center p-6 cursor-pointer hover:border-[#c5a059]/30 transition-colors"
+                                onclick="AdminServices.openReceiptFull()" title="Click to open receipt page">
+                                <i data-lucide="external-link" class="w-8 h-8 text-[#c5a059] mb-3"></i>
+                                <p class="text-xs font-bold text-gray-300 mb-1">Banking receipt page linked</p>
+                                <p class="text-[10px] text-gray-500">Click <span class="text-[#c5a059] font-bold">Open Full</span> to view in a new tab</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ci-input-group">
+                        <label class="ci-label">Notes</label>
+                        <textarea id="ci-notes" rows="2" class="ci-field resize-none" placeholder="Additional details or remarks..."></textarea>
+                    </div>
+                </div>
+
+                <div class="col-span-full pt-8 border-t border-gray-800">
+                    <button type="submit" class="w-full btn-gold py-5 rounded-xl text-xs font-black uppercase tracking-[0.4em] flex items-center justify-center gap-2 shadow-2xl">
                         <i data-lucide="check-circle" class="w-5 h-5"></i> Submit Request
                     </button>
+                    <p class="text-center text-[9px] font-bold text-gray-700 mt-4 uppercase tracking-widest">By submitting you confirm all guest details are audited and verified</p>
                 </div>
             </form>
         </div>`;
@@ -586,7 +716,10 @@ const AdminServices = {
         if (!url) { this._ciClearProfile(); return; }
         const img = document.getElementById('ci-photo-img');
         const preview = document.getElementById('ci-photo-preview');
-        if (img && preview) { img.src = url; preview.classList.remove('hidden'); }
+        if (img && preview) { 
+            img.src = url; 
+            preview.classList.remove('hidden'); 
+        }
     },
 
     _ciProfileFileChange(input) {
@@ -613,10 +746,10 @@ const AdminServices = {
         const reader = new FileReader();
         reader.onload = e => {
             const img = document.getElementById(`ci-id-${side}-img`);
-            const btn = document.getElementById(`ci-id-${side}-btn`);
+            const placeholder = document.getElementById(`ci-id-${side}-placeholder`);
             const preview = document.getElementById(`ci-id-${side}-preview`);
             if (img) img.src = e.target.result;
-            if (btn) btn.classList.add('hidden');
+            if (placeholder) placeholder.classList.add('hidden');
             if (preview) preview.classList.remove('hidden');
             // Store as base64 in hidden var
             AdminServices[`_ciId${side.charAt(0).toUpperCase()+side.slice(1)}B64`] = e.target.result;
@@ -625,131 +758,355 @@ const AdminServices = {
     },
 
     _ciClearId(side) {
-        const btn = document.getElementById(`ci-id-${side}-btn`);
+        const placeholder = document.getElementById(`ci-id-${side}-placeholder`);
         const preview = document.getElementById(`ci-id-${side}-preview`);
         const fileInput = document.getElementById(`ci-id-${side}-file`);
-        if (btn) btn.classList.remove('hidden');
+        if (placeholder) placeholder.classList.remove('hidden');
         if (preview) preview.classList.add('hidden');
         if (fileInput) fileInput.value = '';
         AdminServices[`_ciId${side.charAt(0).toUpperCase()+side.slice(1)}B64`] = null;
     },
 
     // ── Receipt PDF preview helper ────────────────────────────────────────────
+    _isReceiptPreviewable(val) {
+        if (!val || typeof val !== 'string') return false;
+        const v = val.trim();
+        return v.startsWith('http://') || v.startsWith('https://') || v.startsWith('data:application/pdf') || v.startsWith('blob:');
+    },
+
+    _isReceiptEmbeddable(val) {
+        const v = (val || '').trim();
+        if (!v) return false;
+        if (v.startsWith('data:application/pdf') || v.startsWith('blob:')) return true;
+        return /^https?:\/\//i.test(v) && /\.pdf(\?|#|$)/i.test(v);
+    },
+
+    _receiptPreviewSrc(val) {
+        const v = (val || '').trim();
+        if (!v || !this._isReceiptEmbeddable(v)) return '';
+        return v;
+    },
+
+    _receiptLabel(val) {
+        const v = (val || '').trim();
+        if (!v) return 'Receipt';
+        if (v.startsWith('data:')) return 'Uploaded Receipt.pdf';
+        const part = v.split('/').pop().split('?')[0];
+        return part || 'Receipt Document';
+    },
+
     _ciReceiptChange(val) {
         const pdfPreview = document.getElementById('ci-receipt-pdf-preview');
+        const filename = document.getElementById('receipt-filename');
         const iframe = document.getElementById('ci-receipt-iframe');
-        const isPdf = val && (val.startsWith('http') || val.startsWith('data:application/pdf')) &&
-                      (val.toLowerCase().includes('.pdf') || val.startsWith('data:application/pdf'));
-        if (pdfPreview && iframe) {
-            if (isPdf) {
-                iframe.src = val;
-                pdfPreview.classList.remove('hidden');
-            } else {
-                pdfPreview.classList.add('hidden');
-                iframe.src = '';
-            }
+        const embedWrap = document.getElementById('ci-receipt-embed-wrap');
+        const linkWrap = document.getElementById('ci-receipt-link-wrap');
+        const canPreview = this._isReceiptPreviewable(val);
+        const embeddable = this._isReceiptEmbeddable(val);
+
+        if (!pdfPreview) return;
+
+        if (canPreview) {
+            const label = this._receiptLabel(val);
+            if (filename) filename.textContent = label;
+            if (embedWrap) embedWrap.classList.toggle('hidden', !embeddable);
+            if (linkWrap) linkWrap.classList.toggle('hidden', embeddable);
+            if (iframe) iframe.src = embeddable ? val.trim() : 'about:blank';
+            this._receiptFullUrl = val.trim();
+            this._receiptFullTitle = label;
+            pdfPreview.classList.remove('hidden');
+            lucide.createIcons();
+        } else {
+            if (iframe) iframe.src = 'about:blank';
+            if (embedWrap) embedWrap.classList.add('hidden');
+            if (linkWrap) linkWrap.classList.add('hidden');
+            this._receiptFullUrl = '';
+            pdfPreview.classList.add('hidden');
         }
     },
 
+    openReceiptFull(url, title) {
+        const receiptUrl = (url || this._receiptFullUrl || document.getElementById('ci-receipt-url')?.value || '').trim();
+        if (!receiptUrl || !this._isReceiptPreviewable(receiptUrl)) return;
+
+        const embeddable = this._isReceiptEmbeddable(receiptUrl);
+        const label = title || this._receiptFullTitle || this._receiptLabel(receiptUrl);
+
+        if (!embeddable) {
+            window.open(receiptUrl, '_blank', 'noopener,noreferrer');
+            return;
+        }
+
+        const modal = document.getElementById('receipt-full-modal');
+        const iframe = document.getElementById('receipt-full-iframe');
+        const embedWrap = document.getElementById('receipt-full-embed-wrap');
+        const fallback = document.getElementById('receipt-full-fallback');
+        const fallbackLink = document.getElementById('receipt-full-fallback-link');
+        const titleEl = document.getElementById('receipt-full-title');
+        const external = document.getElementById('receipt-full-external');
+
+        if (titleEl) titleEl.textContent = label;
+        if (external) external.href = receiptUrl;
+        if (fallbackLink) fallbackLink.href = receiptUrl;
+        if (embedWrap) embedWrap.classList.remove('hidden');
+        if (fallback) fallback.classList.add('hidden');
+        if (iframe) iframe.src = receiptUrl;
+        if (modal) modal.classList.remove('hidden');
+        lucide.createIcons();
+    },
+
+    closeReceiptFull() {
+        const modal = document.getElementById('receipt-full-modal');
+        const iframe = document.getElementById('receipt-full-iframe');
+        const embedWrap = document.getElementById('receipt-full-embed-wrap');
+        const fallback = document.getElementById('receipt-full-fallback');
+        if (iframe) iframe.src = 'about:blank';
+        if (embedWrap) embedWrap.classList.remove('hidden');
+        if (fallback) fallback.classList.add('hidden');
+        if (modal) modal.classList.add('hidden');
+    },
+
+    _ciReceiptFileChange(input) {
+        const file = input.files[0];
+        if (!file) return;
+        if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+            alert('Please upload a PDF receipt.');
+            input.value = '';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = e => {
+            const urlBox = document.getElementById('ci-receipt-url');
+            if (urlBox) urlBox.value = e.target.result;
+            this._ciReceiptChange(e.target.result);
+        };
+        reader.readAsDataURL(file);
+    },
+
     _ciClearReceipt() {
-        const receipt = document.getElementById('ci-receipt');
-        if (receipt) receipt.value = '';
+        const urlBox = document.getElementById('ci-receipt-url');
+        const fileInput = document.getElementById('ci-receipt-file');
+        const iframe = document.getElementById('ci-receipt-iframe');
+        if (urlBox) urlBox.value = '';
+        if (fileInput) fileInput.value = '';
+        if (iframe) iframe.src = 'about:blank';
+        this._receiptFullUrl = '';
+        this._receiptFullTitle = '';
         this._ciReceiptChange('');
+    },
+
+    _renderReceiptPreviewHtml(url, label = 'Digital Receipt') {
+        if (!url || !this._isReceiptPreviewable(url)) {
+            return `<a href="${url}" target="_blank" rel="noopener" class="text-[#c5a059] underline text-xs font-bold hover:text-white transition-colors">View Transaction</a>`;
+        }
+        const embeddable = this._isReceiptEmbeddable(url);
+        const name = this._receiptLabel(url);
+        this._receiptFullUrl = url;
+        this._receiptFullTitle = name;
+        const previewBody = embeddable ? `
+                <div class="rounded-xl overflow-hidden border border-gray-700 bg-gray-900 h-72 relative group cursor-pointer"
+                    onclick="AdminServices.openReceiptFull()" title="Click to open full preview">
+                    <iframe src="${url}" class="w-full h-full bg-white pointer-events-none" title="${name}"></iframe>
+                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <span class="px-4 py-2 bg-[#c5a059] text-gray-900 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg">Open Full</span>
+                    </div>
+                </div>` : `
+                <div class="rounded-xl border border-gray-700 bg-gray-900 h-40 flex flex-col items-center justify-center text-center p-6 cursor-pointer hover:border-[#c5a059]/30 transition-colors"
+                    onclick="AdminServices.openReceiptFull()" title="Click to open receipt page">
+                    <p class="text-xs font-bold text-gray-300 mb-1">Banking receipt page</p>
+                    <p class="text-[10px] text-gray-500">Opens in a new browser tab</p>
+                </div>`;
+        return `
+            <div class="col-span-2 space-y-3">
+                <div class="flex items-center justify-between">
+                    <p class="text-gray-500 text-[9px] uppercase font-black tracking-widest">${label}</p>
+                    <button type="button" onclick="AdminServices.openReceiptFull()"
+                        class="px-3 py-1.5 bg-[#c5a059]/10 border border-[#c5a059]/30 rounded-lg text-[9px] font-black uppercase tracking-widest text-[#c5a059] hover:bg-[#c5a059] hover:text-gray-900 transition-colors">Open Full</button>
+                </div>
+                ${previewBody}
+            </div>`;
     },
 
     _ciFloorChange(floorId) {
         const select = document.getElementById('ci-room');
         if (!select) return;
         if (!floorId) {
-            select.innerHTML = '<option value="" class="bg-gray-800">Select a floor first</option>';
+            select.innerHTML = '<option value="">Select a floor first</option>';
             return;
         }
         const rmFilters = this.rooms.filter(r => r.floorId === floorId && r.status === 'available');
         if (rmFilters.length === 0) {
-            select.innerHTML = '<option value="" class="bg-gray-800">No rooms available</option>';
+            select.innerHTML = '<option value="">No rooms available</option>';
         } else {
-            select.innerHTML = rmFilters.map(r => `<option value="${r.roomNumber}" class="bg-gray-800">Room ${r.roomNumber} - ${r.category}</option>`).join('');
+            select.innerHTML = '<option value="">Select Room...</option>' + 
+                rmFilters.map(r => `<option value="${r.roomNumber}" data-price="${r.price}">Room ${r.roomNumber} - ${r.category} (${Number(r.price).toLocaleString()} Br)</option>`).join('');
+        }
+        this._updateStaySummary();
+    },
+
+    _updateStaySummary() {
+        const roomSel = document.getElementById('ci-room');
+        const durationInp = document.getElementById('ci-duration');
+        if (!roomSel || !durationInp) return;
+
+        const opt = roomSel.options[roomSel.selectedIndex];
+        const price = parseFloat(opt?.dataset.price || 0);
+        const days = parseInt(durationInp.value || 1);
+        
+        const total = price * days;
+        const hours = days * 24;
+
+        // UI Updates
+        const priceDisp = document.getElementById('ci-room-price-display');
+        const nightsDisp = document.getElementById('summary-nights');
+        const hoursDisp = document.getElementById('summary-hours');
+        const totalDisp = document.getElementById('summary-total');
+        const infoDisp = document.getElementById('summary-calc-info');
+
+        if (priceDisp) priceDisp.value = price > 0 ? price.toLocaleString() : '0';
+        if (nightsDisp) nightsDisp.textContent = days;
+        if (hoursDisp) hoursDisp.textContent = hours + 'h';
+        if (totalDisp) totalDisp.textContent = total.toLocaleString();
+        if (infoDisp) infoDisp.textContent = `${price.toLocaleString()} ETB/night × ${days}`;
+        
+        lucide.createIcons();
+    },
+
+    _togglePaymentFields() {
+        const method = document.querySelector('input[name="ci-payment"]:checked')?.value;
+        const extra = document.getElementById('payment-extra-fields');
+        if (extra) {
+            if (['MOBILE BANKING', 'TELEBIRR'].includes(method)) {
+                extra.classList.remove('hidden');
+            } else {
+                extra.classList.add('hidden');
+            }
         }
     },
 
     async submitNewCheckIn(e) {
-        e.preventDefault();
-        const paymentMethod = document.querySelector('input[name="ci-payment"]:checked')?.value || 'CASH';
-        const body = {
-            guestName: document.getElementById('ci-name').value,
-            phone: document.getElementById('ci-phone').value,
-            faydaId: document.getElementById('ci-fayda').value,
-            roomNumber: document.getElementById('ci-room')?.value || '',
-            guests: parseInt(document.getElementById('ci-guests')?.value || 1),
-            stayDuration: parseInt(document.getElementById('ci-duration')?.value || 1),
-            paymentMethod,
-            receiptNumber: document.getElementById('ci-receipt')?.value || '',
-            notes: document.getElementById('ci-notes')?.value || '',
-            profilePhoto: document.getElementById('ci-photo-url')?.value || '',
-            idPhotoFront: AdminServices._ciIdFrontB64 || '',
-            idPhotoBack: AdminServices._ciIdBackB64 || '',
-            inquiryType: 'WALK_IN',
-        };
-        const res = await this.api('POST', 'api/reception-requests.php', body);
-        if (res?.status === 'success') {
-            this.fetchQueueData();
-            this.setReceptionSubView('status');
-        } else {
-            alert(res?.message || 'Error submitting check-in');
+        try {
+            if (e) e.preventDefault();
+            const paymentMethod = document.querySelector('input[name="ci-payment"]:checked')?.value || 'CASH';
+            const transNum = document.getElementById('ci-transaction')?.value || '';
+            const receiptUrl = document.getElementById('ci-receipt-url')?.value || '';
+            
+            const nameEl = document.getElementById('ci-name');
+            const roomEl = document.getElementById('ci-room');
+            if (!nameEl?.value) { alert('Please enter guest name'); return; }
+            if (!roomEl?.value) { alert('Please select a room'); return; }
+
+            const body = {
+                guestName: nameEl.value,
+                phone: document.getElementById('ci-phone')?.value || '',
+                faydaId: document.getElementById('ci-fayda')?.value || '',
+                roomNumber: roomEl.value,
+                guests: parseInt(document.getElementById('ci-guests')?.value || 1),
+                stayDuration: parseInt(document.getElementById('ci-duration')?.value || 1),
+                paymentMethod,
+                receiptNumber: transNum,
+                transactionUrl: receiptUrl,
+                notes: document.getElementById('ci-notes')?.value || '',
+                profilePhoto: document.getElementById('ci-photo-url')?.value || '',
+                idPhotoFront: AdminServices._ciIdFrontB64 || '',
+                idPhotoBack: AdminServices._ciIdBackB64 || '',
+                inquiryType: 'WALK_IN',
+            };
+            
+            const res = await this.api('POST', 'api/reception-requests.php', body);
+            if (res?.status === 'success') {
+                alert('Check-in submitted successfully!');
+                window.location.reload();
+            } else {
+                alert(res?.message || 'Error submitting check-in');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Submission Error: ' + err.message);
         }
     },
 
-
-    _setDateFilter(d) {
-        this.receptionDateFilter = d;
-        document.querySelectorAll('.rec-date-pill').forEach(b => {
-            const on = b.dataset.date === d;
-            b.classList.toggle('bg-[#c5a059]', on);
-            b.classList.toggle('text-gray-900', on);
-            b.classList.toggle('border-[#c5a059]', on);
-            b.classList.toggle('border-gray-600', !on);
-            b.classList.toggle('text-gray-500', !on);
-            b.classList.toggle('hover:text-gray-200', !on);
-        });
-        this._renderReceptionContent();
-    },
 
     _setStatusFilter(s) {
         this.receptionFilter = s;
         document.querySelectorAll('.rec-status-pill').forEach(b => {
             const on = b.dataset.status === s;
-            if (on) {
-                b.classList.add('bg-[#c5a059]/10', 'text-[#c5a059]', 'border-[#c5a059]/30');
-                b.classList.remove('border-transparent', 'text-gray-500');
-            } else {
-                b.classList.remove('bg-[#c5a059]/10', 'text-[#c5a059]', 'border-[#c5a059]/30');
-                b.classList.add('border-transparent', 'text-gray-500');
-            }
+            b.classList.toggle('bg-[#c5a059]/10', on);
+            b.classList.toggle('text-[#c5a059]', on);
+            b.classList.toggle('border-[#c5a059]/30', on);
+            b.classList.toggle('border-transparent', !on);
+            b.classList.toggle('text-gray-500', !on);
         });
         this._renderReceptionContent();
     },
 
     async approveReceptionItem(id) {
-        if (!confirm('Approve this guest check-in?')) return;
-        const res = await this.api('PUT', `api/reception-requests.php?id=${id}`, { status: 'CHECKIN_APPROVED' });
-        if (res.status === 'success') this.fetchQueueData();
+        const req = this.receptionRequests.find(r => r.id === id);
+        if (!req) return;
+        let msg = 'Approve this guest check-in?';
+        if (req.status === 'CHECKOUT_PENDING') msg = 'Approve checkout for this guest?';
+        if (req.status === 'EXTEND_PENDING') msg = `Approve ${req.pendingExtraDays || 1} extra day(s) for this guest?`;
+        if (!confirm(msg)) return;
+        await this.actionReception(id, 'approve');
     },
 
     async denyReceptionItem(id) {
-        if (!confirm('Reject this guest check-in?')) return;
-        const note = prompt('Enter rejection reason (optional):');
-        const res = await this.api('PUT', `api/reception-requests.php?id=${id}`, { status: 'REJECTED', reviewNote: note });
-        if (res.status === 'success') this.fetchQueueData();
+        const req = this.receptionRequests.find(r => r.id === id);
+        if (!req) return;
+        let msg = 'Reject this request?';
+        if (req.status === 'CHECKOUT_PENDING') msg = 'Deny checkout request? Guest will remain checked in.';
+        if (req.status === 'EXTEND_PENDING') msg = 'Deny extension request?';
+        if (!confirm(msg)) return;
+        const note = ['PENDING_APPROVAL', 'CHECKIN_PENDING', 'pending'].includes(req.status)
+            ? prompt('Enter rejection reason (optional):') : '';
+        await this.actionReception(id, 'deny', note);
+    },
+
+    async requestCheckout(id) {
+        if (!confirm('Submit checkout request to admin?')) return;
+        const res = await this.api('PUT', `api/reception-requests.php?id=${id}`, { status: 'CHECKOUT_PENDING' });
+        if (res.status === 'success') {
+            alert('Checkout request submitted. Waiting for admin approval.');
+            this.fetchQueueData();
+        } else {
+            alert(res?.message || 'Failed to submit checkout request');
+        }
+    },
+
+    async requestExtend(id) {
+        const days = parseInt(prompt('How many extra days does the guest need?', '1'), 10);
+        if (!days || days < 1) return;
+        const res = await this.api('PUT', `api/reception-requests.php?id=${id}`, { status: 'EXTEND_PENDING', extraDays: days });
+        if (res.status === 'success') {
+            alert(`Extension request for ${days} day(s) submitted. Waiting for admin approval.`);
+            this.fetchQueueData();
+        } else {
+            alert(res?.message || 'Failed to submit extension request');
+        }
+    },
+
+    _getReceptionBuckets() {
+        return {
+            'all': this.receptionRequests,
+            'pending': this.receptionRequests.filter(r => ['PENDING_APPROVAL','CHECKIN_PENDING','CHECKOUT_PENDING','EXTEND_PENDING','pending'].includes(r.status)),
+            'checked-in': this.receptionRequests.filter(r => ['CHECKIN_APPROVED','check_in','ACTIVE','guests','staying'].includes(r.status)),
+            'rejected': this.receptionRequests.filter(r => ['REJECTED','denied'].includes(r.status)),
+            'checked-out': this.receptionRequests.filter(r => ['CHECKED_OUT','CHECKOUT_APPROVED','check_out','checked-out'].includes(r.status))
+        };
+    },
+
+    _updateStatusCounts() {
+        const allBuckets = this._getReceptionBuckets();
+        Object.keys(allBuckets).forEach(k => {
+            document.querySelectorAll(`.rec-count-${k}`).forEach(e => {
+                e.textContent = allBuckets[k].length;
+            });
+        });
+        return allBuckets;
     },
 
     _filterReception() {
         let list = [...this.receptionRequests];
-        // Date filter
-        const now = new Date();
-        const toDay = d => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
-        if (this.receptionDateFilter === 'today') list = list.filter(r => toDay(r.createdAt).toDateString() === now.toDateString());
-        if (this.receptionDateFilter === 'week') { const w = new Date(now - 7*864e5); list = list.filter(r => new Date(r.createdAt) >= w); }
-        if (this.receptionDateFilter === 'year') list = list.filter(r => new Date(r.createdAt).getFullYear() === now.getFullYear());
         // Search
         if (this.receptionSearch) {
             const q = this.receptionSearch.toLowerCase();
@@ -757,9 +1114,9 @@ const AdminServices = {
         }
         // Status bucket
         const buckets = {
-            'pending': ['CHECKIN_PENDING','CHECKOUT_PENDING','EXTEND_PENDING','pending'],
+            'pending': ['PENDING_APPROVAL','CHECKIN_PENDING','CHECKOUT_PENDING','EXTEND_PENDING','pending'],
             'checked-in': ['CHECKIN_APPROVED','check_in','ACTIVE','guests','staying'],
-            'denied': ['REJECTED','denied'],
+            'rejected': ['REJECTED','denied'],
             'checked-out': ['CHECKED_OUT','CHECKOUT_APPROVED','check_out','checked-out']
         };
         if (this.receptionFilter !== 'all') list = list.filter(r => (buckets[this.receptionFilter]||[]).includes(r.status));
@@ -771,18 +1128,14 @@ const AdminServices = {
         if (!container) return;
         const list = this._filterReception();
 
-        // Update count badges on pills
-        const allBuckets = {
-            'all': this.receptionRequests,
-            'pending': this.receptionRequests.filter(r => ['CHECKIN_PENDING','CHECKOUT_PENDING','EXTEND_PENDING','pending'].includes(r.status)),
-            'checked-in': this.receptionRequests.filter(r => ['CHECKIN_APPROVED','check_in','ACTIVE','guests','staying'].includes(r.status)),
-            'denied': this.receptionRequests.filter(r => ['REJECTED','denied'].includes(r.status)),
-            'checked-out': this.receptionRequests.filter(r => ['CHECKED_OUT','CHECKOUT_APPROVED','check_out','checked-out'].includes(r.status))
-        };
-        Object.keys(allBuckets).forEach(k => {
-            const el = document.querySelectorAll(`.rec-count-${k}`);
-            el.forEach(e => e.textContent = allBuckets[k].length);
-        });
+        const allBuckets = this._updateStatusCounts();
+
+        const today = new Date().toISOString().slice(0, 10);
+        const dueGuests = this.receptionRequests.filter(r =>
+            r.status === 'CHECKIN_APPROVED' && r.checkOut && r.checkOut.slice(0, 10) <= today
+        );
+        const banner = document.getElementById('rec-checkout-banner');
+        if (banner) banner.classList.toggle('hidden', dueGuests.length === 0);
 
         // Update top-level Stats
         const revEl = document.getElementById('stat-revenue');
@@ -795,7 +1148,9 @@ const AdminServices = {
         let stayCount = 0;
 
         allBuckets['all'].forEach(r => {
-            if (r.roomPrice) totalRevenue += Number(r.roomPrice);
+            if (r.roomPrice && ['CHECKIN_APPROVED','CHECKED_OUT','ACTIVE'].includes(r.status)) {
+                totalRevenue += Number(r.roomPrice);
+            }
             if (['CHECKIN_APPROVED','ACTIVE'].includes(r.status)) {
                 guestsActive++;
                 if (r.checkIn && r.checkOut) {
@@ -814,78 +1169,108 @@ const AdminServices = {
             return;
         }
 
-        container.innerHTML = list.map(r => {
-            const badgeClass = this._getStatusBadgeClass(r.status);
-            const isPending = ['CHECKIN_PENDING', 'pending'].includes(r.status);
-            const isAdmin = window.USER_ROLE === 'admin';
+        const isReception = this._isReceptionStaff();
+        container.innerHTML = list.map(r => this._renderGuestCard(r, {
+            showReceptionActions: isReception && r.status === 'CHECKIN_APPROVED'
+        })).join('');
+        lucide.createIcons();
+    },
 
-            return `
-            <div class="bg-[#121413] rounded-2xl border border-[#1a1c1a] p-6 hover:border-[#c5a059]/20 transition-all flex flex-col relative overflow-hidden group">
-                <div class="flex justify-between items-start gap-4 mb-6">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-gray-900 border border-[#2a2c2a] flex items-center justify-center shrink-0">
-                            ${r.photoUrl ? `<img src="${r.photoUrl}" class="w-full h-full object-cover rounded-xl">` : `<i data-lucide="user" class="w-5 h-5 text-gray-500"></i>`}
-                        </div>
-                        <div class="min-w-0">
-                            <h4 class="text-sm font-black text-gray-200 uppercase tracking-widest truncate">${r.guestName || 'Guest'}</h4>
-                            <p class="text-[10px] uppercase font-bold text-gray-500 tracking-[0.2em] mt-1">${r.inquiryType?.replace(/_/g,' ') || 'CHECK-IN'}</p>
-                        </div>
-                    </div>
-                    <span class="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border shrink-0 ${badgeClass}">${r.status.replace(/_/g,' ')}</span>
-                </div>
+    _renderGuestCard(r, options = {}) {
+        const badgeClass = this._getStatusBadgeClass(r.status);
+        const needsApproval = this._needsAdminAction(r.status);
+        const isAdmin = window.USER_ROLE === 'admin';
+        const showActions = options.showReceptionActions || false;
+        const isCheckedIn = r.status === 'CHECKIN_APPROVED';
+        const today = new Date().toISOString().slice(0, 10);
+        const checkoutDue = isCheckedIn && r.checkOut && r.checkOut.slice(0, 10) <= today;
+        const statusLabel = this._getStatusLabel(r);
 
-                <div class="space-y-4 text-xs font-medium text-gray-300">
-                    <div class="flex items-center gap-3 bg-gray-900/50 rounded-lg p-3 border border-[#2a2c2a]">
-                        <i data-lucide="door-open" class="w-4 h-4 text-gray-500"></i>
-                        <span class="text-gray-400">Room</span>
-                        <span class="ml-auto font-bold text-white">${r.roomNumber ? `Room ${r.roomNumber}` : '—'}</span>
+        return `
+        <div class="bg-[#121413] rounded-2xl border ${checkoutDue ? 'border-orange-500/40' : 'border-[#1a1c1a]'} p-6 hover:border-[#c5a059]/20 transition-all flex flex-col relative overflow-hidden group">
+            ${checkoutDue ? '<div class="absolute top-0 left-0 right-0 h-1 bg-orange-500"></div>' : ''}
+            <div class="flex justify-between items-start gap-4 mb-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-gray-900 border border-[#2a2c2a] flex items-center justify-center shrink-0">
+                        ${r.profilePhoto ? `<img src="${r.profilePhoto}" class="w-full h-full object-cover rounded-xl">` : `<i data-lucide="user" class="w-5 h-5 text-gray-500"></i>`}
                     </div>
-                    
-                    <div class="flex justify-between items-center border-b border-gray-800 pb-2">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="phone" class="w-3.5 h-3.5 text-gray-600"></i>
-                            <span class="text-gray-500">Phone</span>
-                        </div>
-                        <span class="text-gray-300">${r.phone || '—'}</span>
-                    </div>
-                    <div class="flex justify-between items-center border-b border-gray-800 pb-2">
-                         <div class="flex items-center gap-2">
-                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-gray-600"></i>
-                            <span class="text-gray-500">Stay</span>
-                        </div>
-                        <span class="text-gray-300">${r.checkIn ? `${r.checkIn?.slice(0,10)} → ${r.checkOut?.slice(0,10)||'?'}` : '—'}</span>
+                    <div class="min-w-0">
+                        <h4 class="text-sm font-black text-gray-200 uppercase tracking-widest truncate">${r.guestName || 'Guest'}</h4>
+                        <p class="text-[10px] uppercase font-bold text-gray-500 tracking-[0.2em] mt-1">${r.inquiryType?.replace(/_/g,' ') || 'CHECK-IN'}</p>
                     </div>
                 </div>
+                <span class="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border shrink-0 ${badgeClass}">${statusLabel}</span>
+            </div>
 
-                ${isAdmin && isPending ? `
-                <div class="grid grid-cols-2 gap-3 mt-6">
-                    <button onclick="AdminServices.approveReceptionItem('${r.id}')" class="bg-[#c5a059] text-gray-900 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-[#b59048] transition-colors shadow-lg shadow-[#c5a059]/10">APPROVE</button>
-                    <button onclick="AdminServices.denyReceptionItem('${r.id}')" class="bg-gray-800 border border-gray-700 text-red-400 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 hover:border-red-500/30 transition-all">REJECT</button>
+            <div class="space-y-4 text-xs font-medium text-gray-300">
+                <div class="flex items-center gap-3 bg-gray-900/50 rounded-lg p-3 border border-[#2a2c2a]">
+                    <i data-lucide="door-open" class="w-4 h-4 text-gray-500"></i>
+                    <span class="text-gray-400">Room</span>
+                    <span class="ml-auto font-bold text-white">${r.roomNumber ? `Room ${r.roomNumber}` : '—'}</span>
                 </div>
-                ` : `
-                <div class="mt-auto pt-6 flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-[#c5a059]">
-                    <span>Payment Ref</span>
-                    <span>#${r.faydaId?.substring(0,8) || (Math.random()*10000|0).toString().padStart(4,'0')}${r.id.substring(0,4).toUpperCase()}</span>
+                <div class="flex justify-between items-center border-b border-gray-800 pb-2">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="phone" class="w-3.5 h-3.5 text-gray-600"></i>
+                        <span class="text-gray-500">Phone</span>
+                    </div>
+                    <span class="text-gray-300">${r.phone || '—'}</span>
                 </div>
-                `}
+                <div class="flex justify-between items-center border-b border-gray-800 pb-2">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="calendar" class="w-3.5 h-3.5 text-gray-600"></i>
+                        <span class="text-gray-500">Stay</span>
+                    </div>
+                    <span class="text-gray-300">${r.checkIn ? `${r.checkIn.slice(0,10)} → ${r.checkOut?.slice(0,10)||'?'}` : `${r.stayDuration || 1} night(s)`}</span>
+                </div>
+                ${r.roomPrice ? `<div class="flex justify-between items-center border-b border-gray-800 pb-2">
+                    <span class="text-gray-500">Revenue</span>
+                    <span class="text-[#c5a059] font-bold">${Number(r.roomPrice).toLocaleString()} ETB</span>
+                </div>` : ''}
+                ${r.status === 'EXTEND_PENDING' && r.pendingExtraDays ? `<div class="text-orange-400 text-[10px] font-bold uppercase tracking-wider">+${r.pendingExtraDays} day(s) requested</div>` : ''}
+            </div>
 
-                <button onclick="AdminServices.viewReceptionDetail('${r.id}')" class="absolute top-2 right-2 w-7 h-7 flex items-center justify-center text-gray-700 hover:text-gray-400 transition-colors opacity-0 group-hover:opacity-100">
-                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-                </button>
-            </div>`;
-        }).join('');
+            <div class="mt-auto pt-6 flex flex-wrap items-center gap-2">
+                <button onclick="AdminServices.viewReceptionDetail('${r.id}')" class="flex-1 min-w-[80px] bg-gray-800 border border-gray-700 text-gray-400 py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest hover:text-white transition-all">Details</button>
+                ${isAdmin && needsApproval ? `
+                    <button onclick="AdminServices.approveReceptionItem('${r.id}')" class="flex-1 min-w-[80px] bg-[#c5a059] text-gray-900 py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-[#b59048] transition-colors">Approve</button>
+                    <button onclick="AdminServices.denyReceptionItem('${r.id}')" class="flex-1 min-w-[80px] bg-red-500/10 border border-red-500/20 text-red-500 py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-colors">Deny</button>
+                ` : ''}
+                ${showActions && isCheckedIn ? `
+                    <button onclick="AdminServices.requestExtend('${r.id}')" class="flex-1 min-w-[80px] bg-blue-500/10 border border-blue-500/20 text-blue-400 py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-colors">Extend</button>
+                    <button onclick="AdminServices.requestCheckout('${r.id}')" class="flex-1 min-w-[80px] bg-purple-500/10 border border-purple-500/20 text-purple-400 py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-purple-500 hover:text-white transition-colors">Checkout</button>
+                ` : ''}
+                ${isAdmin ? `<button onclick="AdminServices.deleteReceptionItem('${r.id}')" class="px-3 py-2.5 bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-all"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
+            </div>
+        </div>`;
+    },
+
+    _getStatusLabel(r) {
+        const map = {
+            'PENDING_APPROVAL': 'Pending',
+            'CHECKIN_PENDING': 'Pending',
+            'CHECKIN_APPROVED': 'Checked In',
+            'CHECKOUT_PENDING': 'Checkout Request',
+            'EXTEND_PENDING': 'Extend Request',
+            'CHECKED_OUT': 'Checked Out',
+            'REJECTED': 'Rejected'
+        };
+        return map[r.status] || r.status.replace(/_/g, ' ');
+    },
+
+    _needsAdminAction(status) {
+        return ['PENDING_APPROVAL','CHECKIN_PENDING','CHECKOUT_PENDING','EXTEND_PENDING','pending'].includes(status);
     },
 
     _getStatusDotClass(s) {
-        if (['pending','CHECKIN_PENDING'].includes(s)) return 'bg-amber-500';
-        if (['CHECKOUT_PENDING'].includes(s)) return 'bg-orange-500';
+        if (['pending','CHECKIN_PENDING','PENDING_APPROVAL'].includes(s)) return 'bg-amber-500';
+        if (['CHECKOUT_PENDING','EXTEND_PENDING'].includes(s)) return 'bg-orange-500';
         if (['CHECKIN_APPROVED','check_in','ACTIVE','staying','guests'].includes(s)) return 'bg-emerald-500';
         if (['CHECKED_OUT','CHECKOUT_APPROVED','check_out','checked-out'].includes(s)) return 'bg-purple-500';
         return 'bg-red-500';
     },
 
     _getStatusBadgeClass(s) {
-        if (['pending','CHECKIN_PENDING'].includes(s)) return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+        if (['pending','CHECKIN_PENDING','PENDING_APPROVAL'].includes(s)) return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
         if (['CHECKOUT_PENDING','EXTEND_PENDING'].includes(s)) return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
         if (['CHECKIN_APPROVED','check_in','ACTIVE','staying','guests'].includes(s)) return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
         if (['CHECKED_OUT','CHECKOUT_APPROVED','check_out','checked-out'].includes(s)) return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
@@ -893,10 +1278,10 @@ const AdminServices = {
     },
 
     _isPending(s) {
-        return ['pending','CHECKIN_PENDING','CHECKOUT_PENDING','EXTEND_PENDING'].includes(s);
+        return ['pending','PENDING_APPROVAL','CHECKIN_PENDING','CHECKOUT_PENDING','EXTEND_PENDING'].includes(s);
     },
 
-    async actionReception(id, action) {
+    async actionReception(id, action, reviewNote = '') {
         const req = this.receptionRequests.find(r => r.id === id);
         if (!req) return;
         let status = 'REJECTED';
@@ -905,17 +1290,26 @@ const AdminServices = {
             else if (req.status === 'EXTEND_PENDING') status = 'CHECKIN_APPROVED';
             else status = 'CHECKIN_APPROVED';
         } else {
-            // deny check_out = keep as CHECKIN_APPROVED (guest stays checked in)
-            if (req.status === 'CHECKOUT_PENDING') status = 'CHECKIN_APPROVED';
+            if (['CHECKOUT_PENDING','EXTEND_PENDING'].includes(req.status)) status = 'CHECKIN_APPROVED';
+            else status = 'REJECTED';
         }
-        await this.api('PUT', `api/reception-requests.php?id=${id}`, { status });
-        await this.fetchQueueData();
+        const body = { status };
+        if (reviewNote) body.reviewNote = reviewNote;
+        const res = await this.api('PUT', `api/reception-requests.php?id=${id}`, body);
+        if (res.status === 'success') await this.fetchQueueData();
+        else alert(res?.message || 'Action failed');
+    },
+
+    async deleteReceptionItem(id) {
+        if (!confirm('⚠️ Permanently delete this guest record?')) return;
+        const res = await this.api('DELETE', `api/reception-requests.php?id=${id}`);
+        if (res.status === 'success') this.fetchQueueData();
     },
 
     async wipeReception() {
         if (!confirm('⚠️ This will permanently delete ALL reception records. Continue?')) return;
-        await this.api('DELETE', 'api/reception-requests.php?action=wipe');
-        await this.fetchQueueData();
+        const res = await this.api('DELETE', 'api/reception-requests.php?action=wipe');
+        if (res.status === 'success') this.fetchQueueData();
     },
 
     async viewReceptionDetail(id) {
@@ -923,30 +1317,74 @@ const AdminServices = {
         const r = res.data;
         if (!r) return;
         
-        // Open detail modal
+        const needsApproval = this._needsAdminAction(r.status);
+        const isAdmin = window.USER_ROLE === 'admin';
+
         document.getElementById('rec-detail-name').textContent = r.guestName || '—';
-        document.getElementById('rec-detail-status').textContent = r.status.replace(/_/g, ' ');
+        document.getElementById('rec-detail-status').textContent = this._getStatusLabel(r);
         document.getElementById('rec-detail-body').innerHTML = `
-            <div class="grid grid-cols-2 gap-4 text-sm">
-                <div><p class="text-gray-500 text-[9px] uppercase mb-1">Fayda ID</p><p class="font-mono text-white">${r.faydaId || '—'}</p></div>
-                <div><p class="text-gray-500 text-[9px] uppercase mb-1">Phone</p><p class="font-mono text-white">${r.phone || '—'}</p></div>
-                <div><p class="text-gray-500 text-[9px] uppercase mb-1">Room</p><p class="font-bold text-white">${r.roomNumber || '—'}</p></div>
-                <div><p class="text-gray-500 text-[9px] uppercase mb-1">Price/Night</p><p class="font-mono text-[#d4af37]">${Number(r.roomPrice||0).toLocaleString()} ETB</p></div>
-                <div><p class="text-gray-500 text-[9px] uppercase mb-1">Check In</p><p class="text-white">${r.checkIn?.slice(0,10)||'—'}</p></div>
-                <div><p class="text-gray-500 text-[9px] uppercase mb-1">Check Out</p><p class="text-white">${r.checkOut?.slice(0,10)||'—'}</p></div>
-                <div><p class="text-gray-500 text-[9px] uppercase mb-1">Guests</p><p class="text-white">${r.guests||1}</p></div>
-                <div><p class="text-gray-500 text-[9px] uppercase mb-1">Payment</p><p class="text-white">${r.paymentMethod||'—'} ${r.paymentReference ? '· ' + r.paymentReference : ''}</p></div>
-                ${r.notes ? `<div class="col-span-2"><p class="text-gray-500 text-[9px] uppercase mb-1">Notes</p><p class="text-gray-300">${r.notes}</p></div>` : ''}
-                ${r.reviewNote ? `<div class="col-span-2"><p class="text-gray-500 text-[9px] uppercase mb-1">Review Note</p><p class="text-gray-300">${r.reviewNote}</p></div>` : ''}
-                ${r.transactionUrl ? `<div class="col-span-2"><p class="text-gray-500 text-[9px] uppercase mb-1">Receipt</p><a href="${r.transactionUrl}" target="_blank" class="text-[#d4af37] underline text-xs">View Transaction</a></div>` : ''}
+            <div class="flex items-start gap-6 pb-6 border-b border-gray-800 mb-6">
+                <div class="w-24 h-24 rounded-2xl bg-gray-900 border border-gray-700 overflow-hidden shrink-0 shadow-2xl">
+                    ${r.profilePhoto ? `<img src="${r.profilePhoto}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-gray-700"><i data-lucide="user" class="w-10 h-10"></i></div>`}
+                </div>
+                <div class="flex-1 space-y-1">
+                    <p class="text-[10px] font-black text-[#c5a059] uppercase tracking-[0.2em]">Guest Profile Verified</p>
+                    <h3 class="text-xl font-black text-white uppercase tracking-tight">${r.guestName || 'Unknown Guest'}</h3>
+                    <p class="text-xs text-gray-500">${r.inquiryType?.replace(/_/g,' ') || 'WALK-IN CHECK-IN'}</p>
+                </div>
             </div>
-            ${r.idPhotoFront || r.idPhotoBack ? `
-            <div class="grid grid-cols-2 gap-4 mt-4">
-                ${r.idPhotoFront ? `<div><p class="text-gray-500 text-[9px] uppercase mb-2">ID Front</p><img src="${r.idPhotoFront}" class="w-full rounded-xl object-cover h-32"></div>` : ''}
-                ${r.idPhotoBack ? `<div><p class="text-gray-500 text-[9px] uppercase mb-2">ID Back</p><img src="${r.idPhotoBack}" class="w-full rounded-xl object-cover h-32"></div>` : ''}
-            </div>` : ''}`;
+
+            <div class="grid grid-cols-2 gap-y-6 gap-x-8 text-sm">
+                <div><p class="text-gray-500 text-[9px] uppercase font-black tracking-widest mb-1.5">Fayda ID (FAN)</p><p class="font-mono text-white text-base">${r.faydaId || '—'}</p></div>
+                <div><p class="text-gray-500 text-[9px] uppercase font-black tracking-widest mb-1.5">Phone Number</p><p class="font-mono text-white text-base">${r.phone || '—'}</p></div>
+                <div><p class="text-gray-500 text-[9px] uppercase font-black tracking-widest mb-1.5">Room Assignment</p><p class="font-black text-white text-lg">${r.roomNumber ? 'Room ' + r.roomNumber : '—'}</p></div>
+                <div><p class="text-gray-500 text-[9px] uppercase font-black tracking-widest mb-1.5">Price Per Night</p><p class="font-mono text-[#c5a059] text-lg">${Number(r.roomPrice||0).toLocaleString()} ETB</p></div>
+                <div><p class="text-gray-500 text-[9px] uppercase font-black tracking-widest mb-1.5">Check In Date</p><p class="text-white font-bold">${r.checkIn ? r.checkIn.slice(0,10) : '—'}</p></div>
+                <div><p class="text-gray-500 text-[9px] uppercase font-black tracking-widest mb-1.5">Check Out Planned</p><p class="text-white font-bold">${r.checkOut ? r.checkOut.slice(0,10) : '—'}</p></div>
+                <div><p class="text-gray-500 text-[9px] uppercase font-black tracking-widest mb-1.5">Total Guests</p><p class="text-white font-black text-lg">${r.guests||1}</p></div>
+                <div><p class="text-gray-500 text-[9px] uppercase font-black tracking-widest mb-1.5">Payment Method</p><p class="text-white font-black text-base">${r.paymentMethod||'—'}</p></div>
+                
+                ${r.receiptNumber ? `<div class="col-span-1"><p class="text-gray-500 text-[9px] uppercase font-black tracking-widest mb-1.5">Transaction ID</p><p class="font-mono text-gray-300">${r.receiptNumber}</p></div>` : ''}
+                ${r.transactionUrl ? this._renderReceiptPreviewHtml(r.transactionUrl) : ''}
+                
+                ${r.notes ? `<div class="col-span-2 bg-gray-900/50 p-4 rounded-xl border border-gray-800"><p class="text-gray-500 text-[9px] uppercase font-black tracking-widest mb-2">Guest Notes</p><p class="text-gray-300 text-xs italic">"${r.notes}"</p></div>` : ''}
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mt-8 pt-8 border-t border-gray-800">
+                ${r.idPhotoFront ? `
+                <div class="space-y-2">
+                    <p class="text-gray-500 text-[9px] uppercase font-black tracking-widest">ID Front Side</p>
+                    <div class="h-40 rounded-2xl overflow-hidden border border-gray-700 bg-gray-900">
+                        <img src="${r.idPhotoFront}" class="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform" onclick="window.open(this.src)">
+                    </div>
+                </div>` : ''}
+                ${r.idPhotoBack ? `
+                <div class="space-y-2">
+                    <p class="text-gray-500 text-[9px] uppercase font-black tracking-widest">ID Back Side</p>
+                    <div class="h-40 rounded-2xl overflow-hidden border border-gray-700 bg-gray-900">
+                        <img src="${r.idPhotoBack}" class="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform" onclick="window.open(this.src)">
+                    </div>
+                </div>` : ''}
+            </div>
+
+            ${isAdmin && needsApproval ? `
+            <div class="grid grid-cols-2 gap-4 mt-8">
+                <button onclick="AdminServices.approveReceptionItem('${r.id}'); document.getElementById('rec-detail-modal').classList.add('hidden');" 
+                    class="bg-[#c5a059] text-gray-900 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[#b59048] transition-all shadow-xl shadow-[#c5a059]/10">Approve</button>
+                <button onclick="AdminServices.denyReceptionItem('${r.id}'); document.getElementById('rec-detail-modal').classList.add('hidden');" 
+                    class="bg-gray-800 border border-gray-700 text-red-500 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-500/10 transition-all">Deny</button>
+            </div>` : ''}
+            ${!isAdmin && r.status === 'CHECKIN_APPROVED' ? `
+            <div class="grid grid-cols-2 gap-4 mt-8">
+                <button onclick="AdminServices.requestExtend('${r.id}'); document.getElementById('rec-detail-modal').classList.add('hidden');" 
+                    class="bg-blue-500/10 border border-blue-500/20 text-blue-400 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-500 hover:text-white transition-all">Request Extend</button>
+                <button onclick="AdminServices.requestCheckout('${r.id}'); document.getElementById('rec-detail-modal').classList.add('hidden');" 
+                    class="bg-purple-500/10 border border-purple-500/20 text-purple-400 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-purple-500 hover:text-white transition-all">Request Checkout</button>
+            </div>` : ''}
+        `;
         document.getElementById('rec-detail-modal').classList.remove('hidden');
         document.getElementById('rec-detail-id-hidden').value = id;
+        lucide.createIcons();
     },
 
 

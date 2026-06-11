@@ -8,13 +8,22 @@ require_once __DIR__ . '/../../includes/auth.php';
 $manager = new SettingsManager();
 
 try {
-    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    $method = $_SERVER['REQUEST_METHOD'];
+    $allowedRoles = ['admin', 'reception', 'receptionist'];
+    $role = $_SESSION['role'] ?? '';
+
+    if (!in_array($role, $allowedRoles)) {
         http_response_code(403);
         echo json_encode(['message' => 'Forbidden']);
         exit;
     }
 
-    $method = $_SERVER['REQUEST_METHOD'];
+    // Only allow admin for mutations
+    if ($method !== 'GET' && $role !== 'admin') {
+        http_response_code(403);
+        echo json_encode(['message' => 'Unauthorized operation']);
+        exit;
+    }
     $id = $_GET['id'] ?? null;
     $input = json_decode(file_get_contents('php://input'), true);
 

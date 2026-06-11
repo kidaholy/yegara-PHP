@@ -4,7 +4,7 @@
  */
 require_once 'includes/layout.php';
 require_once 'includes/auth.php';
-requireAuth(['admin', 'store_keeper']);
+requireAuth(['admin', 'store', 'store_keeper']);
 
 $user   = getCurrentUser();
 $isAdmin = ($user['role'] === 'admin');
