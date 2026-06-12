@@ -36,7 +36,7 @@
     "about": {
         "title": "About Abe Hotel",
         "content": "Abe Hotel offers a warm welcome in the heart of the city. Our thoughtfully designed rooms, attentive staff, and renowned restaurant create the perfect setting for both business travelers and families.\n\nWhether you are here for a short visit or an extended stay, we are committed to making you feel at home from the moment you arrive.",
-        "image": "assets/cms/defaults/about.jpg"
+        "image": "assets/cms/1781266935_175e20d6.jpg"
     },
     "services": [
         {
@@ -44,37 +44,32 @@
             "title": "Luxury Rooms",
             "description": "Spacious, elegantly furnished rooms with modern amenities and serene comfort.",
             "icon": "bed-double",
-            "image": "assets/cms/defaults/service-rooms.jpg"
+            "image": "assets/cms/1781266968_d169897d.jpg"
         },
         {
             "id": "svc-dining",
             "title": "Authentic Dining",
             "description": "Savor local and international dishes prepared by our expert chefs.",
             "icon": "utensils-crossed",
-            "image": "assets/cms/defaults/service-dining.png"
+            "image": "assets/cms/1781266975_53cab456.jpg"
         },
         {
             "id": "svc-events",
             "title": "Events & Meetings",
             "description": "Flexible event spaces for conferences, celebrations, and private gatherings.",
             "icon": "concierge-bell",
-            "image": "assets/cms/defaults/gallery-2.png"
+            "image": "assets/cms/1781266981_6b308d28.jpg"
         }
     ],
     "contact": {
-        "phone": "+251 900 000 000",
+        "phone": "+251 911706728",
         "email": "abehotel@abehotelbet.com",
         "address": "Dilla, Ethiopia"
     },
     "social": [
         {
-            "platform": "telegram",
-            "link": "https://t.me/Kidajos",
-            "platform_label": ""
-        },
-        {
             "platform": "tiktok",
-            "link": "",
+            "link": "https://www.tiktok.com/@abe.kurt.bet",
             "platform_label": ""
         }
     ],

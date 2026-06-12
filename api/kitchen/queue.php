@@ -18,7 +18,7 @@ if (!isAuthenticated()) {
 }
 
 $role = $_SESSION['role'] ?? '';
-if (!in_array($role, ['chef', 'bar', 'admin'], true)) {
+if (!in_array($role, ['chef', 'bar', 'admin', 'display'], true)) {
     sendJson(['message' => 'Forbidden'], 403);
 }
 

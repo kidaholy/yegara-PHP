@@ -312,5 +312,57 @@
         "menuTierId": null,
         "menuTierName": "Standard",
         "menuCollection": "menuItems"
+    },
+    {
+        "id": "41569401f3c95e281b14",
+        "createdAt": "2026-06-12 15:57:21",
+        "updatedAt": "2026-06-12 15:57:21",
+        "isDeleted": false,
+        "orderNumber": "10",
+        "tableNumber": "Buy&Go",
+        "roomNumber": null,
+        "guestName": null,
+        "floorId": "69c6a7e2140cb91738d34fe3",
+        "floorNumber": "GROUND",
+        "paymentMethod": "cash",
+        "batchNumber": null,
+        "distributions": [],
+        "totalAmount": 2600,
+        "status": "pending",
+        "createdBy": {
+            "id": "69c506a6733d5342b5d87c57",
+            "name": "GROUND FLOOR (SOSINA ABERA) CASHIER 1"
+        },
+        "servedAt": null,
+        "type": "cashier",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuCollection": "menuItems"
+    },
+    {
+        "id": "f0f056cc67ce253700cd",
+        "createdAt": "2026-06-12 15:58:42",
+        "updatedAt": "2026-06-12 15:58:42",
+        "isDeleted": false,
+        "orderNumber": "11",
+        "tableNumber": "Buy&Go",
+        "roomNumber": null,
+        "guestName": null,
+        "floorId": "69c6a7e2140cb91738d34fe3",
+        "floorNumber": "GROUND",
+        "paymentMethod": "cash",
+        "batchNumber": null,
+        "distributions": [],
+        "totalAmount": 3380,
+        "status": "pending",
+        "createdBy": {
+            "id": "69c506a6733d5342b5d87c57",
+            "name": "GROUND FLOOR (SOSINA ABERA) CASHIER 1"
+        },
+        "servedAt": null,
+        "type": "cashier",
+        "menuTierId": "8717dd3fdfcd2d29",
+        "menuTierName": "VIP 1",
+        "menuCollection": "vip18717dd3fdfcd2d29Menu"
     }
 ]

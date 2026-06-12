@@ -28,6 +28,8 @@ function routeUserBasedOnRole($role) {
         case 'receptionist':
         case 'reception':
             return 'reception.php';
+        case 'display':
+            return 'display.php';
         default:
             return 'index.php';
     }

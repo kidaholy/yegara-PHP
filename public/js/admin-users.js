@@ -137,7 +137,7 @@ function renderUserCard(u) {
                     ${u.floorId ? `
                         <div class="flex items-center gap-1.5 px-3 py-1 rounded-md bg-gray-900 border border-gray-700 text-xs font-bold text-gray-400">
                             <i data-lucide="map-pin" class="w-3 h-3 text-red-400"></i>
-                            Floor #${state.floors.find(f => f.id == u.floorId)?.number || u.floorId}
+                            Floor #${state.floors.find(f => f.id == u.floorId)?.floorNumber || u.floorId}
                         </div>
                     ` : ''}
                     ${(u.assignedCategories || []).map(cat => `
@@ -284,7 +284,7 @@ function renderForm() {
     // Floors dropdown
     const floorSelect = document.getElementById('floor-select');
     floorSelect.innerHTML = '<option value="">All Floors (Global)</option>' + 
-        state.floors.map(f => `<option value="${f.id}" ${state.formData.floorId == f.id ? 'selected' : ''}>Floor #${f.number} - ${f.name}</option>`).join('');
+        state.floors.map(f => `<option value="${f.id}" ${state.formData.floorId == f.id ? 'selected' : ''}>Floor ${f.floorNumber}</option>`).join('');
 
     // Categories
     const catList = document.getElementById('category-list');

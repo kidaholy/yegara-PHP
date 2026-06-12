@@ -298,5 +298,20 @@
             "pakage food"
         ],
         "lastLoginAt": "2026-05-06T20:40:09.930Z"
+    },
+    {
+        "id": "6a6102111bdd8d7dd8b3",
+        "createdAt": "2026-06-12T15:30:55.000Z",
+        "updatedAt": "2026-06-12T15:30:55.000Z",
+        "isDeleted": false,
+        "name": "display one",
+        "email": "display@gmail.com",
+        "password": "$2y$10$yQV9GsgfsfNj5Ncxjtytd.rJS6ToJFiSqsQkSo4P6hzA5jy1apQ.i",
+        "plainPassword": "123456",
+        "role": "display",
+        "isActive": true,
+        "floorId": "69c6a7e2140cb91738d34fe3",
+        "assignedCategories": [],
+        "permissions": []
     }
 ]
