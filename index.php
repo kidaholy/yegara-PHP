@@ -40,10 +40,7 @@ if ($showAboutImage) {
 }
 
 $title = $appName . ' - ' . $heroHeadline;
-renderHeader($title, [
-    'nav' => 'kiosk',
-    'heroImage' => $heroImage
-]);
+renderHeader($title, ['nav' => 'kiosk']);
 renderSocialIconsStylesheet();
 ?>
 
@@ -53,7 +50,7 @@ renderSocialIconsStylesheet();
             <a href="#" class="flex min-w-0 items-center gap-3" aria-label="<?php echo htmlspecialchars($appName); ?> home">
                 <?php if ($logoUrl): ?>
                     <span class="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full border border-[#1e211d]/10 bg-white shadow-sm">
-                        <img src="<?php echo htmlspecialchars($logoUrl); ?>" alt="<?php echo htmlspecialchars($appName); ?> logo" class="h-full w-full object-cover" fetchpriority="high">
+                        <img src="<?php echo htmlspecialchars($logoUrl); ?>" alt="<?php echo htmlspecialchars($appName); ?> logo" class="h-full w-full object-cover">
                     </span>
                 <?php else: ?>
                     <span class="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#1e211d] text-[10px] font-black uppercase tracking-[0.16em] text-[#f6f1e8] shadow-sm">
@@ -103,20 +100,10 @@ renderSocialIconsStylesheet();
 
     <main>
         <section class="hero-section relative isolate min-h-screen overflow-hidden pt-[76px]">
-            <style>
-                .hero-visual {
-                    background: linear-gradient(135deg, #1e211d 0%, #10130f 100%);
-                }
-                @media (min-width: 641px) {
-                    .hero-visual {
-                        background-image: url('<?php echo htmlspecialchars($heroImage); ?>');
-                        background-size: cover;
-                        background-position: center;
-                    }
-                }
-            </style>
             <div class="absolute inset-0">
-                <div class="h-full w-full hero-visual"></div>
+                <?php if ($heroImage): ?>
+                    <img src="<?php echo htmlspecialchars($heroImage); ?>" alt="" class="h-full w-full object-cover hero-image">
+                <?php endif; ?>
                 <div class="absolute inset-0 bg-[linear-gradient(90deg,rgba(11,14,11,0.74)_0%,rgba(11,14,11,0.42)_45%,rgba(11,14,11,0.16)_100%)]"></div>
                 <div class="absolute inset-x-0 bottom-0 h-36 bg-[#f6f1e8]"></div>
             </div>
@@ -181,7 +168,7 @@ renderSocialIconsStylesheet();
             <div class="mx-auto grid max-w-7xl grid-cols-1 gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
                 <?php if ($showAboutImage): ?>
                     <figure class="relative order-2 overflow-hidden rounded-lg bg-[#1e211d] lg:order-1">
-                        <img src="<?php echo htmlspecialchars($aboutImage); ?>" alt="<?php echo htmlspecialchars($about['title'] ?? $appName); ?>" class="aspect-[4/5] h-full w-full object-cover" loading="lazy">
+                        <img src="<?php echo htmlspecialchars($aboutImage); ?>" alt="<?php echo htmlspecialchars($about['title'] ?? $appName); ?>" class="aspect-[4/5] h-full w-full object-cover">
                         <figcaption class="absolute bottom-4 left-4 right-4 rounded-lg bg-[#f6f1e8]/90 p-4 text-sm font-semibold text-[#1e211d] backdrop-blur-md">
                             <?php echo htmlspecialchars($appTagline); ?>
                         </figcaption>
@@ -231,7 +218,7 @@ renderSocialIconsStylesheet();
                         <?php foreach ($services as $idx => $s): ?>
                             <article class="group overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]">
                                 <div class="relative aspect-[16/11] overflow-hidden">
-                                    <img src="<?php echo htmlspecialchars($s['image']); ?>" alt="<?php echo htmlspecialchars($s['title']); ?>" class="h-full w-full object-cover transition duration-700 group-hover:scale-105" loading="lazy">
+                                    <img src="<?php echo htmlspecialchars($s['image']); ?>" alt="<?php echo htmlspecialchars($s['title']); ?>" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
                                     <div class="absolute inset-0 bg-gradient-to-t from-[#1e211d]/70 to-transparent"></div>
                                     <div class="absolute bottom-4 left-4 grid h-12 w-12 place-items-center rounded-lg bg-[#d28f62] text-[#1e211d]">
                                         <i data-lucide="<?php echo htmlspecialchars($s['icon'] ?? 'star'); ?>" class="h-6 w-6"></i>
@@ -269,7 +256,7 @@ renderSocialIconsStylesheet();
                             $span = ($idx % 6 === 0) ? 'md:col-span-2 md:row-span-2' : (($idx % 5 === 2) ? 'md:row-span-2' : '');
                         ?>
                             <figure class="group relative overflow-hidden rounded-lg bg-[#1e211d] <?php echo $span; ?>">
-                                <img src="<?php echo htmlspecialchars($g['image']); ?>" alt="<?php echo htmlspecialchars($g['title']); ?>" class="h-full w-full object-cover transition duration-700 group-hover:scale-105" loading="lazy">
+                                <img src="<?php echo htmlspecialchars($g['image']); ?>" alt="<?php echo htmlspecialchars($g['title']); ?>" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
                                 <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent opacity-80"></div>
                                 <figcaption class="absolute bottom-0 left-0 right-0 p-4 text-sm font-black uppercase tracking-[0.16em] text-white">
                                     <?php echo htmlspecialchars($g['title']); ?>
