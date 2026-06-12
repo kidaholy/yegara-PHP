@@ -86,6 +86,7 @@ function getDefaultCmsData(): array {
             'description' => 'Abe Hotel & Spa offers refined accommodation and authentic dining in the heart of Ethiopia. Experience premium comfort and timeless hospitality.',
             'keywords' => 'Abe Hotel, Hotel in Ethiopia, Ethiopia Hospitality, Luxury Rooms, Authentic Dining, Ethiopia Tourism',
             'og_image' => 'assets/cms/defaults/hero.png',
+            'google_verification' => '',
         ],
     ];
 }

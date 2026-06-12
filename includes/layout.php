@@ -44,6 +44,10 @@ function renderHeader($title = "Management System", $options = []) {
         <meta name="keywords" content="<?php echo $metaKeywords; ?>">
         <meta name="robots" content="index, follow">
         
+        <?php if (!empty($seo['google_verification'])): ?>
+        <meta name="google-site-verification" content="<?php echo htmlspecialchars($seo['google_verification']); ?>" />
+        <?php endif; ?>
+
         <!-- Open Graph / Facebook -->
         <meta property="og:type" content="website">
         <meta property="og:url" content="<?php echo $baseUrl; ?>">

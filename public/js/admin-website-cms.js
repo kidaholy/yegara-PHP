@@ -459,6 +459,10 @@ const WebsiteCMS = {
                         ${this.field('Sharing Image URL', 'seo_og_image', seo.og_image || '', 'url', 'assets/cms/defaults/hero.png')}
                         <p class="text-[10px] text-white/30 italic">Commonly used for Facebook/Twitter link previews.</p>
                     </div>
+                    <div class="space-y-4">
+                        ${this.field('Google Verification Content', 'seo_google_verification', seo.google_verification || '', 'text', 'googlee0ab3...')}
+                        <p class="text-[10px] text-white/30 italic">Only the code part (e.g., googlee0ab378d64584852).</p>
+                    </div>
                 </div>
                 <div class="p-5 rounded-2xl bg-white/[0.03] border border-white/10 mt-8">
                     <div class="flex items-center gap-3 mb-4">
@@ -701,9 +705,11 @@ const WebsiteCMS = {
             const description = this.fieldVal('seo_description');
             const keywords = this.fieldVal('seo_keywords');
             const og_image = this.fieldVal('seo_og_image');
+            const google_verification = this.fieldVal('seo_google_verification');
             if (description !== null) this.data.seo.description = description;
             if (keywords !== null) this.data.seo.keywords = keywords;
             if (og_image !== null) this.data.seo.og_image = og_image;
+            if (google_verification !== null) this.data.seo.google_verification = google_verification;
         }
     },
 
