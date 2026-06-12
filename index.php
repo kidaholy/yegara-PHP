@@ -103,12 +103,21 @@ renderSocialIconsStylesheet();
 
     <main>
         <section class="hero-section relative isolate min-h-screen overflow-hidden pt-[76px]">
+            <style>
+                .hero-visual {
+                    background: linear-gradient(135deg, #1e211d 0%, #10130f 100%);
+                }
+                @media (min-width: 641px) {
+                    .hero-visual {
+                        background-image: url('<?php echo htmlspecialchars($heroImage); ?>');
+                        background-size: cover;
+                        background-position: center;
+                    }
+                }
+            </style>
             <div class="absolute inset-0">
-                <?php if ($heroImage): ?>
-                    <img src="<?php echo htmlspecialchars($heroImage); ?>" alt="" class="h-full w-full object-cover hero-image">
-                <?php endif; ?>
+                <div class="h-full w-full hero-visual"></div>
                 <div class="absolute inset-0 bg-[linear-gradient(90deg,rgba(11,14,11,0.74)_0%,rgba(11,14,11,0.42)_45%,rgba(11,14,11,0.16)_100%)]"></div>
-                <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.12)_0%,rgba(0,0,0,0)_42%,rgba(246,241,232,0.9)_100%)]"></div>
                 <div class="absolute inset-x-0 bottom-0 h-36 bg-[#f6f1e8]"></div>
             </div>
 

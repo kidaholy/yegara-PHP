@@ -84,8 +84,8 @@ function renderHeader($title = "Management System", $options = []) {
         <link rel="preconnect" href="https://cdn.tailwindcss.com">
         
         <?php if (!empty($options['heroImage'])): ?>
-        <!-- Preload LCP Image -->
-        <link rel="preload" as="image" href="<?php echo htmlspecialchars($options['heroImage']); ?>">
+        <!-- Preload LCP Image (Desktop Only) -->
+        <link rel="preload" as="image" href="<?php echo htmlspecialchars($options['heroImage']); ?>" media="(min-width: 641px)">
         <?php endif; ?>
 
         <!-- Tailwind CSS CDN -->
