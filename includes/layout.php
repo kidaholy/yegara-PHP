@@ -28,12 +28,7 @@ function renderHeader($title = "Management System", $options = []) {
     $metaKeywords = htmlspecialchars($seo['keywords'] ?? "");
     $ogImage = htmlspecialchars($seo['og_image'] ?? ($logoUrl ?: ""));
     
-    // Determine language-specific links (for hreflang)
-    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
-    $host = $_SERVER['HTTP_HOST'];
-    $uri = $_SERVER['REQUEST_URI'];
-    $cleanUri = strtok($uri, '?');
-    $baseUrl = "{$protocol}://{$host}{$cleanUri}";
+    $baseUrl = ""; // No longer used for canonicals
     ?>
     <!DOCTYPE html>
     <html lang="<?php echo $currentLang; ?>">
@@ -47,30 +42,6 @@ function renderHeader($title = "Management System", $options = []) {
         <?php if (!empty($seo['google_verification'])): ?>
         <meta name="google-site-verification" content="<?php echo htmlspecialchars($seo['google_verification']); ?>" />
         <?php endif; ?>
-
-        <!-- Open Graph / Facebook -->
-        <meta property="og:type" content="website">
-        <meta property="og:url" content="<?php echo $baseUrl; ?>">
-        <meta property="og:title" content="<?php echo $fullTitle; ?>">
-        <meta property="og:description" content="<?php echo $metaDesc; ?>">
-        <?php if ($ogImage): ?>
-        <meta property="og:image" content="<?php echo $ogImage; ?>">
-        <?php endif; ?>
-
-        <!-- Twitter -->
-        <meta property="twitter:card" content="summary_large_image">
-        <meta property="twitter:url" content="<?php echo $baseUrl; ?>">
-        <meta property="twitter:title" content="<?php echo $fullTitle; ?>">
-        <meta property="twitter:description" content="<?php echo $metaDesc; ?>">
-        <?php if ($ogImage): ?>
-        <meta property="twitter:image" content="<?php echo $ogImage; ?>">
-        <?php endif; ?>
-
-        <!-- SEO Links -->
-        <link rel="canonical" href="<?php echo $baseUrl; ?>">
-        <link rel="alternate" hreflang="en" href="<?php echo $baseUrl; ?>?lang=en">
-        <link rel="alternate" hreflang="am" href="<?php echo $baseUrl; ?>?lang=am">
-        <link rel="alternate" hreflang="x-default" href="<?php echo $baseUrl; ?>">
 
         <title><?php echo $fullTitle; ?></title>
         <?php if ($faviconUrl): ?>
