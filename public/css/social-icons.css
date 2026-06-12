@@ -15,10 +15,12 @@
 .social-icon-sm { width: 2.25rem; height: 2.25rem; }
 .social-icon-md { width: 2.75rem; height: 2.75rem; }
 .social-icon-lg { width: 3.25rem; height: 3.25rem; }
+.social-icon-contact { width: 2.5rem; height: 2.5rem; }
 
 .social-icon-sm .social-icon-glyph { width: 1rem; height: 1rem; }
 .social-icon-md .social-icon-glyph { width: 1.25rem; height: 1.25rem; }
 .social-icon-lg .social-icon-glyph { width: 1.4rem; height: 1.4rem; }
+.social-icon-contact .social-icon-glyph { width: 1.15rem; height: 1.15rem; }
 
 .social-icon-glow,
 .social-icon-surface {
@@ -122,6 +124,11 @@ a:hover .social-icon-badge .social-icon-surface {
     background: linear-gradient(135deg, #6b7280 0%, #374151 100%);
 }
 
+.social-brand-custom .social-icon-surface,
+.social-brand-custom .social-icon-glow {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+}
+
 /* Admin picker card with brand tint when selected */
 .social-pick-card {
     position: relative;
@@ -158,6 +165,7 @@ a:hover .social-icon-badge .social-icon-surface {
 .social-pick-card.social-brand-whatsapp.is-active::before { background: #25d366; }
 .social-pick-card.social-brand-website.is-active::before { background: #c5a059; }
 .social-pick-card.social-brand-email.is-active::before { background: #6b7280; }
+.social-pick-card.social-brand-custom.is-active::before { background: #8b5cf6; }
 
 /* Public site link wrapper */
 .social-link-item {
@@ -171,4 +179,35 @@ a:hover .social-icon-badge .social-icon-surface {
 
 .social-link-item:hover .social-icon-badge {
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
+/* Contact card — 1 to 4 linked social icons */
+.contact-social-icons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 100%;
+}
+
+.contact-social-icons[data-count="4"] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, max-content));
+    justify-content: start;
+    gap: 0.5rem 0.625rem;
+}
+
+@media (min-width: 420px) {
+    .contact-social-icons[data-count="4"] {
+        grid-template-columns: repeat(4, minmax(0, max-content));
+    }
+}
+
+.contact-social-icons .social-link-item {
+    justify-content: center;
+}
+
+.contact-social-icons .social-icon-badge {
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
 }

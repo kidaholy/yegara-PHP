@@ -307,16 +307,20 @@ renderSocialIconsStylesheet();
                             <a href="mailto:<?php echo htmlspecialchars($contact['email']); ?>" class="mt-3 block break-words text-sm leading-7 text-white/70 transition hover:text-[#d28f62]"><?php echo htmlspecialchars($contact['email']); ?></a>
                         </div>
                     <?php endif; ?>
-                    <?php if (!empty($cms['social'])): ?>
+                    <?php
+                    $socialLinks = array_values($cms['social'] ?? []);
+                    $socialCount = min(count($socialLinks), 4);
+                    if ($socialCount > 0):
+                    ?>
                         <div class="rounded-lg border border-white/10 bg-white/[0.04] p-6">
                             <i data-lucide="share-2" class="mb-5 h-6 w-6 text-[#d28f62]"></i>
                             <p class="text-xs font-black uppercase tracking-[0.2em] text-white/40"><?php echo htmlspecialchars($socialSec['title'] ?? 'Follow Us'); ?></p>
-                            <div class="mt-4 flex flex-wrap gap-3">
-                                <?php foreach ($cms['social'] as $s):
-                                    if (empty($s['link'])) continue;
+                            <div class="contact-social-icons mt-4" data-count="<?php echo $socialCount; ?>">
+                                <?php foreach (array_slice($socialLinks, 0, 4) as $s): 
+                                    $link = !empty(trim((string)($s['link'] ?? ''))) ? $s['link'] : '#';
                                 ?>
-                                    <a href="<?php echo htmlspecialchars($s['link']); ?>" target="_blank" rel="noopener noreferrer" class="social-link-item" title="<?php echo htmlspecialchars(getSocialPlatformLabel($s['platform'])); ?>">
-                                        <?php echo renderSocialIconBadge($s['platform'], ['size' => 'lg', 'active' => true]); ?>
+                                    <a href="<?php echo htmlspecialchars($link); ?>" target="_blank" rel="noopener noreferrer" class="social-link-item" title="<?php echo htmlspecialchars(getSocialPlatformLabel($s['platform'], $s)); ?>" aria-label="<?php echo htmlspecialchars(getSocialPlatformLabel($s['platform'], $s)); ?>">
+                                        <?php echo renderSocialIconBadge($s['platform'], ['size' => 'contact', 'active' => true], $s); ?>
                                     </a>
                                 <?php endforeach; ?>
                             </div>
@@ -417,6 +421,19 @@ body, main, main > div {
         transform: none;
     }
 }
+.contact-social-icons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.contact-social-icons[data-count="4"] {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+}
+
 </style>
 
 <script>

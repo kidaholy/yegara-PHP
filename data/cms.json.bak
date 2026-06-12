@@ -68,12 +68,14 @@
     },
     "social": [
         {
-            "platform": "facebook",
-            "link": "https://facebook.com"
+            "platform": "instagram",
+            "link": "",
+            "platform_label": ""
         },
         {
-            "platform": "instagram",
-            "link": ""
+            "platform": "telegram",
+            "link": "https://t.me/Kidajos",
+            "platform_label": ""
         }
     ],
     "gallery": [

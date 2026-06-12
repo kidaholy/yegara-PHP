@@ -95,7 +95,18 @@ function getCmsData(): array {
     if (!is_array($stored)) {
         return $defaults;
     }
-    return array_replace_recursive($defaults, $stored);
+    
+    // surgical merge: replace top-level list keys, merge others
+    $out = array_replace_recursive($defaults, $stored);
+    
+    // Explicitly override list keys so deletions work
+    foreach (['social', 'services', 'gallery'] as $listKey) {
+        if (isset($stored[$listKey]) && is_array($stored[$listKey])) {
+            $out[$listKey] = $stored[$listKey];
+        }
+    }
+    
+    return $out;
 }
 
 function cmsSection(array $cms, string $key): array {
@@ -116,10 +127,14 @@ function saveCmsPayload(array $input): array {
         }
     }
 
-    foreach (['services', 'social', 'gallery'] as $key) {
+    foreach (['services', 'gallery'] as $key) {
         if (isset($input[$key]) && is_array($input[$key])) {
             $out[$key] = $input[$key];
         }
+    }
+
+    if (isset($input['social']) && is_array($input['social'])) {
+        $out['social'] = array_slice(array_values($input['social']), 0, 4);
     }
 
     foreach (array_keys($defaults) as $key) {

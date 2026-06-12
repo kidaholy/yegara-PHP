@@ -18,7 +18,7 @@ const WebsiteCMS = {
         about: 'Tell your story with text and a featured image',
         services: 'Showcase hotel amenities and offerings',
         contact: 'Phone, email and address for guests',
-        social: 'Pick platforms and add profile links',
+        social: 'Choose 1–4 platforms and add profile links for the contact card',
         gallery: 'Upload menu photos in an attractive gallery',
     },
     socialPlatforms: [
@@ -32,7 +32,9 @@ const WebsiteCMS = {
         { id: 'message-circle', label: 'WhatsApp', brand: 'social-brand-whatsapp' },
         { id: 'globe', label: 'Website', brand: 'social-brand-website' },
         { id: 'mail', label: 'Email', brand: 'social-brand-email' },
+        { id: 'custom', label: 'Other Content', brand: 'social-brand-custom' },
     ],
+    maxSocialPlatforms: 4,
     serviceIcons: [
         'bed-double', 'utensils-crossed', 'wine', 'coffee', 'concierge-bell',
         'car', 'wifi', 'sparkles', 'heart', 'map-pin', 'phone', 'star',
@@ -50,10 +52,12 @@ const WebsiteCMS = {
         const res = await fetch('api/website-cms.php');
         this.data = await res.json();
         if (Array.isArray(this.data.social)) {
-            this.data.social = this.data.social.map(s => ({
-                ...s,
-                platform: this.normalizeSocialPlatform(s.platform),
-            }));
+            this.data.social = this.data.social
+                .slice(0, this.maxSocialPlatforms)
+                .map(s => ({
+                    ...s,
+                    platform: this.normalizeSocialPlatform(s.platform),
+                }));
         }
     },
 
@@ -268,10 +272,11 @@ const WebsiteCMS = {
         youtube: '<path d="M21.8 8.001a2.5 2.5 0 0 0-1.76-1.77C18.36 6 12 6 12 6s-6.36 0-8.04.231A2.5 2.5 0 0 0 2.2 8.001 26.3 26.3 0 0 0 2 12a26.3 26.3 0 0 0 .2 3.999 2.5 2.5 0 0 0 1.76 1.77C5.64 18 12 18 12 18s6.36 0 8.04-.231a2.5 2.5 0 0 0 1.76-1.77A26.3 26.3 0 0 0 22 12a26.3 26.3 0 0 0-.2-3.999zM10 15.5v-7l6 3.5-6 3.5z"/>',
         linkedin: '<path d="M4.98 3.5a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5zM3 8.75h3.96V21H3V8.75zm7.53 0H14.5v1.67h.05c.55-1.04 1.9-2.14 3.91-2.14 4.18 0 4.95 2.75 4.95 6.33V21h-4v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94V21h-4V8.75z"/>',
         tiktok: '<path d="M16.6 5.82s.51.5 0 0A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.69V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3a4.1 4.1 0 0 1-1-.48z"/>',
-        telegram: '<path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>',
+        telegram: '<path d="M20.665 3.717l-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42 10.532-6.645c.498-.303.953-.14.579.192l-8.533 7.701-.33 4.955c.488 0 .705-.223.978-.488l2.35-2.285 4.888 3.61c.9.497 1.55.241 1.774-.838l3.203-15.1c.33-1.32-.505-1.925-1.371-1.533z"/>',
         'message-circle': '<path d="M12 2a9 9 0 0 0-7.74 13.6L2 22l6.55-2.12A9 9 0 1 0 12 2zm0 2a7 7 0 0 1 5.6 11.2l-.35.46.12.74.55-1.78 1.78-.55-.74-.12-.46-.35A7 7 0 0 1 12 4zm-3.5 4.5a.75.75 0 0 0 0 1.5h7a.75.75 0 0 0 0-1.5h-7zm0 3a.75.75 0 0 0 0 1.5h4.5a.75.75 0 0 0 0-1.5H8.5z"/>',
         globe: '<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm7.93 9h-3.18a15.7 15.7 0 0 0-1.2-4.96A8.03 8.03 0 0 1 19.93 11zM12 4c.95 1.57 1.63 3.36 1.93 5.25h-3.86C10.37 7.36 11.05 5.57 12 4zM8.45 6.04A15.7 15.7 0 0 0 7.25 11H4.07a8.03 8.03 0 0 1 4.38-4.96zM4.07 13h3.18c.2 1.74.74 3.38 1.55 4.82A8.03 8.03 0 0 1 4.07 13zm7.93 7c-.95-1.57-1.63-3.36-1.93-5.25h3.86c-.3 1.89-.98 3.68-1.93 5.25zm3.12-5.25h3.18a8.03 8.03 0 0 1-4.38 4.96c.81-1.44 1.35-3.08 1.55-4.96zm1.38-2H16.3a13.6 13.6 0 0 0-1.38-4.01A8.02 8.02 0 0 1 17.5 11zM11.08 6.99A13.6 13.6 0 0 0 9.7 11H6.5a8.02 8.02 0 0 1 4.58-4.01zM6.5 13h3.2c.3 1.45.86 2.8 1.58 3.99A8.02 8.02 0 0 1 6.5 13z"/>',
         mail: '<path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 2v.01L12 13l8-6.99V6H4zm16 12V9.25l-7.4 5.55a1 1 0 0 1-1.2 0L4 9.25V18h16z"/>',
+        custom: '<path d="M11 5h2v6h6v2h-6v6h-2v-6h-6v-2h6z"/>',
     },
 
     normalizeSocialPlatform(platform) {
@@ -282,7 +287,9 @@ const WebsiteCMS = {
         platform = this.normalizeSocialPlatform(platform);
         const meta = this.socialPlatforms.find(p => p.id === platform);
         const brand = meta?.brand || 'social-brand-website';
-        const sizeClass = size === 'sm' ? 'social-icon-sm' : (size === 'lg' ? 'social-icon-lg' : 'social-icon-md');
+        const sizeClass = size === 'sm' ? 'social-icon-sm'
+            : (size === 'lg' ? 'social-icon-lg'
+            : (size === 'contact' ? 'social-icon-contact' : 'social-icon-md'));
         const stateClass = active ? 'social-icon-active' : (muted ? 'social-icon-muted' : '');
         const path = this.socialIconSvgs[platform] || this.socialIconSvgs.globe;
         return `
@@ -296,38 +303,65 @@ const WebsiteCMS = {
     renderSocial() {
         const sec = this.data.sections?.social || {};
         const items = this.data.social || [];
+        const count = items.length;
+        const atMax = count >= this.maxSocialPlatforms;
         const used = new Set(items.map(s => this.normalizeSocialPlatform(s.platform)));
-        const picker = this.socialPlatforms.map(p => {
+        const pickerPlatforms = this.socialPlatforms.filter(p => p.id !== 'custom');
+        const picker = pickerPlatforms.map(p => {
             const active = used.has(p.id);
+            const disabled = atMax && !active;
             return `
-                <button type="button" onclick="WebsiteCMS.toggleSocialPlatform('${p.id}')"
-                    class="social-pick-card social-pick flex flex-col items-center gap-3 p-4 rounded-xl border transition-all ${p.brand} ${active ? 'is-active border-white/20 bg-white/[0.04]' : 'border-white/10 bg-white/[0.02] hover:border-white/20'}">
+                <button type="button"
+                    onclick="WebsiteCMS.toggleSocialPlatform('${p.id}')"
+                    ${disabled ? 'disabled' : ''}
+                    aria-pressed="${active}"
+                    class="social-pick-card social-pick flex flex-col items-center gap-3 p-4 rounded-xl border transition-all ${p.brand} ${active ? 'is-active border-white/20 bg-white/[0.04]' : 'border-white/10 bg-white/[0.02] hover:border-white/20'} ${disabled ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}">
                     ${this.socialIconBadge(p.id, { size: 'lg', active, muted: !active })}
                     <span class="text-[10px] font-bold uppercase tracking-wider ${active ? 'text-white' : 'text-white/40'}">${p.label}</span>
                 </button>`;
         }).join('');
 
         return `
-            ${this.sectionHeader('Social Media', 'Click an icon to add or remove a platform, then paste the link')}
+            ${this.sectionHeader('Social Media', 'Select up to 4 platforms — they appear as linked icons in the contact card')}
             ${this.field('Section Title', 'social_section_title', sec.title || 'Follow Us')}
             <div class="mb-8">
-                <p class="text-[10px] font-black uppercase tracking-[0.25em] text-white/40 mb-4">Choose Platforms</p>
-                <div class="grid grid-cols-3 sm:grid-cols-5 gap-3">${picker}</div>
+                <div class="flex items-center justify-between gap-4 mb-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.25em] text-white/40">Choose Platforms</p>
+                    <p class="text-[10px] font-black uppercase tracking-[0.2em] ${atMax ? 'text-[#c5a059]' : 'text-white/30'}">${count} / ${this.maxSocialPlatforms} selected</p>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">${picker}</div>
             </div>
             <div class="space-y-3" id="socialLinksList">
-                ${items.length ? items.map((s, i) => this.socialRow(s, i)).join('') : '<p class="text-sm text-white/30 italic">Select platforms above to add links.</p>'}
+                ${items.length ? items.map((s, i) => this.socialRow(s, i)).join('') : '<p class="text-sm text-white/30 italic">Select 1–4 platforms above, then paste each profile link.</p>'}
+            </div>
+            <div class="mt-4 flex justify-start">
+                <button type="button"
+                    onclick="WebsiteCMS.addCustomSocialLink()"
+                    ${atMax ? 'disabled' : ''}
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-[#c5a059] hover:border-[#c5a059]/40 transition-all ${atMax ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Custom Link
+                </button>
             </div>`;
     },
 
     socialRow(s, i) {
         const platform = this.normalizeSocialPlatform(s.platform);
         const meta = this.socialPlatforms.find(p => p.id === platform);
+        const isCustom = platform === 'custom';
         return `
-            <div class="flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/10">
+            <div class="flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/10 group">
                 ${this.socialIconBadge(platform, { size: 'md', active: true })}
                 <div class="flex-1 min-w-0">
-                    <p class="text-xs font-bold text-white/50 uppercase tracking-wider mb-1">${meta?.label || s.platform}</p>
-                    <input type="url" data-social="${i}" value="${this.esc(s.link)}" placeholder="https://..." class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white">
+                    <div class="flex justify-between items-center mb-1.5">
+                        ${isCustom ? 
+                            `<input type="text" data-social-label="${i}" value="${this.esc(s.platform_label || 'Custom')}" placeholder="Platform Name" class="bg-transparent border-none p-0 text-[10px] font-black uppercase tracking-widest text-[#c5a059] outline-none focus:ring-0">` :
+                            `<p class="text-[10px] font-black text-white/40 uppercase tracking-widest">${meta?.label || s.platform}</p>`
+                        }
+                        <button type="button" onclick="WebsiteCMS.removeSocialLink(${i})" class="text-white/40 hover:text-red-400 p-1.5 transition-colors">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <input type="url" data-social="${i}" value="${this.esc(s.link)}" placeholder="https://..." class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-[#c5a059]/50 outline-none transition-colors">
                 </div>
             </div>`;
     },
@@ -372,15 +406,41 @@ const WebsiteCMS = {
     },
 
     toggleSocialPlatform(platform) {
+        if (platform === 'custom') {
+            this.addCustomSocialLink();
+            return;
+        }
         this.collectCurrentSlide();
         const items = this.data.social || [];
-        const idx = items.findIndex(s => s.platform === platform);
-        if (idx >= 0) {
-            items.splice(idx, 1);
+        const normalized = this.normalizeSocialPlatform(platform);
+        const index = items.findIndex(s => this.normalizeSocialPlatform(s.platform) === normalized);
+        if (index >= 0) {
+            items.splice(index, 1);
         } else {
-            items.push({ platform, link: '' });
+            if (items.length >= this.maxSocialPlatforms) {
+                return;
+            }
+            items.push({ platform: normalized, link: '', platform_label: '' });
         }
         this.data.social = items;
+        this.renderSlide();
+    },
+
+    addCustomSocialLink() {
+        this.collectCurrentSlide();
+        const items = this.data.social || [];
+        if (items.length >= this.maxSocialPlatforms) {
+            return;
+        }
+        items.push({ platform: 'custom', link: '', platform_label: 'Other' });
+        this.data.social = items;
+        this.renderSlide();
+    },
+
+    removeSocialLink(i) {
+        // No confirm needed here as per common patterns for lists, or keep it if it's destructive
+        this.collectCurrentSlide();
+        this.data.social.splice(i, 1);
         this.renderSlide();
     },
 
@@ -573,7 +633,11 @@ const WebsiteCMS = {
             if (!Array.isArray(this.data.social)) this.data.social = [];
             document.querySelectorAll('[data-social]').forEach(el => {
                 const i = parseInt(el.dataset.social, 10);
-                if (this.data.social[i]) this.data.social[i].link = el.value;
+                if (this.data.social[i]) {
+                    this.data.social[i].link = el.value;
+                    const labelEl = document.querySelector(`[data-social-label="${i}"]`);
+                    if (labelEl) this.data.social[i].platform_label = labelEl.value;
+                }
             });
         }
 
@@ -596,6 +660,9 @@ const WebsiteCMS = {
 
     async persist(showErrors = true) {
         this.collectCurrentSlide();
+        if (Array.isArray(this.data.social)) {
+            this.data.social = this.data.social.slice(0, this.maxSocialPlatforms);
+        }
         try {
             const res = await fetch('api/website-cms.php', {
                 method: 'POST',
