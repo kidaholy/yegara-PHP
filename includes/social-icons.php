@@ -101,12 +101,12 @@ function renderSocialIconBadge(string $platform, array $options = [], array $ite
     $class = getSocialPlatformClass($platform);
     $label = htmlspecialchars(getSocialPlatformLabel($platform, $item));
 
-    $sizeClass = match ($size) {
-        'sm' => 'social-icon-sm',
-        'lg' => 'social-icon-lg',
-        'contact' => 'social-icon-contact',
-        default => 'social-icon-md',
-    };
+    $sizeClass = 'social-icon-md';
+    switch ($size) {
+        case 'sm': $sizeClass = 'social-icon-sm'; break;
+        case 'lg': $sizeClass = 'social-icon-lg'; break;
+        case 'contact': $sizeClass = 'social-icon-contact'; break;
+    }
 
     $stateClass = $active ? 'social-icon-active' : ($muted ? 'social-icon-muted' : '');
     $extra = htmlspecialchars($options['extraClass'] ?? '');
