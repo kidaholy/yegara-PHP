@@ -1,6 +1,6 @@
 <?php
 /**
- * Public landing page — fully driven by Website CMS (data/cms.json)
+ * Public landing page - fully driven by Website CMS (data/cms.json)
  */
 require_once 'includes/layout.php';
 require_once __DIR__ . '/includes/cms.php';
@@ -11,7 +11,7 @@ $manager = new SettingsManager();
 extract($manager->getBrandingVars());
 
 $cms = getCmsData();
-$hero = $cms['hero'];
+$hero = $cms['hero'] ?? [];
 $aboutSec = $cms['sections']['about'] ?? [];
 $servicesSec = $cms['sections']['services'] ?? [];
 $gallerySec = $cms['sections']['gallery'] ?? [];
@@ -19,318 +19,403 @@ $contactSec = $cms['sections']['contact'] ?? [];
 $socialSec = $cms['sections']['social'] ?? [];
 $visionSec = $cms['sections']['vision'] ?? [];
 
-$title = $appName . ' — ' . ($hero['headline'] ?? 'Luxury Experience');
+$services = $cms['services'] ?? [];
+$gallery = $cms['gallery'] ?? [];
+$contact = $cms['contact'] ?? [];
+$about = $cms['about'] ?? [];
+
+$heroImage = $hero['background_image'] ?? '';
+$heroHeadline = $hero['headline'] ?? $appName;
+$heroSubtitle = $hero['subtitle'] ?? $appTagline;
+$heroEyebrow = $hero['eyebrow'] ?? 'Welcome';
+$ctaLink = ($hero['cta_link'] ?? '') ?: '#services';
+$ctaText = $hero['cta_text'] ?? 'Explore';
+$phoneHref = !empty($contact['phone']) ? preg_replace('/\s+/', '', $contact['phone']) : '';
+
+$aboutImage = trim($about['image'] ?? '');
+$showAboutImage = $aboutImage !== '' && $aboutImage !== 'assets/about_placeholder.png';
+if ($showAboutImage) {
+    $aboutImagePath = __DIR__ . '/' . ltrim($aboutImage, '/');
+    $showAboutImage = file_exists($aboutImagePath);
+}
+
+$title = $appName . ' - ' . $heroHeadline;
 renderHeader($title, ['nav' => 'kiosk']);
 renderSocialIconsStylesheet();
 ?>
 
-<div class="landing-page w-full bg-[#080808] text-gray-300 font-sans selection:bg-[#c5a059]/30 overflow-x-hidden">
-
-    <!-- HERO -->
-    <section class="relative min-h-screen flex flex-col overflow-hidden">
-        <div class="absolute inset-0 z-0 overflow-hidden">
-            <img src="<?php echo htmlspecialchars($hero['background_image']); ?>" alt="" class="w-full h-full object-cover scale-105 animate-[slowZoom_20s_ease-in-out_infinite_alternate]">
-            <div class="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-[#080808]"></div>
-            <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,#080808_85%)]"></div>
-        </div>
-
-        <header class="relative z-50 px-6 lg:px-16 py-8 flex justify-between items-center">
-            <a href="#" class="flex items-center gap-4 group">
+<div class="landing-page min-h-screen bg-[#f6f1e8] text-[#1e211d] font-sans selection:bg-[#b9653a]/20 overflow-x-hidden">
+    <header class="fixed inset-x-0 top-0 z-50 border-b border-[#1e211d]/10 bg-[#eee8de]/95 shadow-sm shadow-black/5 backdrop-blur-xl">
+        <div class="mx-auto flex h-[76px] max-w-[1500px] items-center justify-between px-5 sm:px-8 lg:px-12">
+            <a href="#" class="flex min-w-0 items-center gap-3" aria-label="<?php echo htmlspecialchars($appName); ?> home">
                 <?php if ($logoUrl): ?>
-                    <div class="w-12 h-12 lg:w-14 lg:h-14 rounded-full overflow-hidden border-2 border-[#c5a059]/50 shadow-xl">
-                        <img src="<?php echo htmlspecialchars($logoUrl); ?>" alt="Logo" class="w-full h-full object-cover">
-                    </div>
+                    <span class="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full border border-[#1e211d]/10 bg-white shadow-sm">
+                        <img src="<?php echo htmlspecialchars($logoUrl); ?>" alt="<?php echo htmlspecialchars($appName); ?> logo" class="h-full w-full object-cover">
+                    </span>
                 <?php else: ?>
-                    <div class="w-12 h-12 lg:w-14 lg:h-14 rounded-full border-2 border-[#c5a059]/60 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                        <span class="text-[10px] font-black tracking-widest text-[#c5a059]"><?php echo htmlspecialchars(strtoupper(substr($appName, 0, 3))); ?></span>
-                    </div>
+                    <span class="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#1e211d] text-[10px] font-black uppercase tracking-[0.16em] text-[#f6f1e8] shadow-sm">
+                        <?php echo htmlspecialchars(substr($appName, 0, 3)); ?>
+                    </span>
                 <?php endif; ?>
-                <div class="hidden sm:block">
-                    <p class="text-[#c5a059] font-bold text-lg leading-none"><?php echo htmlspecialchars($appName); ?></p>
-                    <p class="text-[9px] text-white/40 uppercase tracking-[0.25em] mt-1"><?php echo htmlspecialchars($appTagline); ?></p>
-                </div>
+                <span class="min-w-0">
+                    <span class="block truncate text-sm font-black uppercase tracking-[0.18em] text-[#1e211d]"><?php echo htmlspecialchars($appName); ?></span>
+                    <span class="hidden truncate text-xs text-[#6c7168] sm:block"><?php echo htmlspecialchars($appTagline); ?></span>
+                </span>
             </a>
 
-            <nav class="hidden md:flex items-center gap-8 text-[10px] font-bold uppercase tracking-[0.25em] text-white/45">
-                <a href="#about" class="hover:text-[#c5a059] transition-colors">About</a>
-                <a href="#services" class="hover:text-[#c5a059] transition-colors">Services</a>
-                <a href="#gallery" class="hover:text-[#c5a059] transition-colors">Menu</a>
-                <a href="#contact" class="hover:text-[#c5a059] transition-colors">Contact</a>
+            <nav class="hidden items-center gap-9 text-xs font-black uppercase tracking-[0.2em] text-[#6c7168] md:flex">
+                <a href="#about" class="transition hover:text-[#b9653a]">About</a>
+                <a href="#services" class="transition hover:text-[#b9653a]">Services</a>
+                <a href="#gallery" class="transition hover:text-[#b9653a]">Menu</a>
+                <a href="#contact" class="transition hover:text-[#b9653a]">Contact</a>
             </nav>
 
-            <div class="flex items-center gap-3">
-                <button type="button" id="mobileMenuBtn" class="md:hidden p-2 text-white/60 hover:text-[#c5a059]">
-                    <i data-lucide="menu" class="w-6 h-6"></i>
-                </button>
-                <a href="login.php" class="hidden sm:inline-flex px-6 py-2.5 border border-[#c5a059]/60 text-[#c5a059] text-[10px] font-black uppercase tracking-[0.2em] rounded-sm hover:bg-[#c5a059] hover:text-black transition-all">
+            <div class="flex items-center gap-2">
+
+                <a href="login.php" class="hidden h-12 items-center rounded-full border border-[#1e211d]/20 px-5 text-xs font-black uppercase tracking-[0.14em] text-[#1e211d] transition hover:border-[#b9653a] hover:text-[#b9653a] sm:inline-flex">
                     Login
                 </a>
+                <button type="button" id="mobileMenuBtn" class="grid h-12 w-12 place-items-center rounded-full border border-[#1e211d]/20 text-[#1e211d] md:hidden" aria-label="Open navigation">
+                    <i data-lucide="menu" class="h-5 w-5"></i>
+                </button>
             </div>
-        </header>
+        </div>
+    </header>
 
-        <!-- Mobile nav drawer -->
-        <div id="mobileNav" class="fixed inset-0 z-[60] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center gap-8 text-lg font-bold uppercase tracking-[0.3em] text-white/70 hidden">
-            <button type="button" id="mobileNavClose" class="absolute top-8 right-8 p-2 text-white/50 hover:text-white">
-                <i data-lucide="x" class="w-8 h-8"></i>
+    <div id="mobileNav" class="fixed inset-0 z-[70] hidden bg-[#1e211d] px-6 text-[#f6f1e8]">
+        <div class="flex h-20 items-center justify-between">
+            <span class="text-sm font-black uppercase tracking-[0.18em]"><?php echo htmlspecialchars($appName); ?></span>
+            <button type="button" id="mobileNavClose" class="grid h-11 w-11 place-items-center rounded-lg border border-white/20" aria-label="Close navigation">
+                <i data-lucide="x" class="h-5 w-5"></i>
             </button>
-            <a href="#about" class="mobile-nav-link hover:text-[#c5a059]">About</a>
-            <a href="#services" class="mobile-nav-link hover:text-[#c5a059]">Services</a>
-            <a href="#gallery" class="mobile-nav-link hover:text-[#c5a059]">Menu</a>
-            <a href="#contact" class="mobile-nav-link hover:text-[#c5a059]">Contact</a>
         </div>
+        <nav class="flex min-h-[70vh] flex-col justify-center gap-7 text-3xl font-semibold">
+            <a href="#about" class="mobile-nav-link">About</a>
+            <a href="#services" class="mobile-nav-link">Services</a>
+            <a href="#gallery" class="mobile-nav-link">Menu</a>
+            <a href="#contact" class="mobile-nav-link">Contact</a>
+            <a href="login.php" class="mobile-nav-link text-[#d28f62]">Login</a>
+        </nav>
+    </div>
 
-        <div class="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6 pb-24 pt-8 max-w-5xl mx-auto">
-            <div class="reveal flex items-center gap-6 mb-6">
-                <span class="w-12 lg:w-20 h-px bg-gradient-to-r from-transparent to-[#c5a059]/50"></span>
-                <span class="font-serif-lux italic text-[#c5a059] text-xl lg:text-2xl tracking-wide"><?php echo htmlspecialchars($hero['eyebrow']); ?></span>
-                <span class="w-12 lg:w-20 h-px bg-gradient-to-l from-transparent to-[#c5a059]/50"></span>
-            </div>
-
-            <h1 class="reveal reveal-delay-1 font-serif-lux text-6xl sm:text-7xl lg:text-[9rem] leading-[0.9] text-[#c5a059] italic font-light mb-6 drop-shadow-2xl">
-                <?php echo htmlspecialchars($hero['headline']); ?>
-            </h1>
-
-            <p class="reveal reveal-delay-2 text-sm lg:text-base text-white/70 max-w-2xl leading-relaxed font-light mb-12">
-                <?php echo htmlspecialchars($hero['subtitle']); ?>
-            </p>
-
-            <?php if (!empty($hero['cta_text'])): ?>
-            <a href="<?php echo htmlspecialchars($hero['cta_link'] ?: '#services'); ?>" class="reveal reveal-delay-3 group inline-flex items-center gap-3 px-10 py-4 bg-[#c5a059] text-black text-xs font-black uppercase tracking-[0.25em] rounded-sm hover:bg-[#d4b06a] transition-all shadow-xl shadow-[#c5a059]/20">
-                <?php echo htmlspecialchars($hero['cta_text']); ?>
-                <i data-lucide="arrow-down" class="w-4 h-4 group-hover:translate-y-0.5 transition-transform"></i>
-            </a>
-            <?php endif; ?>
-        </div>
-
-        <div class="relative z-10 pb-10 flex justify-center">
-            <a href="#about" class="animate-bounce text-white/30 hover:text-[#c5a059] transition-colors">
-                <i data-lucide="chevron-down" class="w-8 h-8"></i>
-            </a>
-        </div>
-    </section>
-
-    <!-- ABOUT -->
-    <?php
-    $aboutImage = trim($cms['about']['image'] ?? '');
-    $showAboutImage = $aboutImage !== '' && $aboutImage !== 'assets/about_placeholder.png';
-    if ($showAboutImage) {
-        $aboutImagePath = __DIR__ . '/' . ltrim($aboutImage, '/');
-        $showAboutImage = file_exists($aboutImagePath);
-    }
-    ?>
-    <section id="about" class="py-24 lg:py-32 px-6 lg:px-16">
-        <div class="max-w-7xl mx-auto grid grid-cols-1 <?php echo $showAboutImage ? 'lg:grid-cols-2' : ''; ?> gap-16 lg:gap-24 items-center">
-            <div class="space-y-8">
-                <?php if (!empty($aboutSec['badge'])): ?>
-                <span class="inline-block px-4 py-1.5 border border-[#c5a059]/25 rounded-full text-[10px] font-black uppercase tracking-[0.35em] text-[#c5a059]">
-                    <?php echo htmlspecialchars($aboutSec['badge']); ?>
-                </span>
+    <main>
+        <section class="hero-section relative isolate min-h-screen overflow-hidden pt-[76px]">
+            <div class="absolute inset-0">
+                <?php if ($heroImage): ?>
+                    <img src="<?php echo htmlspecialchars($heroImage); ?>" alt="" class="h-full w-full object-cover hero-image">
                 <?php endif; ?>
-                <h2 class="font-serif-lux text-5xl lg:text-6xl italic text-white leading-tight">
-                    <?php echo htmlspecialchars($cms['about']['title']); ?>
-                </h2>
-                <div class="w-16 h-0.5 bg-gradient-to-r from-[#c5a059] to-transparent"></div>
-                <p class="text-lg text-gray-400 leading-relaxed font-light">
-                    <?php echo nl2br(htmlspecialchars($cms['about']['content'])); ?>
-                </p>
+                <div class="absolute inset-0 bg-[linear-gradient(90deg,rgba(11,14,11,0.74)_0%,rgba(11,14,11,0.42)_45%,rgba(11,14,11,0.16)_100%)]"></div>
+                <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.12)_0%,rgba(0,0,0,0)_42%,rgba(246,241,232,0.9)_100%)]"></div>
+                <div class="absolute inset-x-0 bottom-0 h-36 bg-[#f6f1e8]"></div>
             </div>
-            <?php if ($showAboutImage): ?>
-            <div class="relative group">
-                <div class="absolute -inset-3 border border-[#c5a059]/15 rounded-2xl translate-x-3 translate-y-3 transition-transform group-hover:translate-x-4 group-hover:translate-y-4"></div>
-                <div class="relative aspect-[4/5] max-h-[520px] rounded-2xl overflow-hidden shadow-2xl">
-                    <img src="<?php echo htmlspecialchars($aboutImage); ?>" alt="<?php echo htmlspecialchars($cms['about']['title']); ?>" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
-                </div>
-            </div>
-            <?php endif; ?>
-        </div>
-    </section>
 
-    <!-- SERVICES -->
-    <?php if (!empty($cms['services'])): ?>
-    <section id="services" class="py-24 lg:py-32 bg-[#0c0e0d] relative">
-        <div class="absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_top,#c5a05908,transparent_60%)]"></div>
-        <div class="relative max-w-7xl mx-auto px-6 lg:px-16">
-            <div class="text-center mb-16 lg:mb-20 space-y-4">
-                <?php if (!empty($servicesSec['badge'])): ?>
-                <p class="text-[10px] font-black uppercase tracking-[0.45em] text-[#c5a059]"><?php echo htmlspecialchars($servicesSec['badge']); ?></p>
-                <?php endif; ?>
-                <h2 class="font-serif-lux text-5xl lg:text-6xl italic text-white"><?php echo htmlspecialchars($servicesSec['title'] ?? 'Our Services'); ?></h2>
-                <?php if (!empty($servicesSec['subtitle'])): ?>
-                <p class="text-sm text-gray-500 max-w-xl mx-auto"><?php echo htmlspecialchars($servicesSec['subtitle']); ?></p>
-                <?php endif; ?>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
-                <?php foreach ($cms['services'] as $s): ?>
-                <article class="service-card group relative h-[420px] lg:h-[480px] rounded-2xl overflow-hidden cursor-default">
-                    <img src="<?php echo htmlspecialchars($s['image']); ?>" alt="<?php echo htmlspecialchars($s['title']); ?>" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-90 group-hover:opacity-95 transition-opacity"></div>
-                    <div class="absolute inset-0 p-8 lg:p-10 flex flex-col justify-end">
-                        <div class="w-12 h-12 rounded-xl bg-[#c5a059] flex items-center justify-center text-black mb-5 transform translate-y-2 opacity-80 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
-                            <i data-lucide="<?php echo htmlspecialchars($s['icon']); ?>" class="w-6 h-6"></i>
-                        </div>
-                        <h3 class="text-2xl font-bold text-white mb-2"><?php echo htmlspecialchars($s['title']); ?></h3>
-                        <p class="text-sm text-gray-400 leading-relaxed max-h-0 overflow-hidden opacity-0 group-hover:max-h-24 group-hover:opacity-100 transition-all duration-500"><?php echo htmlspecialchars($s['description']); ?></p>
+            <div class="relative mx-auto grid min-h-[calc(100svh-76px)] max-w-[1500px] grid-cols-1 items-center gap-8 px-5 pb-16 pt-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(340px,480px)] lg:px-12 lg:pb-20">
+                <div class="max-w-4xl text-white">
+                    <div class="reveal mb-5 inline-flex items-center gap-3 rounded-full border border-white/25 bg-white/10 px-5 py-2.5 text-xs font-black uppercase tracking-[0.22em] shadow-lg shadow-black/10 backdrop-blur-md">
+                        <span class="h-2 w-2 rounded-full bg-[#d28f62]"></span>
+                        <?php echo htmlspecialchars($heroEyebrow); ?>
                     </div>
-                </article>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    </section>
-    <?php endif; ?>
-
-    <!-- MENU GALLERY -->
-    <?php if (!empty($cms['gallery'])): ?>
-    <section id="gallery" class="py-24 lg:py-32 px-6 lg:px-16">
-        <div class="max-w-7xl mx-auto">
-            <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-14 lg:mb-20">
-                <div class="space-y-4">
-                    <?php if (!empty($gallerySec['badge'])): ?>
-                    <p class="text-[10px] font-black uppercase tracking-[0.45em] text-[#c5a059]"><?php echo htmlspecialchars($gallerySec['badge']); ?></p>
-                    <?php endif; ?>
-                    <h2 class="font-serif-lux text-5xl lg:text-6xl italic text-white"><?php echo htmlspecialchars($gallerySec['title'] ?? 'Menu Gallery'); ?></h2>
-                </div>
-                <?php if (!empty($gallerySec['subtitle'])): ?>
-                <p class="text-sm text-gray-500 max-w-md leading-relaxed"><?php echo htmlspecialchars($gallerySec['subtitle']); ?></p>
-                <?php endif; ?>
-            </div>
-
-            <div class="gallery-masonry grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4 auto-rows-[180px] lg:auto-rows-[220px]">
-                <?php foreach ($cms['gallery'] as $idx => $g):
-                    $span = ($idx % 7 === 0) ? 'md:col-span-2 md:row-span-2' : (($idx % 5 === 2) ? 'md:row-span-2' : '');
-                ?>
-                <figure class="gallery-item relative rounded-xl overflow-hidden group <?php echo $span; ?>">
-                    <img src="<?php echo htmlspecialchars($g['image']); ?>" alt="<?php echo htmlspecialchars($g['title']); ?>" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-[#c5a059]/0 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-end p-5 lg:p-6">
-                        <figcaption class="text-xs font-black uppercase tracking-[0.25em] text-white translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                            <?php echo htmlspecialchars($g['title']); ?>
-                        </figcaption>
-                    </div>
-                    <div class="absolute top-3 right-3 w-8 h-8 rounded-full bg-[#c5a059]/90 flex items-center justify-center text-black opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-300">
-                        <i data-lucide="zoom-in" class="w-4 h-4"></i>
-                    </div>
-                </figure>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    </section>
-    <?php endif; ?>
-
-    <!-- CONTACT & FOOTER -->
-    <footer id="contact" class="pt-24 lg:pt-32 pb-12 bg-black border-t border-white/5">
-        <div class="max-w-7xl mx-auto px-6 lg:px-16">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16 lg:gap-20 mb-20">
-                <!-- Contact -->
-                <div class="space-y-8">
-                    <h3 class="font-serif-lux text-3xl lg:text-4xl italic text-[#c5a059]">
-                        <?php echo htmlspecialchars($contactSec['title'] ?? 'Contact Us'); ?>
-                    </h3>
-                    <ul class="space-y-5 text-sm">
-                        <?php if (!empty($cms['contact']['address'])): ?>
-                        <li class="flex gap-4 items-start">
-                            <span class="w-10 h-10 rounded-full bg-[#c5a059]/10 flex items-center justify-center shrink-0">
-                                <i data-lucide="map-pin" class="w-4 h-4 text-[#c5a059]"></i>
-                            </span>
-                            <span class="text-white/55 leading-relaxed pt-2"><?php echo nl2br(htmlspecialchars($cms['contact']['address'])); ?></span>
-                        </li>
+                    <h1 class="hero-title reveal reveal-delay-1 text-balance font-serif-lux font-semibold leading-[0.9] tracking-normal drop-shadow-[0_10px_32px_rgba(0,0,0,0.4)]">
+                        <?php echo htmlspecialchars($heroHeadline); ?>
+                    </h1>
+                    <p class="reveal reveal-delay-2 mt-6 max-w-2xl text-base font-medium leading-8 text-white/90 sm:text-lg">
+                        <?php echo htmlspecialchars($heroSubtitle); ?>
+                    </p>
+                    <div class="reveal reveal-delay-3 mt-9 flex flex-col gap-3 sm:flex-row">
+                        <?php if (!empty($ctaText)): ?>
+                            <a href="<?php echo htmlspecialchars($ctaLink); ?>" class="inline-flex h-13 items-center justify-center gap-3 rounded-full bg-[#df925d] px-8 py-4 text-sm font-black uppercase tracking-[0.14em] text-[#1e211d] shadow-xl shadow-black/25 transition hover:-translate-y-0.5 hover:bg-[#f0b27b]">
+                                <?php echo htmlspecialchars($ctaText); ?>
+                                <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                            </a>
                         <?php endif; ?>
-                        <?php if (!empty($cms['contact']['phone'])): ?>
-                        <li class="flex gap-4 items-center">
-                            <span class="w-10 h-10 rounded-full bg-[#c5a059]/10 flex items-center justify-center shrink-0">
-                                <i data-lucide="phone" class="w-4 h-4 text-[#c5a059]"></i>
-                            </span>
-                            <a href="tel:<?php echo preg_replace('/\s+/', '', $cms['contact']['phone']); ?>" class="text-white/55 hover:text-[#c5a059] transition-colors"><?php echo htmlspecialchars($cms['contact']['phone']); ?></a>
-                        </li>
-                        <?php endif; ?>
-                        <?php if (!empty($cms['contact']['email'])): ?>
-                        <li class="flex gap-4 items-center">
-                            <span class="w-10 h-10 rounded-full bg-[#c5a059]/10 flex items-center justify-center shrink-0">
-                                <i data-lucide="mail" class="w-4 h-4 text-[#c5a059]"></i>
-                            </span>
-                            <a href="mailto:<?php echo htmlspecialchars($cms['contact']['email']); ?>" class="text-white/55 hover:text-[#c5a059] transition-colors"><?php echo htmlspecialchars($cms['contact']['email']); ?></a>
-                        </li>
-                        <?php endif; ?>
-                    </ul>
-                </div>
-
-                <!-- Social -->
-                <?php if (!empty($cms['social'])): ?>
-                <div class="space-y-8">
-                    <h3 class="font-serif-lux text-3xl lg:text-4xl italic text-[#c5a059]">
-                        <?php echo htmlspecialchars($socialSec['title'] ?? 'Follow Us'); ?>
-                    </h3>
-                    <div class="flex flex-wrap gap-4">
-                        <?php foreach ($cms['social'] as $s):
-                            if (empty($s['link'])) continue;
-                        ?>
-                        <a href="<?php echo htmlspecialchars($s['link']); ?>" target="_blank" rel="noopener noreferrer"
-                           class="social-link-item group"
-                           title="<?php echo htmlspecialchars(getSocialPlatformLabel($s['platform'])); ?>">
-                            <?php echo renderSocialIconBadge($s['platform'], ['size' => 'lg', 'active' => true]); ?>
+                        <a href="#gallery" class="inline-flex h-13 items-center justify-center gap-3 rounded-full border border-white/30 bg-white/10 px-8 py-4 text-sm font-black uppercase tracking-[0.14em] text-white shadow-lg shadow-black/10 backdrop-blur-md transition hover:-translate-y-0.5 hover:bg-white hover:text-[#1e211d]">
+                            View Menu
+                            <i data-lucide="utensils" class="h-4 w-4"></i>
                         </a>
+                    </div>
+                </div>
+
+                <aside class="hero-panel reveal reveal-delay-2 w-full max-w-[480px] justify-self-start rounded-[28px] border border-white/25 bg-[#f6f1e8]/90 p-5 text-[#1e211d] shadow-2xl shadow-black/30 backdrop-blur-xl lg:justify-self-end">
+                    <div class="flex items-center justify-between border-b border-[#1e211d]/10 px-2 py-4">
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#8b6f58]">Services</p>
+                            <p class="mt-1 text-4xl font-black"><?php echo count($services); ?></p>
+                        </div>
+                        <span class="grid h-11 w-11 place-items-center rounded-full bg-[#1e211d] text-white">
+                            <i data-lucide="concierge-bell" class="h-5 w-5"></i>
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between border-b border-[#1e211d]/10 px-2 py-4">
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#8b6f58]">Menu Looks</p>
+                            <p class="mt-1 text-4xl font-black"><?php echo count($gallery); ?></p>
+                        </div>
+                        <span class="grid h-11 w-11 place-items-center rounded-full bg-[#df925d] text-[#1e211d]">
+                            <i data-lucide="image" class="h-5 w-5"></i>
+                        </span>
+                    </div>
+                    <div class="mt-3 rounded-2xl bg-[#526454] p-5 text-white shadow-lg shadow-[#526454]/20">
+                        <p class="text-[10px] font-black uppercase tracking-[0.24em] text-white/60">Next Step</p>
+                        <a href="#contact" class="mt-3 inline-flex items-center gap-2 text-xl font-black">
+                            Plan a visit
+                            <i data-lucide="arrow-up-right" class="h-5 w-5"></i>
+                        </a>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <section id="about" class="px-5 py-20 sm:px-8 lg:px-10 lg:py-28">
+            <div class="mx-auto grid max-w-7xl grid-cols-1 gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+                <?php if ($showAboutImage): ?>
+                    <figure class="relative order-2 overflow-hidden rounded-lg bg-[#1e211d] lg:order-1">
+                        <img src="<?php echo htmlspecialchars($aboutImage); ?>" alt="<?php echo htmlspecialchars($about['title'] ?? $appName); ?>" class="aspect-[4/5] h-full w-full object-cover">
+                        <figcaption class="absolute bottom-4 left-4 right-4 rounded-lg bg-[#f6f1e8]/90 p-4 text-sm font-semibold text-[#1e211d] backdrop-blur-md">
+                            <?php echo htmlspecialchars($appTagline); ?>
+                        </figcaption>
+                    </figure>
+                <?php endif; ?>
+
+                <div class="<?php echo $showAboutImage ? 'order-1 lg:order-2' : ''; ?>">
+                    <?php if (!empty($aboutSec['badge'])): ?>
+                        <p class="mb-5 text-xs font-black uppercase tracking-[0.24em] text-[#b9653a]"><?php echo htmlspecialchars($aboutSec['badge']); ?></p>
+                    <?php endif; ?>
+                    <h2 class="max-w-3xl font-serif-lux text-5xl font-semibold leading-tight tracking-normal text-[#1e211d] lg:text-7xl">
+                        <?php echo htmlspecialchars($about['title'] ?? 'About Us'); ?>
+                    </h2>
+                    <div class="mt-8 max-w-2xl space-y-6 text-lg leading-9 text-[#5f645d]">
+                        <p><?php echo nl2br(htmlspecialchars($about['content'] ?? '')); ?></p>
+                    </div>
+                    <div class="mt-10 flex flex-wrap gap-3">
+                        <a href="#services" class="inline-flex items-center gap-2 rounded-lg bg-[#1e211d] px-5 py-3 text-sm font-black uppercase tracking-[0.14em] text-white transition hover:bg-[#526454]">
+                            Explore Services
+                            <i data-lucide="sparkles" class="h-4 w-4"></i>
+                        </a>
+                        <a href="#contact" class="inline-flex items-center gap-2 rounded-lg border border-[#1e211d]/20 px-5 py-3 text-sm font-black uppercase tracking-[0.14em] text-[#1e211d] transition hover:border-[#b9653a] hover:text-[#b9653a]">
+                            Contact
+                            <i data-lucide="send" class="h-4 w-4"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <?php if (!empty($services)): ?>
+            <section id="services" class="bg-[#1e211d] px-5 py-20 text-white sm:px-8 lg:px-10 lg:py-28">
+                <div class="mx-auto max-w-7xl">
+                    <div class="mb-12 grid gap-6 lg:grid-cols-[0.8fr_1fr] lg:items-end">
+                        <div>
+                            <?php if (!empty($servicesSec['badge'])): ?>
+                                <p class="mb-4 text-xs font-black uppercase tracking-[0.24em] text-[#d28f62]"><?php echo htmlspecialchars($servicesSec['badge']); ?></p>
+                            <?php endif; ?>
+                            <h2 class="font-serif-lux text-5xl font-semibold leading-tight tracking-normal lg:text-7xl"><?php echo htmlspecialchars($servicesSec['title'] ?? 'Our Services'); ?></h2>
+                        </div>
+                        <?php if (!empty($servicesSec['subtitle'])): ?>
+                            <p class="max-w-2xl text-base leading-8 text-white/60 lg:justify-self-end"><?php echo htmlspecialchars($servicesSec['subtitle']); ?></p>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        <?php foreach ($services as $idx => $s): ?>
+                            <article class="group overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]">
+                                <div class="relative aspect-[16/11] overflow-hidden">
+                                    <img src="<?php echo htmlspecialchars($s['image']); ?>" alt="<?php echo htmlspecialchars($s['title']); ?>" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-[#1e211d]/70 to-transparent"></div>
+                                    <div class="absolute bottom-4 left-4 grid h-12 w-12 place-items-center rounded-lg bg-[#d28f62] text-[#1e211d]">
+                                        <i data-lucide="<?php echo htmlspecialchars($s['icon'] ?? 'star'); ?>" class="h-6 w-6"></i>
+                                    </div>
+                                </div>
+                                <div class="p-6">
+                                    <p class="mb-3 text-xs font-black uppercase tracking-[0.2em] text-[#d28f62]">0<?php echo $idx + 1; ?></p>
+                                    <h3 class="text-2xl font-black"><?php echo htmlspecialchars($s['title']); ?></h3>
+                                    <p class="mt-4 text-sm leading-7 text-white/60"><?php echo htmlspecialchars($s['description']); ?></p>
+                                </div>
+                            </article>
                         <?php endforeach; ?>
                     </div>
                 </div>
-                <?php endif; ?>
+            </section>
+        <?php endif; ?>
 
-                <!-- Vision -->
-                <?php if (!empty($visionSec['content'])): ?>
-                <div class="space-y-6 md:col-span-2 lg:col-span-1">
-                    <h3 class="font-serif-lux text-3xl lg:text-4xl italic text-[#c5a059]">
-                        <?php echo htmlspecialchars($visionSec['title'] ?? 'Our Vision'); ?>
-                    </h3>
-                    <blockquote class="text-sm text-white/40 leading-loose italic border-l-2 border-[#c5a059]/30 pl-6">
-                        "<?php echo htmlspecialchars($visionSec['content']); ?>"
-                    </blockquote>
+        <?php if (!empty($gallery)): ?>
+            <section id="gallery" class="px-5 py-20 sm:px-8 lg:px-10 lg:py-28">
+                <div class="mx-auto max-w-7xl">
+                    <div class="mb-12 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+                        <div>
+                            <?php if (!empty($gallerySec['badge'])): ?>
+                                <p class="mb-4 text-xs font-black uppercase tracking-[0.24em] text-[#b9653a]"><?php echo htmlspecialchars($gallerySec['badge']); ?></p>
+                            <?php endif; ?>
+                            <h2 class="font-serif-lux text-5xl font-semibold leading-tight tracking-normal text-[#1e211d] lg:text-7xl"><?php echo htmlspecialchars($gallerySec['title'] ?? 'Menu Gallery'); ?></h2>
+                        </div>
+                        <?php if (!empty($gallerySec['subtitle'])): ?>
+                            <p class="max-w-xl text-base leading-8 text-[#5f645d]"><?php echo htmlspecialchars($gallerySec['subtitle']); ?></p>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="grid auto-rows-[180px] grid-cols-2 gap-3 md:grid-cols-4 lg:auto-rows-[230px]">
+                        <?php foreach ($gallery as $idx => $g):
+                            $span = ($idx % 6 === 0) ? 'md:col-span-2 md:row-span-2' : (($idx % 5 === 2) ? 'md:row-span-2' : '');
+                        ?>
+                            <figure class="group relative overflow-hidden rounded-lg bg-[#1e211d] <?php echo $span; ?>">
+                                <img src="<?php echo htmlspecialchars($g['image']); ?>" alt="<?php echo htmlspecialchars($g['title']); ?>" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent opacity-80"></div>
+                                <figcaption class="absolute bottom-0 left-0 right-0 p-4 text-sm font-black uppercase tracking-[0.16em] text-white">
+                                    <?php echo htmlspecialchars($g['title']); ?>
+                                </figcaption>
+                            </figure>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
-                <?php endif; ?>
+            </section>
+        <?php endif; ?>
+    </main>
+
+    <footer id="contact" class="bg-[#10130f] px-5 pb-10 pt-20 text-white sm:px-8 lg:px-10 lg:pt-28">
+        <div class="mx-auto max-w-7xl">
+            <div class="grid gap-12 lg:grid-cols-[1fr_1.2fr]">
+                <div>
+                    <p class="mb-4 text-xs font-black uppercase tracking-[0.24em] text-[#d28f62]">Contact</p>
+                    <h2 class="font-serif-lux text-5xl font-semibold leading-tight tracking-normal lg:text-7xl">
+                        <?php echo htmlspecialchars($contactSec['title'] ?? 'Contact Us'); ?>
+                    </h2>
+                    <?php if (!empty($visionSec['content'])): ?>
+                        <blockquote class="mt-8 max-w-xl border-l-2 border-[#d28f62] pl-5 text-base leading-8 text-white/62">
+                            &ldquo;<?php echo htmlspecialchars($visionSec['content']); ?>&rdquo;
+                        </blockquote>
+                    <?php endif; ?>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <?php if (!empty($contact['address'])): ?>
+                        <div class="rounded-lg border border-white/10 bg-white/[0.04] p-6">
+                            <i data-lucide="map-pin" class="mb-5 h-6 w-6 text-[#d28f62]"></i>
+                            <p class="text-xs font-black uppercase tracking-[0.2em] text-white/40">Address</p>
+                            <p class="mt-3 text-sm leading-7 text-white/70"><?php echo nl2br(htmlspecialchars($contact['address'])); ?></p>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (!empty($contact['phone'])): ?>
+                        <div class="rounded-lg border border-white/10 bg-white/[0.04] p-6">
+                            <i data-lucide="phone" class="mb-5 h-6 w-6 text-[#d28f62]"></i>
+                            <p class="text-xs font-black uppercase tracking-[0.2em] text-white/40">Phone</p>
+                            <a href="tel:<?php echo htmlspecialchars($phoneHref); ?>" class="mt-3 block text-sm leading-7 text-white/70 transition hover:text-[#d28f62]"><?php echo htmlspecialchars($contact['phone']); ?></a>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (!empty($contact['email'])): ?>
+                        <div class="rounded-lg border border-white/10 bg-white/[0.04] p-6">
+                            <i data-lucide="mail" class="mb-5 h-6 w-6 text-[#d28f62]"></i>
+                            <p class="text-xs font-black uppercase tracking-[0.2em] text-white/40">Email</p>
+                            <a href="mailto:<?php echo htmlspecialchars($contact['email']); ?>" class="mt-3 block break-words text-sm leading-7 text-white/70 transition hover:text-[#d28f62]"><?php echo htmlspecialchars($contact['email']); ?></a>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (!empty($cms['social'])): ?>
+                        <div class="rounded-lg border border-white/10 bg-white/[0.04] p-6">
+                            <i data-lucide="share-2" class="mb-5 h-6 w-6 text-[#d28f62]"></i>
+                            <p class="text-xs font-black uppercase tracking-[0.2em] text-white/40"><?php echo htmlspecialchars($socialSec['title'] ?? 'Follow Us'); ?></p>
+                            <div class="mt-4 flex flex-wrap gap-3">
+                                <?php foreach ($cms['social'] as $s):
+                                    if (empty($s['link'])) continue;
+                                ?>
+                                    <a href="<?php echo htmlspecialchars($s['link']); ?>" target="_blank" rel="noopener noreferrer" class="social-link-item" title="<?php echo htmlspecialchars(getSocialPlatformLabel($s['platform'])); ?>">
+                                        <?php echo renderSocialIconBadge($s['platform'], ['size' => 'lg', 'active' => true]); ?>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
             </div>
 
-            <div class="pt-10 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
-                <p class="text-[10px] font-bold text-white/25 uppercase tracking-[0.35em]">
-                    &copy; <?php echo date('Y'); ?> <?php echo htmlspecialchars($appName); ?>. All rights reserved.
-                </p>
-                <a href="login.php" class="text-[10px] font-bold text-white/20 uppercase tracking-widest hover:text-[#c5a059] transition-colors">
-                    Login
-                </a>
+            <div class="mt-16 flex flex-col gap-4 border-t border-white/10 pt-8 text-xs font-bold uppercase tracking-[0.18em] text-white/40 sm:flex-row sm:items-center sm:justify-between">
+                <p>&copy; <?php echo date('Y'); ?> <?php echo htmlspecialchars($appName); ?>. All rights reserved.</p>
+                <a href="login.php" class="transition hover:text-[#d28f62]">Login</a>
             </div>
         </div>
     </footer>
 </div>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap');
 
 html { scroll-behavior: smooth; }
+
+/* Fix: renderHeader() wraps content in flex-row — force column so sections stack & center */
+body, main, main > div {
+    flex-direction: column !important;
+    width: 100% !important;
+    min-width: 0 !important;
+}
+
+/* Ensure the landing-page fills the full viewport width */
+.landing-page {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
 
 .landing-page .font-serif-lux {
     font-family: 'Cormorant Garamond', Georgia, serif;
 }
 
-@keyframes slowZoom {
-    from { transform: scale(1); }
-    to { transform: scale(1.08); }
+.hero-section {
+    min-height: 100svh;
+}
+
+.hero-image {
+    filter: saturate(1.08) contrast(1.02);
+}
+
+.hero-title {
+    font-size: clamp(4.35rem, 8.2vw, 8.25rem);
+}
+
+.hero-panel {
+    transform-origin: center right;
+}
+
+.text-balance {
+    text-wrap: balance;
+}
+
+.h-13 {
+    height: 3.25rem;
 }
 
 .reveal {
     opacity: 0;
-    transform: translateY(24px);
-    animation: revealUp 1s ease forwards;
+    transform: translateY(18px);
+    animation: revealUp 0.8s ease forwards;
 }
-.reveal-delay-1 { animation-delay: 0.15s; }
-.reveal-delay-2 { animation-delay: 0.3s; }
-.reveal-delay-3 { animation-delay: 0.45s; }
+
+.reveal-delay-1 { animation-delay: 0.12s; }
+.reveal-delay-2 { animation-delay: 0.24s; }
+.reveal-delay-3 { animation-delay: 0.36s; }
 
 @keyframes revealUp {
     to { opacity: 1; transform: translateY(0); }
 }
 
-.gallery-item {
-    min-height: 100%;
+@media (max-height: 780px) and (min-width: 1024px) {
+    .hero-title {
+        font-size: clamp(3.9rem, 6.5vw, 6.35rem);
+    }
+
+    .hero-panel {
+        transform: scale(0.92);
+    }
 }
 
-.service-card {
-    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+@media (max-width: 767px) {
+    .hero-title {
+        font-size: clamp(3.45rem, 17vw, 5.25rem);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reveal {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
 }
 </style>
 
@@ -340,10 +425,12 @@ html { scroll-behavior: smooth; }
     const mobileNav = document.getElementById('mobileNav');
     const closeBtn = document.getElementById('mobileNavClose');
 
+    const closeNav = () => mobileNav?.classList.add('hidden');
+
     menuBtn?.addEventListener('click', () => mobileNav?.classList.remove('hidden'));
-    closeBtn?.addEventListener('click', () => mobileNav?.classList.add('hidden'));
+    closeBtn?.addEventListener('click', closeNav);
     mobileNav?.querySelectorAll('.mobile-nav-link').forEach(link => {
-        link.addEventListener('click', () => mobileNav.classList.add('hidden'));
+        link.addEventListener('click', closeNav);
     });
 })();
 </script>

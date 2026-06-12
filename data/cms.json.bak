@@ -26,7 +26,7 @@
             "title": "Contact Us"
         },
         "social": {
-            "title": "Follow Us"
+            "title": "Follow"
         },
         "vision": {
             "title": "Our Vision",
@@ -73,11 +73,7 @@
         },
         {
             "platform": "instagram",
-            "link": "https://instagram.com"
-        },
-        {
-            "platform": "telegram",
-            "link": "https://t.me"
+            "link": ""
         }
     ],
     "gallery": [
@@ -95,11 +91,6 @@
             "id": "gal-3",
             "title": "House Favorite",
             "image": "assets/cms/defaults/gallery-3.jpg"
-        },
-        {
-            "id": "gal-4",
-            "title": "Signature Dish",
-            "image": "assets/cms/defaults/gallery-4.png"
         },
         {
             "id": "1781217939087",
@@ -120,6 +111,21 @@
             "id": "1781218033038",
             "title": "Menu Item",
             "image": "assets/cms/1781218043_e43c3b03.jpg"
+        },
+        {
+            "id": "1781224440498",
+            "title": "Menu Item",
+            "image": "assets/welcome_bg.png"
+        },
+        {
+            "id": "1781224474730",
+            "title": "Menu Item",
+            "image": "assets/welcome_bg.png"
+        },
+        {
+            "id": "1781224507474",
+            "title": "Menu Item",
+            "image": "assets/welcome_bg.png"
         }
     ]
 }
