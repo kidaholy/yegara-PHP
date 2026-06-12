@@ -3,7 +3,7 @@
         "eyebrow": "Welcome to",
         "headline": "Abe Hotel",
         "subtitle": "Refined accommodation and authentic dining — where comfort meets Ethiopian hospitality.",
-        "background_image": "assets/cms/defaults/hero.png",
+        "background_image": "assets/welcome_bg.png",
         "cta_text": "Discover More",
         "cta_link": "#services"
     },
@@ -63,7 +63,7 @@
     ],
     "contact": {
         "phone": "+251 900 000 000",
-        "email": "info@abehotel.com",
+        "email": "abehotel@abehotel.com",
         "address": "Dilla, Ethiopia"
     },
     "social": [
@@ -129,5 +129,11 @@
             "title": "Menu Item",
             "image": "assets/welcome_bg.png"
         }
-    ]
+    ],
+    "seo": {
+        "description": "Abe Hotel & Spa offers refined accommodation and authentic dining in the heart of Ethiopia. Experience premium comfort and timeless hospitality.",
+        "keywords": "Abe Hotel, Hotel in Ethiopia, Ethiopia Hospitality, Luxury Rooms, Authentic Dining, Ethiopia Tourism",
+        "og_image": "assets/cms/defaults/hero.png",
+        "google_verification": ""
+    }
 }

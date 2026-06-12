@@ -122,6 +122,17 @@ renderHeader($title);
                 </div>
             </a>
 
+            <a href="https://s16387.fra1.stableserver.net:2096/cpsess6687300317/3rdparty/roundcube/?_task=mail&_mbox=INBOX" target="_blank" class="group h-full">
+                <div class="glass p-8 rounded-2xl border border-[#c5a059]/20 bg-[#c5a059]/5 hover:bg-[#c5a059]/10 transition-colors flex flex-col h-full">
+                    <div class="flex items-start justify-between mb-8">
+                        <i data-lucide="mail" class="w-8 h-8 text-[#c5a059]"></i>
+                        <i data-lucide="external-link" class="w-5 h-5 text-gray-500 group-hover:text-[#c5a059] transition-colors group-hover:translate-x-1"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Check Email</h3>
+                    <p class="text-sm text-gray-400">Official Hotel Webmail Access</p>
+                </div>
+            </a>
+
         </div>
 >
 

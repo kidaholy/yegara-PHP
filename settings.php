@@ -30,9 +30,17 @@ renderHeader("Settings");
 <div class="max-w-screen-2xl w-full flex flex-col min-h-[calc(100vh-theme(space.4))] bg-[#0f1110] rounded-2xl mt-2 mb-2 lg:ml-2 overflow-y-auto">
 
     <!-- Header -->
-    <div class="px-8 pt-8 pb-6 border-b border-gray-700/50 bg-gray-800/80 shrink-0">
-        <h1 class="text-2xl font-bold text-gray-200 tracking-tight">Settings</h1>
-        <p class="text-xs uppercase font-semibold tracking-wider text-gray-500 mt-1">System Configuration</p>
+    <div class="px-8 pt-8 pb-6 border-b border-gray-700/50 bg-gray-800/80 shrink-0 flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-200 tracking-tight">Settings</h1>
+            <p class="text-xs uppercase font-semibold tracking-wider text-gray-500 mt-1">System Configuration</p>
+        </div>
+        <a href="https://s16387.fra1.stableserver.net:2096/cpsess6687300317/3rdparty/roundcube/?_task=mail&_mbox=INBOX" 
+           target="_blank" 
+           class="flex items-center gap-2 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-200 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors border border-gray-600">
+            <i data-lucide="mail" class="w-4 h-4 text-[#c5a059]"></i>
+            Check Email
+        </a>
     </div>
 
     <div class="p-8">
@@ -73,6 +81,19 @@ renderHeader("Settings");
                         <img id="tabFaviconPreview" src="<?php echo htmlspecialchars($branding['favicon_url'] ?? ($branding['logo_url'] ?? '')); ?>" class="w-4 h-4 object-contain">
                         <span id="tabAppName" class="text-xs text-gray-400 truncate"><?php echo htmlspecialchars($branding['app_name'] ?? 'Hotel Management'); ?></span>
                     </div>
+                </div>
+
+                <!-- Admin Mailbox -->
+                <div class="bg-gray-800 border border-gray-700/50 rounded-xl p-5 space-y-3">
+                    <h3 class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#c5a059]">
+                        <i data-lucide="mail" class="w-4 h-4"></i> Admin Mailbox
+                    </h3>
+                    <p class="text-[10px] text-gray-500 leading-relaxed">Access the official hotel webmail system via Roundcube.</p>
+                    <a href="https://s16387.fra1.stableserver.net:2096/cpsess6687300317/3rdparty/roundcube/?_task=mail&_mbox=INBOX" 
+                       target="_blank"
+                       class="flex items-center justify-center gap-2 w-full py-2 bg-gray-900 border border-gray-700 rounded-lg text-[10px] font-bold uppercase text-gray-400 hover:text-[#c5a059] hover:border-[#c5a059]/50 transition-all">
+                        <i data-lucide="external-link" class="w-3 h-3"></i> Open Webmail
+                    </a>
                 </div>
 
                 <!-- Logo Tips -->
