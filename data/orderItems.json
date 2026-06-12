@@ -587,5 +587,25 @@
         "menuTier": "Standard",
         "menuCollection": "menuItems",
         "status": "pending"
+    },
+    {
+        "id": "c213c211bd4c8c5dac19",
+        "createdAt": "2026-06-12T10:28:42.000Z",
+        "updatedAt": "2026-06-12T10:28:42.000Z",
+        "isDeleted": false,
+        "orderId": "b87c9119809d9ceb4743",
+        "menuItemId": "69ada38ad661b3f94ac72fc6",
+        "menuId": "4",
+        "name": "TRE\/\u1325\u122c 0.5 \u12aa.\u130d",
+        "quantity": 1,
+        "price": 1300,
+        "notes": "",
+        "category": "TRE\/\u1241\u122d\u1325",
+        "mainCategory": "Food",
+        "menuTierId": null,
+        "menuTierName": "Standard",
+        "menuTier": "Standard",
+        "menuCollection": "menuItems",
+        "status": "pending"
     }
 ]

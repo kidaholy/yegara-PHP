@@ -307,6 +307,7 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
     let selectedCategory = '';
     let activeFloorId = '';
     let appName = 'ABE HOTEL';
+    let enablePrinting = true;
     let searchTimer = null;
 
     function esc(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
@@ -347,6 +348,7 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
             floorPlan = data.floorPlan || [];
             allRooms = data.rooms || [];
             appName = data.branding?.app_name || appName;
+            enablePrinting = data.configuration?.enable_cashier_printing !== false;
 
             const floorSelect = document.getElementById('floor-select');
             floorSelect.innerHTML = floorPlan.map(f => `<option value="${esc(f.id)}">${esc(f.label)}</option>`).join('');
@@ -873,11 +875,11 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
                 renderCart();
 
                 setTimeout(() => {
+                    if (!enablePrinting) return;
                     const receipt = document.getElementById('receipt-print');
                     if (receipt.parentElement !== document.body) {
                         document.body.appendChild(receipt);
                     }
-                    printReceipt(orderData);
                     printReceipt(orderData);
                 }, 150);
             } else alert('Error: ' + (result.message || 'Failed'));

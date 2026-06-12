@@ -247,6 +247,9 @@ try {
             'app_name' => $branding['app_name'] ?? 'ABE HOTEL',
             'app_tagline' => $branding['app_tagline'] ?? '',
         ],
+        'configuration' => [
+            'enable_cashier_printing' => $manager->getSetting('configuration', 'enable_cashier_printing') ?? true,
+        ],
     ]);
 } catch (Exception $e) {
     sendJson(['message' => $e->getMessage()], 500);
