@@ -308,8 +308,16 @@ renderSocialIconsStylesheet();
                         </div>
                     <?php endif; ?>
                     <?php
-                    $socialLinks = array_values($cms['social'] ?? []);
-                    $socialCount = min(count($socialLinks), 4);
+                    $allSocial = isset($cms['social']) && is_array($cms['social']) ? $cms['social'] : [];
+                    $socialLinks = [];
+                    foreach ($allSocial as $s) {
+                        if (!empty($s['platform'])) {
+                           $socialLinks[] = $s;
+                        }
+                    }
+                    $socialCount = count($socialLinks);
+                    if ($socialCount > 4) $socialCount = 4;
+                    
                     if ($socialCount > 0):
                     ?>
                         <div class="rounded-lg border border-white/10 bg-white/[0.04] p-6">

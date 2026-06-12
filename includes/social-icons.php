@@ -2,12 +2,12 @@
 /**
  * Branded social media icons — shared config for CMS admin & public site
  */
-function normalizeSocialPlatform(string $platform): string {
+function normalizeSocialPlatform($platform) {
     $aliases = ['send' => 'telegram'];
     return $aliases[$platform] ?? $platform;
 }
 
-function getSocialPlatformConfig(): array {
+function getSocialPlatformConfig() {
     return [
         'facebook' => [
             'label' => 'Facebook',
@@ -56,7 +56,7 @@ function getSocialPlatformConfig(): array {
     ];
 }
 
-function getSocialPlatformLabel(string $platform, array $item = []): string {
+function getSocialPlatformLabel($platform, $item = []) {
     if (!empty($item['platform_label'])) {
         return $item['platform_label'];
     }
@@ -65,13 +65,13 @@ function getSocialPlatformLabel(string $platform, array $item = []): string {
     return $config[$platform]['label'] ?? ucfirst(str_replace('-', ' ', $platform));
 }
 
-function getSocialPlatformClass(string $platform): string {
+function getSocialPlatformClass($platform) {
     $platform = normalizeSocialPlatform($platform);
     $config = getSocialPlatformConfig();
     return $config[$platform]['class'] ?? 'social-brand-website';
 }
 
-function getSocialIconSvg(string $platform): string {
+function getSocialIconSvg($platform) {
     $platform = normalizeSocialPlatform($platform);
     $icons = [
         'facebook' => '<path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.748c0-.855.192-1.136 1.136-1.136h2.864v-4h-3.864c-3.432 0-5.136 1.703-5.136 5.136v1.748z"/>',
@@ -88,14 +88,14 @@ function getSocialIconSvg(string $platform): string {
     ];
 
     $path = $icons[$platform] ?? $icons['globe'];
-    return '<svg class="social-icon-glyph" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">' . $path . '</svg>';
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white" style="display:block;width:100%;height:100%;" aria-hidden="true">' . $path . '</svg>';
 }
 
 /**
  * Render a branded social icon badge (gradient circle + white glyph)
  */
-function renderSocialIconBadge(string $platform, array $options = [], array $item = []): string {
-    $size = $options['size'] ?? 'md';
+function renderSocialIconBadge($platform, $options = [], $item = []) {
+    $size = isset($options['size']) ? $options['size'] : 'md';
     $active = !empty($options['active']);
     $muted = !empty($options['muted']);
     $class = getSocialPlatformClass($platform);
@@ -109,18 +109,18 @@ function renderSocialIconBadge(string $platform, array $options = [], array $ite
     }
 
     $stateClass = $active ? 'social-icon-active' : ($muted ? 'social-icon-muted' : '');
-    $extra = htmlspecialchars($options['extraClass'] ?? '');
+    $extra = htmlspecialchars(isset($options['extraClass']) ? $options['extraClass'] : '');
     $svg = getSocialIconSvg($platform);
 
-    return <<<HTML
-<span class="social-icon-badge {$sizeClass} {$class} {$stateClass} {$extra}" title="{$label}" aria-label="{$label}">
+    return '<span class="social-icon-badge ' . $sizeClass . ' ' . $class . ' ' . $stateClass . ' ' . $extra . '" title="' . $label . '" aria-label="' . $label . '" style="display:inline-flex;align-items:center;justify-content:center;border-radius:9999px;overflow:hidden;background:#333;">
     <span class="social-icon-glow"></span>
     <span class="social-icon-surface"></span>
-    {$svg}
-</span>
-HTML;
+    <span class="social-icon-glyph-wrapper" style="position:relative;z-index:10;display:block;width:1.25rem;height:1.25rem;color:white;fill:white;">
+        ' . $svg . '
+    </span>
+</span>';
 }
 
-function renderSocialIconsStylesheet(): void {
+function renderSocialIconsStylesheet() {
     echo '<link rel="stylesheet" href="public/css/social-icons.css">';
 }
