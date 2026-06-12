@@ -40,7 +40,10 @@ if ($showAboutImage) {
 }
 
 $title = $appName . ' - ' . $heroHeadline;
-renderHeader($title, ['nav' => 'kiosk']);
+renderHeader($title, [
+    'nav' => 'kiosk',
+    'heroImage' => $heroImage
+]);
 renderSocialIconsStylesheet();
 ?>
 
@@ -50,7 +53,7 @@ renderSocialIconsStylesheet();
             <a href="#" class="flex min-w-0 items-center gap-3" aria-label="<?php echo htmlspecialchars($appName); ?> home">
                 <?php if ($logoUrl): ?>
                     <span class="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full border border-[#1e211d]/10 bg-white shadow-sm">
-                        <img src="<?php echo htmlspecialchars($logoUrl); ?>" alt="<?php echo htmlspecialchars($appName); ?> logo" class="h-full w-full object-cover">
+                        <img src="<?php echo htmlspecialchars($logoUrl); ?>" alt="<?php echo htmlspecialchars($appName); ?> logo" class="h-full w-full object-cover" fetchpriority="high">
                     </span>
                 <?php else: ?>
                     <span class="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#1e211d] text-[10px] font-black uppercase tracking-[0.16em] text-[#f6f1e8] shadow-sm">
@@ -169,7 +172,7 @@ renderSocialIconsStylesheet();
             <div class="mx-auto grid max-w-7xl grid-cols-1 gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
                 <?php if ($showAboutImage): ?>
                     <figure class="relative order-2 overflow-hidden rounded-lg bg-[#1e211d] lg:order-1">
-                        <img src="<?php echo htmlspecialchars($aboutImage); ?>" alt="<?php echo htmlspecialchars($about['title'] ?? $appName); ?>" class="aspect-[4/5] h-full w-full object-cover">
+                        <img src="<?php echo htmlspecialchars($aboutImage); ?>" alt="<?php echo htmlspecialchars($about['title'] ?? $appName); ?>" class="aspect-[4/5] h-full w-full object-cover" loading="lazy">
                         <figcaption class="absolute bottom-4 left-4 right-4 rounded-lg bg-[#f6f1e8]/90 p-4 text-sm font-semibold text-[#1e211d] backdrop-blur-md">
                             <?php echo htmlspecialchars($appTagline); ?>
                         </figcaption>
@@ -219,7 +222,7 @@ renderSocialIconsStylesheet();
                         <?php foreach ($services as $idx => $s): ?>
                             <article class="group overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]">
                                 <div class="relative aspect-[16/11] overflow-hidden">
-                                    <img src="<?php echo htmlspecialchars($s['image']); ?>" alt="<?php echo htmlspecialchars($s['title']); ?>" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
+                                    <img src="<?php echo htmlspecialchars($s['image']); ?>" alt="<?php echo htmlspecialchars($s['title']); ?>" class="h-full w-full object-cover transition duration-700 group-hover:scale-105" loading="lazy">
                                     <div class="absolute inset-0 bg-gradient-to-t from-[#1e211d]/70 to-transparent"></div>
                                     <div class="absolute bottom-4 left-4 grid h-12 w-12 place-items-center rounded-lg bg-[#d28f62] text-[#1e211d]">
                                         <i data-lucide="<?php echo htmlspecialchars($s['icon'] ?? 'star'); ?>" class="h-6 w-6"></i>
@@ -257,7 +260,7 @@ renderSocialIconsStylesheet();
                             $span = ($idx % 6 === 0) ? 'md:col-span-2 md:row-span-2' : (($idx % 5 === 2) ? 'md:row-span-2' : '');
                         ?>
                             <figure class="group relative overflow-hidden rounded-lg bg-[#1e211d] <?php echo $span; ?>">
-                                <img src="<?php echo htmlspecialchars($g['image']); ?>" alt="<?php echo htmlspecialchars($g['title']); ?>" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
+                                <img src="<?php echo htmlspecialchars($g['image']); ?>" alt="<?php echo htmlspecialchars($g['title']); ?>" class="h-full w-full object-cover transition duration-700 group-hover:scale-105" loading="lazy">
                                 <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent opacity-80"></div>
                                 <figcaption class="absolute bottom-0 left-0 right-0 p-4 text-sm font-black uppercase tracking-[0.16em] text-white">
                                     <?php echo htmlspecialchars($g['title']); ?>

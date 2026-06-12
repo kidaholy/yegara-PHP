@@ -76,14 +76,26 @@ function renderHeader($title = "Management System", $options = []) {
         <?php if ($faviconUrl): ?>
         <link rel="icon" href="<?php echo htmlspecialchars($faviconUrl); ?>" />
         <?php endif; ?>
+        
+        <!-- Resource Hints -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="preconnect" href="https://unpkg.com">
+        <link rel="preconnect" href="https://cdn.tailwindcss.com">
+        
+        <?php if (!empty($options['heroImage'])): ?>
+        <!-- Preload LCP Image -->
+        <link rel="preload" as="image" href="<?php echo htmlspecialchars($options['heroImage']); ?>">
+        <?php endif; ?>
+
         <!-- Tailwind CSS CDN -->
         <script src="https://cdn.tailwindcss.com"></script>
         <!-- Google Fonts: Inter -->
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
         <!-- Lucide Icons -->
-        <script src="https://unpkg.com/lucide@latest"></script>
+        <script src="https://unpkg.com/lucide@latest" defer></script>
         <!-- Chart.js -->
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
         <style>
             :root {
                 --background: 144 8% 6%; /* #0f1110 */

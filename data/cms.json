@@ -3,7 +3,7 @@
         "eyebrow": "Welcome to",
         "headline": "Abe Hotel",
         "subtitle": "Refined accommodation and authentic dining — where comfort meets Ethiopian hospitality.",
-        "background_image": "assets/cms/defaults/hero.png",
+        "background_image": "assets/welcome_bg.webp",
         "cta_text": "Discover More",
         "cta_link": "#services"
     },
@@ -117,17 +117,17 @@
         {
             "id": "1781224440498",
             "title": "Menu Item",
-            "image": "assets/welcome_bg.png"
+            "image": "assets/welcome_bg.webp"
         },
         {
             "id": "1781224474730",
             "title": "Menu Item",
-            "image": "assets/welcome_bg.png"
+            "image": "assets/welcome_bg.webp"
         },
         {
             "id": "1781224507474",
             "title": "Menu Item",
-            "image": "assets/welcome_bg.png"
+            "image": "assets/welcome_bg.webp"
         }
     ]
 }
