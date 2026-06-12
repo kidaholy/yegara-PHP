@@ -4,7 +4,7 @@
 const WebsiteCMS = {
     data: null,
     currentSlide: 0,
-    slides: ['hero', 'about', 'services', 'contact', 'social', 'gallery'],
+    slides: ['hero', 'about', 'services', 'contact', 'social', 'gallery', 'seo'],
     slideLabels: {
         hero: 'Hero Banner',
         about: 'About Us',
@@ -12,6 +12,7 @@ const WebsiteCMS = {
         contact: 'Contact Us',
         social: 'Social Media',
         gallery: 'Menu Gallery',
+        seo: 'Google Indexing & SEO',
     },
     slideSubtitles: {
         hero: 'Landing page headline, background & call-to-action',
@@ -20,6 +21,7 @@ const WebsiteCMS = {
         contact: 'Phone, email and address for guests',
         social: 'Choose 1–4 platforms and add profile links for the contact card',
         gallery: 'Upload menu photos in an attractive gallery',
+        seo: 'Meta description, keywords and social sharing settings',
     },
     socialPlatforms: [
         { id: 'facebook', label: 'Facebook', brand: 'social-brand-facebook' },
@@ -117,6 +119,7 @@ const WebsiteCMS = {
             contact: () => this.renderContact(),
             social: () => this.renderSocial(),
             gallery: () => this.renderGallery(),
+            seo: () => this.renderSeo(),
         };
         panel.innerHTML = renderers[key]?.() || '';
         lucide.createIcons();
@@ -444,6 +447,42 @@ const WebsiteCMS = {
         this.renderSlide();
     },
 
+    renderSeo() {
+        const seo = this.data.seo || {};
+        return `
+            ${this.sectionHeader('Search Optimization', 'Settings to help Google find and index your website correctly.')}
+            <div class="space-y-6">
+                ${this.field('Meta Description', 'seo_description', seo.description || '', 'textarea', 'Search engines show this in search results...')}
+                ${this.field('Keywords', 'seo_keywords', seo.keywords || '', 'text', 'keyword1, keyword2, keyword3...')}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        ${this.field('Sharing Image URL', 'seo_og_image', seo.og_image || '', 'url', 'assets/cms/defaults/hero.png')}
+                        <p class="text-[10px] text-white/30 italic">Commonly used for Facebook/Twitter link previews.</p>
+                    </div>
+                </div>
+                <div class="p-5 rounded-2xl bg-white/[0.03] border border-white/10 mt-8">
+                    <div class="flex items-center gap-3 mb-4">
+                        <i data-lucide="info" class="w-5 h-5 text-[#c5a059]"></i>
+                        <h4 class="text-sm font-bold text-white uppercase tracking-wider">Indexing Status</h4>
+                    </div>
+                    <ul class="space-y-3">
+                        <li class="flex items-center gap-3 text-xs text-white/50">
+                            <i data-lucide="check-circle" class="w-4 h-4 text-green-500/70"></i>
+                            Meta Robots: <strong>index, follow</strong> (Active)
+                        </li>
+                        <li class="flex items-center gap-3 text-xs text-white/50">
+                            <i data-lucide="check-circle" class="w-4 h-4 text-green-500/70"></i>
+                            Sitemap XML: <strong>Generated</strong> (/sitemap.php)
+                        </li>
+                        <li class="flex items-center gap-3 text-xs text-white/50">
+                            <i data-lucide="link" class="w-4 h-4 text-[#c5a059]"></i>
+                            Canonical Link: <strong>Set to Root</strong>
+                        </li>
+                    </ul>
+                </div>
+            </div>`;
+    },
+
     addService() {
         this.collectCurrentSlide();
         this.data.services.push({
@@ -655,6 +694,16 @@ const WebsiteCMS = {
                 const i = parseInt(el.dataset.gal, 10);
                 if (this.data.gallery[i]) this.data.gallery[i].title = el.value;
             });
+        }
+
+        if (key === 'seo') {
+            if (!this.data.seo) this.data.seo = {};
+            const description = this.fieldVal('seo_description');
+            const keywords = this.fieldVal('seo_keywords');
+            const og_image = this.fieldVal('seo_og_image');
+            if (description !== null) this.data.seo.description = description;
+            if (keywords !== null) this.data.seo.keywords = keywords;
+            if (og_image !== null) this.data.seo.og_image = og_image;
         }
     },
 

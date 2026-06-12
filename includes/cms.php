@@ -82,6 +82,11 @@ function getDefaultCmsData(): array {
             ['id' => 'gal-3', 'title' => 'House Favorite', 'image' => 'assets/cms/defaults/gallery-3.jpg'],
             ['id' => 'gal-4', 'title' => 'Signature Dish', 'image' => 'assets/cms/defaults/gallery-4.png'],
         ],
+        'seo' => [
+            'description' => 'Abe Hotel & Spa offers refined accommodation and authentic dining in the heart of Ethiopia. Experience premium comfort and timeless hospitality.',
+            'keywords' => 'Abe Hotel, Hotel in Ethiopia, Ethiopia Hospitality, Luxury Rooms, Authentic Dining, Ethiopia Tourism',
+            'og_image' => 'assets/cms/defaults/hero.png',
+        ],
     ];
 }
 
@@ -121,7 +126,7 @@ function saveCmsPayload(array $input): array {
     $defaults = getDefaultCmsData();
     $out = $existing;
 
-    foreach (['hero', 'about', 'contact', 'sections'] as $key) {
+    foreach (['hero', 'about', 'contact', 'sections', 'seo'] as $key) {
         if (isset($input[$key]) && is_array($input[$key])) {
             $out[$key] = array_replace_recursive($out[$key] ?? ($defaults[$key] ?? []), $input[$key]);
         }

@@ -14,17 +14,61 @@ function renderHeader($title = "Management System", $options = []) {
     $navMode = $options['nav'] ?? 'default';
     $posTab = $options['posTab'] ?? 'standard';
     
-    // Load branding (storage + legacy sync)
+    // Load branding & SEO
     $manager = new SettingsManager();
     extract($manager->getBrandingVars());
     
+    // Fetch CMS data for SEO
+    require_once __DIR__ . '/cms.php';
+    $cms = getCmsData();
+    $seo = $cms['seo'] ?? [];
+    
+    $fullTitle = htmlspecialchars($title . " | " . $appName);
+    $metaDesc = htmlspecialchars($seo['description'] ?? "Welcome to " . $appName);
+    $metaKeywords = htmlspecialchars($seo['keywords'] ?? "");
+    $ogImage = htmlspecialchars($seo['og_image'] ?? ($logoUrl ?: ""));
+    
+    // Determine language-specific links (for hreflang)
+    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
+    $host = $_SERVER['HTTP_HOST'];
+    $uri = $_SERVER['REQUEST_URI'];
+    $cleanUri = strtok($uri, '?');
+    $baseUrl = "{$protocol}://{$host}{$cleanUri}";
     ?>
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="<?php echo $currentLang; ?>">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title><?php echo htmlspecialchars($title . " - " . $appName); ?></title>
+        <meta name="description" content="<?php echo $metaDesc; ?>">
+        <meta name="keywords" content="<?php echo $metaKeywords; ?>">
+        <meta name="robots" content="index, follow">
+        
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="<?php echo $baseUrl; ?>">
+        <meta property="og:title" content="<?php echo $fullTitle; ?>">
+        <meta property="og:description" content="<?php echo $metaDesc; ?>">
+        <?php if ($ogImage): ?>
+        <meta property="og:image" content="<?php echo $ogImage; ?>">
+        <?php endif; ?>
+
+        <!-- Twitter -->
+        <meta property="twitter:card" content="summary_large_image">
+        <meta property="twitter:url" content="<?php echo $baseUrl; ?>">
+        <meta property="twitter:title" content="<?php echo $fullTitle; ?>">
+        <meta property="twitter:description" content="<?php echo $metaDesc; ?>">
+        <?php if ($ogImage): ?>
+        <meta property="twitter:image" content="<?php echo $ogImage; ?>">
+        <?php endif; ?>
+
+        <!-- SEO Links -->
+        <link rel="canonical" href="<?php echo $baseUrl; ?>">
+        <link rel="alternate" hreflang="en" href="<?php echo $baseUrl; ?>?lang=en">
+        <link rel="alternate" hreflang="am" href="<?php echo $baseUrl; ?>?lang=am">
+        <link rel="alternate" hreflang="x-default" href="<?php echo $baseUrl; ?>">
+
+        <title><?php echo $fullTitle; ?></title>
         <?php if ($faviconUrl): ?>
         <link rel="icon" href="<?php echo htmlspecialchars($faviconUrl); ?>" />
         <?php endif; ?>
