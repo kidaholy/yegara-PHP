@@ -37,7 +37,7 @@ renderHeader($title);
         </div>
 
         <!-- SECTION 2: KEY METRICS GRID -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
             
             <!-- Metric Card: Today's Revenue -->
             <div id="today-revenue" class="metric-card glass p-6 rounded-2xl bg-gray-800/80 hover:bg-gray-800 transition-colors border border-gray-700/50">
@@ -71,6 +71,17 @@ renderHeader($title);
                     </div>
                 </div>
                 <p class="metric-value text-3xl font-bold text-white leading-none tracking-tight">---</p>
+            </div>
+
+            <!-- Metric Card: Active Orders -->
+            <div id="active-orders" class="metric-card glass p-6 rounded-2xl bg-gray-800/80 hover:bg-gray-800 transition-colors border border-gray-700/50">
+                <div class="flex items-center justify-between mb-4">
+                    <p class="text-sm font-medium text-gray-400">Active Orders</p>
+                    <div class="metric-icon-box inline-flex p-3 rounded-lg bg-gray-900 border border-gray-700 text-blue-400">
+                        <i data-lucide="bell-ring" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <p class="metric-value text-3xl font-bold text-white leading-none tracking-tight">-</p>
             </div>
 
             <!-- Metric Card: Stock Alerts -->
@@ -134,49 +145,7 @@ renderHeader($title);
             </a>
 
         </div>
->
-
-        <!-- SECTION 4: LIVE ACTIVE ORDERS -->
-        <div id="active-orders-panel" class="hidden animate-in fade-in">
-            <div class="glass p-8 rounded-2xl border border-blue-900/40 bg-blue-950/20">
-                <div class="flex items-center justify-between mb-8">
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500">
-                            <i data-lucide="bell-ring" class="w-5 h-5"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-xl font-bold text-blue-400 mt-1">Active Orders <span class="active-count ml-1 text-blue-500"></span></h3>
-                            <p class="text-sm font-medium text-blue-400/60 mt-1">Real-time Order Flow</p>
-                        </div>
-                    </div>
-                    <a href="orders.php" class="text-xs font-bold uppercase tracking-widest text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-2">
-                        View All <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                    </a>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 orders-list">
-                    <!-- Orders injected here -->
-                </div>
-            </div>
         </div>
-
-        <!-- SECTION 5: STOCK ALERTS (Conditional via JS) -->
-        <div id="stock-alerts-panel" class="hidden animate-in fade-in">
-            <div class="glass p-8 rounded-2xl border border-red-900/50 bg-red-950/20">
-                <div class="flex items-center gap-4 mb-8">
-                    <div class="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500">
-                        <i data-lucide="alert-triangle" class="w-5 h-5"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-xl font-bold text-red-400 mt-1">Stock Alerts <span class="alerts-count ml-1 text-red-500"></span></h3>
-                        <p class="text-sm font-medium text-red-400/60 mt-1">Critical Inventory Shortages</p>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 alerts-list">
-                    <!-- Alerts injected here -->
-                </div>
-            </div>
-        </div>
-
     </div>
 </div>
 
