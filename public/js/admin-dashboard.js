@@ -55,7 +55,6 @@ function updateUI() {
     
     // Update Metric Cards
     updateMetricCard('today-revenue', formatCurrency(m.realTimeMetrics.todayRevenue));
-    updateMetricCard('total-orders', m.realTimeMetrics.todayOrders, `${m.operationalMetrics.customerSatisfaction.completedOrders} completed`);
     updateMetricCard('avg-order', formatCurrency(m.realTimeMetrics.averageOrderValue));
     
     const activeOrdersCount = (m.realTimeMetrics.recentActive || []).length;

@@ -37,7 +37,7 @@ renderHeader($title);
         </div>
 
         <!-- SECTION 2: KEY METRICS GRID -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             
             <!-- Metric Card: Today's Revenue -->
             <div id="today-revenue" class="metric-card glass p-6 rounded-2xl bg-gray-800/80 hover:bg-gray-800 transition-colors border border-gray-700/50">
@@ -48,18 +48,6 @@ renderHeader($title);
                     </div>
                 </div>
                 <p class="metric-value text-3xl font-bold text-white leading-none tracking-tight">---</p>
-            </div>
-
-            <!-- Metric Card: Total Orders -->
-            <div id="total-orders" class="metric-card glass p-6 rounded-2xl bg-gray-800/80 hover:bg-gray-800 transition-colors border border-gray-700/50">
-                <div class="flex items-center justify-between mb-4">
-                    <p class="text-sm font-medium text-gray-400">Total Orders</p>
-                    <div class="metric-icon-box inline-flex p-3 rounded-lg bg-gray-900 border border-gray-700 text-blue-400">
-                        <i data-lucide="shopping-cart" class="w-5 h-5"></i>
-                    </div>
-                </div>
-                <p class="metric-value text-3xl font-bold text-white leading-none tracking-tight">-</p>
-                <p class="metric-subtext text-sm text-gray-500 mt-2">calculating metrics...</p>
             </div>
 
             <!-- Metric Card: Average Order -->
