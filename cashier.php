@@ -109,8 +109,18 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
                     </button>
                 </div>
 
-                <div class="flex gap-2 overflow-x-auto shrink-0 mb-4 pb-1 no-scrollbar" id="category-chips">
-                    <button type="button" data-cat="" class="cat-chip shrink-0 px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-wide border transition-all">All Items</button>
+                <div class="relative group/cat-slider mb-4">
+                    <button type="button" onclick="scrollCats(-200)" class="absolute -left-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-gray-900/90 border border-gray-700/50 text-gray-400 opacity-0 group-hover/cat-slider:opacity-100 hover:text-white hover:border-amber-500/50 transition-all flex items-center justify-center shadow-xl backdrop-blur-sm">
+                        <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                    </button>
+                    
+                    <div class="flex gap-2 overflow-x-auto shrink-0 pb-2 scroll-smooth custom-h-scrollbar" id="category-chips">
+                        <button type="button" data-cat="" class="cat-chip shrink-0 px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-wide border transition-all">All Items</button>
+                    </div>
+
+                    <button type="button" onclick="scrollCats(200)" class="absolute -right-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-gray-900/90 border border-gray-700/50 text-gray-400 opacity-0 group-hover/cat-slider:opacity-100 hover:text-white hover:border-amber-500/50 transition-all flex items-center justify-center shadow-xl backdrop-blur-sm">
+                        <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </button>
                 </div>
 
                 <div class="flex-1 min-h-[24rem] lg:min-h-0 overflow-y-auto custom-scrollbar pr-1" id="menu-scroll">
@@ -313,6 +323,45 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
     function esc(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
     function fmt(n) { return Number(n).toLocaleString() + ' ETB'; }
 
+    function scrollCats(amt) {
+        document.getElementById('category-chips').scrollBy({ left: amt, behavior: 'smooth' });
+    }
+
+    function initDragScroll() {
+        const slider = document.getElementById('category-chips');
+        if (!slider) return;
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+
+        slider.addEventListener('mousedown', (e) => {
+            isDown = true;
+            slider.classList.add('active');
+            startX = e.pageX - slider.offsetLeft;
+            scrollLeft = slider.scrollLeft;
+            slider.style.cursor = 'grabbing';
+            slider.style.userSelect = 'none';
+        });
+        slider.addEventListener('mouseleave', () => {
+            isDown = false;
+            slider.style.cursor = 'grab';
+        });
+        slider.addEventListener('mouseup', () => {
+            isDown = false;
+            slider.style.cursor = 'grab';
+        });
+        slider.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - slider.offsetLeft;
+            const walk = (x - startX) * 2; // scroll-fast
+            slider.scrollLeft = scrollLeft - walk;
+        });
+
+        // Initialize cursor
+        slider.style.cursor = 'grab';
+    }
+
     function getSavedFloorId() {
         return document.getElementById('floor-id')?.value || activeFloorId || '';
     }
@@ -358,6 +407,7 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
             }
 
             populateDistList(distributions);
+            initDragScroll();
 
             initTablePicker();
             initRoomPicker();
@@ -1006,6 +1056,11 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
     .custom-gold-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-gold-scrollbar::-webkit-scrollbar-thumb { background: #c5a059; border-radius: 10px; border: 2px solid #0a0a0a; }
     .custom-gold-scrollbar::-webkit-scrollbar-thumb:hover { background: #d4af37; }
+
+    .custom-h-scrollbar::-webkit-scrollbar { height: 8px; }
+    .custom-h-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 10px; }
+    .custom-h-scrollbar::-webkit-scrollbar-thumb { background: #c5a059; border-radius: 10px; border: 2px solid #0a0a0a; }
+    .custom-h-scrollbar::-webkit-scrollbar-thumb:hover { background: #d4af37; }
 
     /* ── Receipt Printing Styles ── */
     #receipt-print { display: none; }
