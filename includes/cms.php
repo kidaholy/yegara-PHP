@@ -102,10 +102,14 @@ function getCmsData(): array {
         return $defaults;
     }
     
-    // surgical merge: replace top-level list keys, merge others
+    // Merging logic:
+    // 1. Start with defaults
+    // 2. Overlay stored data. We use array_replace_recursive for nested objects (sections, hero, about, contact, seo)
+    // 3. BUT for lists (services, gallery, social), we want to COMPLETELY use the stored version if it exists
+    
     $out = array_replace_recursive($defaults, $stored);
     
-    // Explicitly override list keys so deletions work
+    // Explicitly override list keys so deletions/reorders work correctly
     foreach (['social', 'services', 'gallery'] as $listKey) {
         if (isset($stored[$listKey]) && is_array($stored[$listKey])) {
             $out[$listKey] = $stored[$listKey];
@@ -165,11 +169,23 @@ function writeCmsData(array $data): bool {
     if ($json === false) {
         return false;
     }
-    $tmp = $file . '.tmp';
+    
+    // Atomic-ish write: Use a temporary file first
+    $tmp = $file . '.tmp.' . bin2hex(random_bytes(4));
     if (file_put_contents($tmp, $json, LOCK_EX) === false) {
         return false;
     }
-    return rename($tmp, $file);
+
+    // On Windows, rename() fails if the target file is open for reading.
+    // We try rename first, then fallback to direct overwrite if it fails.
+    if (@rename($tmp, $file)) {
+        return true;
+    }
+
+    // Fallback: direct write with lock
+    $success = file_put_contents($file, $json, LOCK_EX) !== false;
+    @unlink($tmp);
+    return $success;
 }
 
 function resetCmsToDefaults(): array {

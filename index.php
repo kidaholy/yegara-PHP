@@ -24,11 +24,11 @@ $gallery = $cms['gallery'] ?? [];
 $contact = $cms['contact'] ?? [];
 $about = $cms['about'] ?? [];
 
-$heroImage = $hero['background_image'] ?? '';
-$heroHeadline = $hero['headline'] ?? $appName;
-$heroSubtitle = $hero['subtitle'] ?? $appTagline;
-$heroEyebrow = $hero['eyebrow'] ?? 'Welcome';
-$ctaLink = ($hero['cta_link'] ?? '') ?: '#services';
+$heroImage = ($hero['background_image'] ?? '') ?: 'assets/welcome_bg.png';
+$heroHeadline = ($hero['headline'] ?? '') ?: $appName;
+$heroSubtitle = ($hero['subtitle'] ?? '') ?: $appTagline;
+$heroEyebrow = ($hero['eyebrow'] ?? '') ?: 'Welcome';
+$ctaLink = ($hero['cta_text'] ?? '') ? ($hero['cta_link'] ?? '#services') : '';
 $ctaText = $hero['cta_text'] ?? 'Explore';
 $phoneHref = !empty($contact['phone']) ? preg_replace('/\s+/', '', $contact['phone']) : '';
 
