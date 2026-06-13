@@ -510,5 +510,5 @@ $cancel    = 'w-full py-3 rounded-lg bg-gray-800 border border-gray-700 text-gra
   }
 </style>
 
-<script src="public/js/admin-store.js"></script>
+<script src="public/js/admin-store.js?v=<?= time() ?>"></script>
 <?php renderFooter(); ?>

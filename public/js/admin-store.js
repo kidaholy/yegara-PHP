@@ -471,30 +471,6 @@ window.submitRestock = async function(e) {
     } catch(err) { alert(err.message); }
 };
 
-// ── Decrease ──
-window.openDecrease = function(itemId) {
-    S.decreaseItemId = itemId;
-    const i = S.items.find(x => x.id === itemId);
-    if (!i) return;
-    document.getElementById('decrease-item-name').textContent = i.name;
-    document.getElementById('decrease-current').textContent   = `${i.storeQuantity||0} ${i.unit}`;
-    document.getElementById('decrease-qty').value   = '';
-    document.getElementById('decrease-notes').value = '';
-    showModal('modal-decrease');
-};
-
-window.submitDecrease = async function(e) {
-    e.preventDefault();
-    const id  = S.decreaseItemId;
-    const qty = parseFloat(document.getElementById('decrease-qty').value);
-    const notes = document.getElementById('decrease-notes').value;
-    try {
-        await api('PUT', `api/stock.php?id=${id}`, { action:'decrease', quantity: qty, notes });
-        hideModal('modal-decrease');
-        await fetchAll();
-    } catch(err) { alert(err.message); }
-};
-
 // ── Transfer ──
 window.openTransfer = function(itemId) {
     S.transferItemId = itemId;
