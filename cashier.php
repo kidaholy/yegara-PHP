@@ -465,12 +465,12 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
 
     function printReceipt(order) {
         const receipt = document.getElementById('receipt-print');
-        receipt.innerHTML = 
-            renderSingleReceipt(order, 'CUSTOMER COPY') + 
-            '<div class="receipt-spacer"></div>' +
-            renderSingleReceipt(order, 'MERCHANT COPY');
+        receipt.innerHTML = renderSingleReceipt(order, 'RECEIPT');
 
         window.print();
+        setTimeout(() => {
+            window.print();
+        }, 500);
     }
 
     /* ── Custom Distribution Dropdown ── */
