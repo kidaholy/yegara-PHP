@@ -143,10 +143,6 @@ function renderInventory() {
                 class="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center hover:bg-blue-500 hover:text-white transition-colors">
                 <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
               </button>
-              <button onclick="openDecrease('${i.id}')" title="Decrease Stock (Wastage)"
-                class="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors">
-                <i data-lucide="minus-circle" class="w-3.5 h-3.5"></i>
-              </button>
               <button onclick="openEditItem('${i.id}')" title="Edit"
                 class="w-8 h-8 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 flex items-center justify-center hover:text-white transition-colors">
                 <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
