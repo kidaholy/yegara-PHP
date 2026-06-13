@@ -22,11 +22,11 @@
         "type": "standard",
         "category": "VIP",
         "price": 2500,
-        "status": "occupied",
+        "status": "available",
         "isActive": true,
         "roomServiceMenuTier": "standard",
         "createdAt": "2026-03-27T16:00:37.239Z",
-        "updatedAt": "2026-06-11T23:58:16.000Z",
+        "updatedAt": "2026-06-13T14:13:45.000Z",
         "isDeleted": false
     },
     {

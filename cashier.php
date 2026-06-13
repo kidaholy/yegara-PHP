@@ -407,10 +407,8 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
         return `<div class="receipt-row"><span>${esc(label)}</span><span>${esc(value)}</span></div>`;
     }
 
-    function printReceipt(order) {
+    function renderSingleReceipt(order, copyTitle) {
         const dateStr = new Date().toLocaleString();
-        const receipt = document.getElementById('receipt-print');
-
         let itemsHtml = order.items.map(i => `
             <tr>
                 <td style="width: 50%">${esc(i.name)}</td>
@@ -432,36 +430,45 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
             order.batchNumber ? receiptRow('Batch #:', order.batchNumber) : '',
         ].join('');
 
-        receipt.innerHTML = `
-            <div class="receipt-header">
-                <div class="receipt-title uppercase">${esc(appName)}</div>
-                <p class="receipt-tagline">Hotel Management System</p>
-            </div>
-            <div class="receipt-divider"></div>
-            ${metaRows}
-            <div class="receipt-divider"></div>
-            <table class="receipt-table">
-                <thead>
-                    <tr>
-                        <th style="width: 50%">Item</th>
-                        <th style="width: 20%; text-align: center">Qty</th>
-                        <th style="width: 30%; text-align: right">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${itemsHtml}
-                </tbody>
-            </table>
-            <div class="receipt-row receipt-total">
-                <span>TOTAL:</span>
-                <span>${Number(order.totalAmount).toLocaleString()} ETB</span>
-            </div>
-            <div class="receipt-divider"></div>
-            <div class="receipt-footer">
-                <p>THANK YOU!</p>
-                <p>Please visit us again</p>
+        return `
+            <div class="receipt-instance">
+                <div class="receipt-header">
+                    <div class="receipt-copy-label">${esc(copyTitle)}</div>
+                    <div class="receipt-title uppercase">${esc(appName)}</div>
+                    <p class="receipt-tagline">Hotel Management System</p>
+                </div>
+                <div class="receipt-divider"></div>
+                ${metaRows}
+                <div class="receipt-divider"></div>
+                <table class="receipt-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50%">Item</th>
+                            <th style="width: 20%; text-align: center">Qty</th>
+                            <th style="width: 30%; text-align: right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>${itemsHtml}</tbody>
+                </table>
+                <div class="receipt-row receipt-total">
+                    <span>TOTAL:</span>
+                    <span>${Number(order.totalAmount).toLocaleString()} ETB</span>
+                </div>
+                <div class="receipt-divider"></div>
+                <div class="receipt-footer">
+                    <p>THANK YOU!</p>
+                    <p>Please visit us again</p>
+                </div>
             </div>
         `;
+    }
+
+    function printReceipt(order) {
+        const receipt = document.getElementById('receipt-print');
+        receipt.innerHTML = 
+            renderSingleReceipt(order, 'CUSTOMER COPY') + 
+            '<div class="receipt-spacer"></div>' +
+            renderSingleReceipt(order, 'MERCHANT COPY');
 
         window.print();
     }
@@ -1020,6 +1027,7 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
         }
         #receipt-print, #receipt-print * { visibility: visible !important; color: black !important; font-weight: bold !important; }
         .receipt-header { text-align: center; margin-bottom: 10px; }
+        .receipt-copy-label { font-size: 10px; font-weight: bold; border: 1px solid black; display: inline-block; padding: 2px 6px; margin-bottom: 5px; }
         .receipt-title { font-size: 20px; text-transform: uppercase; margin: 5px 0; }
         .receipt-tagline { font-size: 11px; margin-bottom: 10px; }
         .receipt-divider { border-bottom: 2px dashed black; margin: 10px 0; }
@@ -1029,6 +1037,8 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
         .receipt-table td { padding: 5px 0; vertical-align: top; border-bottom: 1px dashed #ccc; }
         .receipt-total { font-size: 16px; margin-top: 10px; border-top: 2px dashed black; padding-top: 10px; }
         .receipt-footer { text-align: center; margin-top: 20px; font-size: 11px; }
+        .receipt-spacer { height: 40mm; border-top: 1px dashed #000; margin: 20mm 0; position: relative; }
+        .receipt-spacer::after { content: "CUT HERE"; position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: white; padding: 0 10px; font-size: 10px; }
     }
 </style>
 
