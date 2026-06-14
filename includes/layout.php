@@ -60,8 +60,11 @@ function renderHeader($title = "Management System", $options = []) {
           "address": {
             "@type": "PostalAddress",
             "addressLocality": "Dilla",
+            "addressRegion": "Gedeo Zone, SNNPR",
             "addressCountry": "ET"
-          }
+          },
+          "priceRange": "$$",
+          "telephone": "<?php echo addslashes($contact['phone'] ?? ''); ?>"
         }
         </script>
         <?php endif; ?>
