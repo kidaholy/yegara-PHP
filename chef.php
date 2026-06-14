@@ -4,7 +4,7 @@
  */
 require_once 'includes/layout.php';
 
-requireAuth(['chef', 'admin']);
+requireAuth(['chef', 'admin'], 'chef:access');
 
 $user = getCurrentUser();
 $userName = $user['name'] ?? 'Chef';

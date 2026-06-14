@@ -5,7 +5,7 @@
 require_once 'includes/layout.php';
 
 // Auth required: display or admin
-requireAuth(['display', 'admin']);
+requireAuth(['display', 'admin'], 'display:access');
 
 $user = getCurrentUser();
 $userName = $user['name'] ?? 'Display';

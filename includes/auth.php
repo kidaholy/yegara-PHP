@@ -24,14 +24,35 @@ function isAuthenticated() {
 /**
  * Require authentication for a page
  */
-function requireAuth($roles = []) {
+function requireAuth($roles = [], $requiredPermission = null) {
     if (!isAuthenticated()) {
         header('Location: /login.php');
         exit;
     }
 
-    if (!empty($roles)) {
-        if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], $roles)) {
+    if (!empty($roles) || $requiredPermission !== null) {
+        $userRole = $_SESSION['role'] ?? '';
+        $userPermissions = $_SESSION['permissions'] ?? [];
+
+        // Admin always has access to everything
+        if ($userRole === 'admin') {
+            return;
+        }
+
+        $roleMatch = !empty($roles) && in_array($userRole, $roles);
+        
+        $permissionMatch = false;
+        if ($requiredPermission !== null) {
+            $requiredPermissions = is_array($requiredPermission) ? $requiredPermission : [$requiredPermission];
+            foreach ($requiredPermissions as $rp) {
+                if (in_array($rp, $userPermissions)) {
+                    $permissionMatch = true;
+                    break;
+                }
+            }
+        }
+
+        if (!$roleMatch && !$permissionMatch) {
             header('Location: /unauthorized.php');
             exit;
         }
@@ -57,7 +78,7 @@ function requireAuth($roles = []) {
 /**
  * Require authentication for JSON API endpoints (returns JSON instead of redirecting)
  */
-function requireApiAuth($roles = []) {
+function requireApiAuth($roles = [], $requiredPermission = null) {
     header('Content-Type: application/json');
 
     if (!isAuthenticated()) {
@@ -66,8 +87,29 @@ function requireApiAuth($roles = []) {
         exit;
     }
 
-    if (!empty($roles)) {
-        if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], $roles)) {
+    if (!empty($roles) || $requiredPermission !== null) {
+        $userRole = $_SESSION['role'] ?? '';
+        $userPermissions = $_SESSION['permissions'] ?? [];
+
+        // Admin always has access to everything
+        if ($userRole === 'admin') {
+            return;
+        }
+
+        $roleMatch = !empty($roles) && in_array($userRole, $roles);
+        
+        $permissionMatch = false;
+        if ($requiredPermission !== null) {
+            $requiredPermissions = is_array($requiredPermission) ? $requiredPermission : [$requiredPermission];
+            foreach ($requiredPermissions as $rp) {
+                if (in_array($rp, $userPermissions)) {
+                    $permissionMatch = true;
+                    break;
+                }
+            }
+        }
+
+        if (!$roleMatch && !$permissionMatch) {
             http_response_code(403);
             echo json_encode(['status' => 'error', 'message' => 'Forbidden']);
             exit;
@@ -108,6 +150,7 @@ function login($email, $password) {
             $_SESSION['name'] = $user['name'];
             $_SESSION['email'] = $user['email'];
             $_SESSION['role'] = $user['role'];
+            $_SESSION['permissions'] = $user['permissions'] ?? [];
             $_SESSION['floorId'] = $user['floorId'] ?? null;
             
             return ['success' => true, 'user' => $user];
@@ -144,6 +187,17 @@ function getCurrentUser() {
         'name' => $_SESSION['name'],
         'email' => $_SESSION['email'],
         'role' => $_SESSION['role'],
+        'permissions' => $_SESSION['permissions'] ?? [],
         'floorId' => $_SESSION['floorId'] ?? null
     ];
+}
+
+/**
+ * Check if the current user has a specific permission
+ */
+function hasPermission($permission) {
+    if (!isAuthenticated()) return false;
+    if (($_SESSION['role'] ?? '') === 'admin') return true;
+    $permissions = $_SESSION['permissions'] ?? [];
+    return in_array($permission, $permissions);
 }

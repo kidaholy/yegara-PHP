@@ -4,7 +4,7 @@
  */
 require_once 'includes/layout.php';
 
-requireAuth(['cashier', 'admin']);
+requireAuth(['cashier', 'admin'], 'cashier:access');
 
 $tierId = trim($_GET['tier'] ?? '');
 $activeTier = $tierId !== '' ? getMenuTierById($tierId) : null;

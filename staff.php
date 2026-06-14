@@ -4,7 +4,7 @@
  * High-Fidelity "Luxury-First" Edition
  */
 require_once 'includes/layout.php';
-requireAuth(['admin']); // spec: users:view or admin
+requireAuth(['admin'], 'users:view');
 
 $title = "Staff Management";
 renderHeader($title);

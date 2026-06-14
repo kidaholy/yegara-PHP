@@ -1,6 +1,6 @@
 <?php
 require_once 'includes/layout.php';
-requireAuth(['admin', 'reception', 'receptionist']);
+requireAuth(['admin', 'reception', 'receptionist'], 'services:view');
 $title = "Services Hub";
 renderHeader($title);
 

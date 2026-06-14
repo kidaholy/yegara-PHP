@@ -8,7 +8,7 @@ require_once 'includes/auth.php';
 require_once 'includes/SettingsManager.php';
 
 // Auth: admin or specifically permitted
-requireAuth(['admin']);
+requireAuth(['admin'], 'settings:view');
 
 $manager = new SettingsManager();
 $settings = $manager->getAllSettings();

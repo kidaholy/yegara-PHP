@@ -1,0 +1,1 @@
+[{"id":"1","role":"admin","isActive":true},{"id":"2","role":"cashier","isActive":true},{"id":"3","role":"custom","isActive":true,"permissions":["reports:view"]}]

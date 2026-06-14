@@ -4,7 +4,7 @@
  */
 require_once 'includes/layout.php';
 
-requireAuth(['bar', 'admin']);
+requireAuth(['bar', 'admin'], 'bar:access');
 
 $user = getCurrentUser();
 $userName = $user['name'] ?? 'Bartender';

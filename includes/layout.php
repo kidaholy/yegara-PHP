@@ -260,21 +260,29 @@ function renderFooter() {
 
 function renderTopNavLinks($role) {
     $links = [
-        ['name' => 'Overview',  'url' => 'admin.php',    'roles' => ['admin']],
-        ['name' => 'Orders',    'url' => 'orders.php',   'roles' => ['admin', 'cashier']],
-        ['name' => 'Users',     'url' => 'staff.php',    'roles' => ['admin']],
-        ['name' => 'Store',     'url' => 'store.php',    'roles' => ['admin', 'store_keeper']],
-        ['name' => 'Stock',     'url' => 'stock.php',    'roles' => ['admin']],
-        ['name' => 'Reports',   'url' => 'reports.php',  'roles' => ['admin']],
-        ['name' => 'Services',  'url' => 'services.php','roles' => ['admin', 'reception']],
-        ['name' => 'Website CMS', 'url' => 'website_cms.php', 'roles' => ['admin']],
-        ['name' => 'Settings',  'url' => 'settings.php', 'roles' => ['admin']],
+        ['name' => 'Overview',  'url' => 'admin.php',    'roles' => ['admin'], 'perm' => 'overview:view'],
+        ['name' => 'Orders',    'url' => 'orders.php',   'roles' => ['admin', 'cashier'], 'perm' => 'orders:view'],
+        ['name' => 'Users',     'url' => 'staff.php',    'roles' => ['admin'], 'perm' => 'users:view'],
+        ['name' => 'Store',     'url' => 'store.php',    'roles' => ['admin', 'store_keeper'], 'perm' => 'store:view'],
+        ['name' => 'Stock',     'url' => 'stock.php',    'roles' => ['admin'], 'perm' => 'stock:view'],
+        ['name' => 'Reports',   'url' => 'reports.php',  'roles' => ['admin'], 'perm' => 'reports:view'],
+        ['name' => 'Services',  'url' => 'services.php', 'roles' => ['admin', 'reception'], 'perm' => 'services:view'],
+        ['name' => 'Website CMS', 'url' => 'website_cms.php', 'roles' => ['admin'], 'perm' => 'settings:update'],
+        ['name' => 'Settings',  'url' => 'settings.php', 'roles' => ['admin'], 'perm' => 'settings:view'],
     ];
 
     $currentUrl = basename($_SERVER['SCRIPT_NAME']);
 
     foreach ($links as $link) {
-        if (in_array($role, $link['roles'])) {
+        $hasRole = in_array($role, $link['roles']);
+        $hasPerm = isset($link['perm']) && hasPermission($link['perm']);
+        
+        // Special case for reports: check any reports:* permission
+        if ($link['url'] === 'reports.php' && !empty(preg_grep('/^reports:/', $_SESSION['permissions'] ?? []))) {
+            $hasPerm = true;
+        }
+
+        if ($hasRole || $hasPerm) {
             $active = ($currentUrl === $link['url']);
             $cls = $active
                 ? 'px-4 py-2 text-sm font-semibold text-[#c5a059] bg-[#c5a059]/10 rounded-md transition-colors'
@@ -310,20 +318,28 @@ function renderPosNavLinks($activeTab = 'standard') {
 
 function renderSidebarLinks($role) {
     $links = [
-        ['name' => __('dashboard'), 'icon' => 'layout-dashboard', 'url' => 'admin.php', 'roles' => ['admin']],
-        ['name' => __('reception'), 'icon' => 'key-round', 'url' => 'services.php', 'roles' => ['receptionist', 'admin']],
-        ['name' => __('cashier_pos'), 'icon' => 'shopping-cart', 'url' => 'cashier.php', 'roles' => ['cashier', 'admin']],
-        ['name' => __('kitchen'), 'icon' => 'utensils', 'url' => 'chef.php', 'roles' => ['chef', 'admin']],
-        ['name' => __('bar_monitor'), 'icon' => 'beer', 'url' => 'bar.php', 'roles' => ['bar', 'admin']],
-        ['name' => __('strategic_reports'), 'icon' => 'bar-chart-3', 'url' => 'reports.php', 'roles' => ['admin']],
-        ['name' => __('staff_directory'), 'icon' => 'users', 'url' => 'staff.php', 'roles' => ['admin']],
-        ['name' => __('menu_settings'), 'icon' => 'settings', 'url' => 'settings.php', 'roles' => ['admin']],
+        ['name' => __('dashboard'), 'icon' => 'layout-dashboard', 'url' => 'admin.php', 'roles' => ['admin'], 'perm' => 'overview:view'],
+        ['name' => __('reception'), 'icon' => 'key-round', 'url' => 'services.php', 'roles' => ['receptionist', 'admin'], 'perm' => 'services:view'],
+        ['name' => __('cashier_pos'), 'icon' => 'shopping-cart', 'url' => 'cashier.php', 'roles' => ['cashier', 'admin'], 'perm' => 'cashier:access'],
+        ['name' => __('kitchen'), 'icon' => 'utensils', 'url' => 'chef.php', 'roles' => ['chef', 'admin'], 'perm' => 'chef:access'],
+        ['name' => __('bar_monitor'), 'icon' => 'beer', 'url' => 'bar.php', 'roles' => ['bar', 'admin'], 'perm' => 'bar:access'],
+        ['name' => __('strategic_reports'), 'icon' => 'bar-chart-3', 'url' => 'reports.php', 'roles' => ['admin'], 'perm' => 'reports:view'],
+        ['name' => __('staff_directory'), 'icon' => 'users', 'url' => 'staff.php', 'roles' => ['admin'], 'perm' => 'users:view'],
+        ['name' => __('menu_settings'), 'icon' => 'settings', 'url' => 'settings.php', 'roles' => ['admin'], 'perm' => 'settings:view'],
     ];
 
     $currentUrl = basename($_SERVER['SCRIPT_NAME']);
 
     foreach ($links as $link) {
-        if (in_array($role, $link['roles'])) {
+        $hasRole = in_array($role, $link['roles']);
+        $hasPerm = isset($link['perm']) && hasPermission($link['perm']);
+        
+        // Special case for reports
+        if ($link['url'] === 'reports.php' && !empty(preg_grep('/^reports:/', $_SESSION['permissions'] ?? []))) {
+            $hasPerm = true;
+        }
+
+        if ($hasRole || $hasPerm) {
             $active = ($currentUrl === $link['url']) ? 'active' : '';
             echo "<a href='{$link['url']}' class='sidebar-link {$active}'>";
             echo "<i data-lucide='{$link['icon']}' class='w-4 h-4'></i>";

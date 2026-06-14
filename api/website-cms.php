@@ -5,7 +5,7 @@
 require_once '../includes/auth.php';
 require_once '../includes/cms.php';
 
-requireAuth(['admin']);
+requireAuth(['admin'], 'settings:update');
 
 // System now uses the db('cms') collection exclusively.
 

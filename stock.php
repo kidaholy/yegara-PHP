@@ -4,7 +4,7 @@
  */
 require_once 'includes/layout.php';
 require_once 'includes/auth.php';
-requireAuth(['admin']);
+requireAuth(['admin'], 'stock:view');
 
 renderHeader("Active Stock");
 ?>

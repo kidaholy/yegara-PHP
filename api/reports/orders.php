@@ -3,7 +3,15 @@ require_once '../../includes/auth.php';
 require_once '../../includes/JsonDB.php';
 require_once '../../includes/report-dates.php';
 
-requireApiAuth(['admin', 'reception', 'store', 'cashier']);
+requireApiAuth(['admin', 'reception', 'store', 'cashier'], [
+    'reports:view', 
+    'reports:financial_summary', 
+    'reports:order_history', 
+    'reports:inventory_investment', 
+    'reports:store_investment', 
+    'reports:menu_item_sales', 
+    'reports:cashier_insights'
+]);
 
 $period = $_GET['period'] ?? null;
 $startDate = $_GET['startDate'] ?? null;

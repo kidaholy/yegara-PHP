@@ -39,7 +39,7 @@ try {
     }
 
     if ($method === 'POST') {
-        requireAuth(['admin']);
+        requireAuth(['admin'], 'users:create');
         $data = json_decode(file_get_contents('php://input'), true);
         $password = $data['password'] ?? '';
         $hashed = !empty($password) ? password_hash($password, PASSWORD_BCRYPT) : '';
@@ -60,7 +60,7 @@ try {
     }
 
     if ($method === 'PUT') {
-        requireAuth(['admin']);
+        requireAuth(['admin'], 'users:update');
         $id = $_GET['id'] ?? null;
         if (!$id) sendJson(['message' => 'ID required'], 400);
         $data = json_decode(file_get_contents('php://input'), true);
@@ -89,7 +89,7 @@ try {
     }
 
     if ($method === 'DELETE') {
-        requireAuth(['admin']);
+        requireAuth(['admin'], 'users:delete');
         $id = $_GET['id'] ?? null;
         if (!$id) sendJson(['message' => 'ID required'], 400);
         $db->update(['where' => ['id' => $id], 'data' => ['isDeleted' => true]]);

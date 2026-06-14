@@ -14,7 +14,7 @@ function sendJson($data, $status = 200) {
     exit;
 }
 
-requireAuth(['admin']);
+requireAuth(['admin'], 'services:update');
 
 $method = $_SERVER['REQUEST_METHOD'];
 $type = $_GET['collection'] ?? 'menuItems';

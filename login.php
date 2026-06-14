@@ -30,6 +30,31 @@ function routeUserBasedOnRole($role) {
             return 'reception.php';
         case 'display':
             return 'display.php';
+        case 'custom':
+            // Check specific interface access for custom roles systematically
+            $user = getCurrentUser();
+            $perms = $user['permissions'] ?? [];
+            
+            // Priority 1: Direct Interface Access
+            if (in_array('cashier:access', $perms)) return 'cashier.php';
+            if (in_array('chef:access', $perms)) return 'chef.php';
+            if (in_array('bar:access', $perms)) return 'bar.php';
+            if (in_array('reception:access', $perms)) return 'reception.php';
+            if (in_array('display:access', $perms)) return 'display.php';
+            
+            // Priority 2: Admin/Management Sections
+            if (in_array('overview:view', $perms)) return 'admin.php';
+            
+            // Priority 3: Feature Specific Hubs (Granular checks)
+            if (!empty(preg_grep('/^orders:/', $perms))) return 'orders.php';
+            if (!empty(preg_grep('/^reports:/', $perms))) return 'reports.php';
+            if (!empty(preg_grep('/^stock:/', $perms))) return 'stock.php';
+            if (!empty(preg_grep('/^store:/', $perms))) return 'store.php';
+            if (!empty(preg_grep('/^users:/', $perms))) return 'staff.php';
+            if (!empty(preg_grep('/^services:/', $perms))) return 'services.php';
+            if (!empty(preg_grep('/^settings:/', $perms))) return 'settings.php';
+            
+            return 'index.php';
         default:
             return 'index.php';
     }

@@ -4,7 +4,15 @@ require_once '../../includes/JsonDB.php';
 require_once '../../includes/report-dates.php';
 require_once '../../includes/stock-logic.php';
 
-requireApiAuth(['admin', 'reception', 'store', 'cashier']);
+requireApiAuth(['admin', 'reception', 'store', 'cashier'], [
+    'reports:view', 
+    'reports:financial_summary', 
+    'reports:order_history', 
+    'reports:inventory_investment', 
+    'reports:store_investment', 
+    'reports:menu_item_sales', 
+    'reports:cashier_insights'
+]);
 
 try {
     $period = $_GET['period'] ?? 'week';

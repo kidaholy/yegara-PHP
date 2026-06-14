@@ -7,7 +7,15 @@ require_once 'includes/layout.php';
 require_once 'includes/auth.php';
 
 // Auth & Permissions
-requireAuth(['admin', 'reception', 'store', 'cashier']);
+requireAuth(['admin', 'reception', 'store', 'cashier'], [
+    'reports:view', 
+    'reports:financial_summary', 
+    'reports:order_history', 
+    'reports:inventory_investment', 
+    'reports:store_investment', 
+    'reports:menu_item_sales', 
+    'reports:cashier_insights'
+]);
 $user = getCurrentUser();
 $isAdmin = ($user['role'] === 'admin');
 

@@ -4,7 +4,7 @@
  * High-Fidelity "Luxury-First" Edition (Spec-Corrected)
  */
 require_once 'includes/layout.php';
-    requireAuth(['admin']); // spec: ProtectedRoute requiredRoles=["admin"]
+    requireAuth(['admin'], ['overview:view', 'reports:financial_summary', 'stock:view', 'orders:view']);
     
     $title = "Admin Dashboard";
     renderHeader($title);
@@ -14,6 +14,7 @@ require_once 'includes/layout.php';
         <div class="max-w-screen-2xl w-full space-y-12">
         
         <!-- SECTION 1: HEADER -->
+        <?php if (hasPermission('overview:view')): ?>
         <div class="glass p-8 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-8 bg-gray-900/40">
             <div class="flex items-center gap-6">
                 <!-- Icon Box -->
@@ -35,10 +36,22 @@ require_once 'includes/layout.php';
                 </button>
             </div>
         </div>
+        <?php else: ?>
+        <div class="flex items-center justify-between mb-8">
+            <div class="space-y-1">
+                <h1 class="text-3xl font-black text-white italic font-playfair tracking-tight gold-glow">Financial Overview</h1>
+                <p class="text-[10px] font-black uppercase tracking-[0.3em] text-[#d4af37]/40">Strategic Real-time Metrics</p>
+            </div>
+            <button id="refresh-btn" class="p-4 bg-white/5 border border-white/10 rounded-2xl text-[#d4af37]">
+                <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <?php endif; ?>
 
         <!-- SECTION 2: KEY METRICS GRID -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             
+            <?php if (hasPermission('overview:view') || hasPermission('reports:financial_summary')): ?>
             <!-- Metric Card: Today's Revenue -->
             <div id="today-revenue" class="metric-card glass p-6 rounded-2xl bg-gray-800/80 hover:bg-gray-800 transition-colors border border-gray-700/50">
                 <div class="flex items-center justify-between mb-4">
@@ -60,7 +73,9 @@ require_once 'includes/layout.php';
                 </div>
                 <p class="metric-value text-3xl font-bold text-white leading-none tracking-tight">---</p>
             </div>
+            <?php endif; ?>
 
+            <?php if (hasPermission('overview:view') || hasPermission('orders:view')): ?>
             <!-- Metric Card: Active Orders -->
             <div id="active-orders" class="metric-card glass p-6 rounded-2xl bg-gray-800/80 hover:bg-gray-800 transition-colors border border-gray-700/50">
                 <div class="flex items-center justify-between mb-4">
@@ -71,7 +86,9 @@ require_once 'includes/layout.php';
                 </div>
                 <p class="metric-value text-3xl font-bold text-white leading-none tracking-tight">-</p>
             </div>
+            <?php endif; ?>
 
+            <?php if (hasPermission('overview:view') || hasPermission('stock:view')): ?>
             <!-- Metric Card: Stock Alerts -->
             <div id="stock-alerts" class="metric-card glass p-6 rounded-2xl bg-gray-800/80 hover:bg-gray-800 transition-colors border border-gray-700/50">
                 <div class="flex items-center justify-between mb-4">
@@ -82,12 +99,14 @@ require_once 'includes/layout.php';
                 </div>
                 <p class="metric-value text-3xl font-bold text-white leading-none tracking-tight">-</p>
             </div>
+            <?php endif; ?>
 
         </div>
 
         <!-- SECTION 3: QUICK ACTIONS GRID -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
             
+            <?php if (hasPermission('reports:view') || !empty(preg_grep('/^reports:/', $_SESSION['permissions'] ?? []))): ?>
             <a href="reports.php" class="group h-full">
                 <div class="glass p-8 rounded-2xl border border-gray-700/50 bg-gray-800/60 hover:bg-gray-800 transition-colors flex flex-col h-full">
                     <div class="flex items-start justify-between mb-8">
@@ -98,7 +117,9 @@ require_once 'includes/layout.php';
                     <p class="text-sm text-gray-400">Full Sales & Strategic Analytics</p>
                 </div>
             </a>
+            <?php endif; ?>
 
+            <?php if (hasPermission('stock:view')): ?>
             <a href="reports.php#inventory" class="group h-full">
                 <div class="glass p-8 rounded-2xl border border-gray-700/50 bg-gray-800/60 hover:bg-gray-800 transition-colors flex flex-col h-full">
                     <div class="flex items-start justify-between mb-8">
@@ -109,7 +130,9 @@ require_once 'includes/layout.php';
                     <p class="text-sm text-gray-400">Live Inventory Audit & Controls</p>
                 </div>
             </a>
+            <?php endif; ?>
 
+            <?php if (hasPermission('services:view')): ?>
             <a href="services.php" class="group h-full">
                 <div class="glass p-8 rounded-2xl border border-gray-700/50 bg-gray-800/60 hover:bg-gray-800 transition-colors flex flex-col h-full">
                     <div class="flex items-start justify-between mb-8">
@@ -120,7 +143,9 @@ require_once 'includes/layout.php';
                     <p class="text-sm text-gray-400">Room, Floor & Customer Workflow</p>
                 </div>
             </a>
+            <?php endif; ?>
 
+            <?php if ($_SESSION['role'] === 'admin'): ?>
             <a href="https://s16387.fra1.stableserver.net:2096/cpsess6687300317/3rdparty/roundcube/?_task=mail&_mbox=INBOX" target="_blank" class="group h-full">
                 <div class="glass p-8 rounded-2xl border border-[#c5a059]/20 bg-[#c5a059]/5 hover:bg-[#c5a059]/10 transition-colors flex flex-col h-full">
                     <div class="flex items-start justify-between mb-8">
@@ -131,6 +156,7 @@ require_once 'includes/layout.php';
                     <p class="text-sm text-gray-400">Official Hotel Webmail Access</p>
                 </div>
             </a>
+            <?php endif; ?>
 
         </div>
         </div>

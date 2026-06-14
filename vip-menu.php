@@ -1,7 +1,7 @@
 <?php
 require_once 'includes/layout.php';
 require_once 'includes/JsonDB.php';
-requireAuth(['admin']);
+requireAuth(['admin'], 'services:view');
 
 $tierId = $_GET['tier'] ?? null;
 if (!$tierId) {

@@ -4,7 +4,7 @@
  */
 require_once 'includes/layout.php';
 require_once 'includes/social-icons.php';
-requireAuth(['admin']);
+requireAuth(['admin'], 'settings:update');
 
 $title = 'Website CMS';
 renderHeader($title);
