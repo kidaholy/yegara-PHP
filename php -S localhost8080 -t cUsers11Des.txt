@@ -1,4 +1,3 @@
-php -S localhost:8080 -t "c:\Users\11\Desktop\Projects\Yegara PHP"
-
+php -S localhost:8080
 
 1000416508384

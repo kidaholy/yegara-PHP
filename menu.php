@@ -7,16 +7,10 @@ extract($manager->getBrandingVars());
 
 // Get Tier if provided (e.g. menu.php?tier=vip1)
 $tierId = $_GET['tier'] ?? 'standard';
-$dataPath = ($tierId === 'standard') ? 'data/menuItems.json' : "data/{$tierId}Menu.json";
+$type = ($tierId === 'standard') ? 'menuItems' : "{$tierId}Menu";
 
-// Safety check
-if (!file_exists($dataPath)) {
-    $dataPath = 'data/menuItems.json';
-    $tierId = 'standard';
-}
-
-$items = json_decode(file_get_contents($dataPath), true) ?: [];
-$categories = json_decode(file_get_contents('data/categories.json'), true) ?: [];
+$items = db($type)->findMany(['where' => ['isDeleted' => false]]) ?: [];
+$categories = db('categories')->findMany(['where' => ['group' => 'menu']]) ?: [];
 
 // Filter out deleted items and unavailable items
 $items = array_filter($items, fn($i) => !($i['isDeleted'] ?? false) && ($i['available'] ?? true) !== false);

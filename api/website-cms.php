@@ -7,7 +7,7 @@ require_once '../includes/cms.php';
 
 requireAuth(['admin']);
 
-$cmsFile = __DIR__ . '/../data/cms.json';
+// System now uses the db('cms') collection exclusively.
 
 // REMOVED: Automatic reset on missing file to prevent accidental reversion.
 // Restoration now requires explicit admin action via the "Load Defaults" button.
@@ -54,11 +54,6 @@ if ($method === 'POST') {
     if (is_array($input)) {
         header('Content-Type: application/json');
 
-        if (($input['action'] ?? '') === 'reset_defaults') {
-            $defaults = resetCmsToDefaults();
-            echo json_encode(['success' => true, 'data' => $defaults, 'message' => 'Default content loaded']);
-            exit;
-        }
 
         // Reject clearly broken payloads (missing core keys)
         $required = ['hero', 'about', 'services', 'contact', 'social', 'gallery', 'sections'];

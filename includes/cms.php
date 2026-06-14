@@ -93,19 +93,25 @@ function getDefaultCmsData(): array {
 
 function getCmsData(): array {
     $defaults = getDefaultCmsData();
-    $file = __DIR__ . '/../data/cms.json';
-    if (!file_exists($file)) {
-        // Return defaults but mark them as "default" so we can check later
-        $defaults['__is_default'] = true;
-        return $defaults;
-    }
-    $content = @file_get_contents($file);
-    if ($content === false || trim($content) === '') {
-        $defaults['__is_default'] = true;
-        return $defaults;
-    }
-    $stored = json_decode($content, true);
-    if (!is_array($stored)) {
+    
+    try {
+        $stored = db('cms')->findUnique(['where' => ['id' => 'website_config']]);
+        if (!$stored) {
+            // Check for legacy record without the 'website_config' ID if migration created it differently
+            $all = db('cms')->findMany(['take' => 1]);
+            $stored = $all[0] ?? null;
+        }
+
+        if (!$stored) {
+            $defaults['__is_default'] = true;
+            return $defaults;
+        }
+        
+        // The data is actually stored as the record itself in our SqliteDB implementation
+        // but we need to remove the internal id/createdAt/etc if they exist
+        unset($stored['id'], $stored['createdAt'], $stored['updatedAt'], $stored['isDeleted']);
+    } catch (Exception $e) {
+        error_log("[CMS] Database read failed: " . $e->getMessage());
         $defaults['__is_default'] = true;
         return $defaults;
     }
@@ -172,40 +178,22 @@ function writeCmsData(array $data): bool {
         unset($data['__is_default']);
     }
 
-    $file = __DIR__ . '/../data/cms.json';
-    $dir = dirname($file);
-    if (!is_dir($dir)) {
-        mkdir($dir, 0777, true);
-    }
-    if (file_exists($file)) {
-        @copy($file, $file . '.bak');
-    }
-    $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-    if ($json === false) {
-        error_log("[CMS] JSON encoding failed: " . json_last_error_msg());
-        return false;
-    }
-    
-    // Atomic-ish write: Use a temporary file first
-    $tmp = $file . '.tmp.' . bin2hex(random_bytes(4));
-    if (file_put_contents($tmp, $json, LOCK_EX) === false) {
-        error_log("[CMS] Failed to write temporary file: $tmp");
-        return false;
-    }
-
-    // On Windows, rename() fails if the target file is open for reading.
-    // We try rename first, then fallback to direct overwrite if it fails.
-    if (@rename($tmp, $file)) {
+    try {
+        db('cms')->updateMany([
+            'where' => ['id' => ['not' => '']], // Update all or replace
+            'data' => $data
+        ]);
+        
+        // If nothing was updated, create it
+        if (db('cms')->count() === 0) {
+            $data['id'] = 'website_config';
+            db('cms')->create(['data' => $data]);
+        }
         return true;
+    } catch (Exception $e) {
+        error_log("[CMS] Database write failed: " . $e->getMessage());
+        return false;
     }
-
-    // Fallback: direct write with lock
-    $success = file_put_contents($file, $json, LOCK_EX) !== false;
-    if (!$success) {
-        error_log("[CMS] Failed to write file: $file");
-    }
-    @unlink($tmp);
-    return $success;
 }
 
 function resetCmsToDefaults(): array {

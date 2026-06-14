@@ -304,6 +304,26 @@ renderHeader("Settings");
     </div>
 </div>
 
+<!-- UNIVERSAL EDIT MODAL -->
+<div id="editModal" class="hidden fixed inset-0 z-[500] flex items-center justify-center p-6 lg:p-12">
+    <div onclick="AdminSettings.closeEditModal()" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+    <div class="relative w-full max-w-md glass p-8 rounded-2xl border border-gray-700 bg-gray-900 shadow-2xl animate-fadeIn">
+        <div class="flex items-center justify-between mb-8">
+            <h3 id="editModalTitle" class="text-xl font-bold text-white tracking-tight">Edit Entity</h3>
+            <button onclick="AdminSettings.closeEditModal()" class="text-gray-500 hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div id="editModalContent" class="space-y-6">
+            <!-- Dynamic fields go here -->
+        </div>
+        <div class="mt-8 pt-6 border-t border-gray-700/50 flex gap-3">
+            <button onclick="AdminSettings.closeEditModal()" class="flex-1 py-3 rounded-xl bg-gray-800 text-gray-400 text-xs font-bold uppercase tracking-widest hover:bg-gray-750 transition-all">Cancel</button>
+            <button onclick="AdminSettings.saveEdit()" class="flex-1 py-3 rounded-xl bg-[#c5a059] text-gray-900 text-xs font-bold uppercase tracking-widest hover:bg-[#b59048] transition-all shadow-lg">Save Changes</button>
+        </div>
+    </div>
+</div>
+
 
 <style>
 .alert-success { background: rgba(74,222,128,.1); color: #4ade80; border: 1px solid rgba(74,222,128,.2); border-radius: 0.5rem; }
@@ -328,7 +348,9 @@ const AdminSettings = {
             },
             floors: <?php echo json_encode($floors); ?>,
             tables: <?php echo json_encode($tables); ?>
-        }
+        },
+        editingItem: null,
+        editingType: null // 'category', 'floor', 'table'
     },
 
     switchTab(tab) {
@@ -488,7 +510,7 @@ const AdminSettings = {
                         <button onclick="AdminSettings.deleteCategory('${cat.id}')" class="w-8 h-8 rounded-lg bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-500 hover:text-red-400 hover:border-red-500/30 transition-all">
                             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                         </button>
-                        <button class="w-8 h-8 rounded-lg bg-[#c5a059]/10 border border-[#c5a059]/20 flex items-center justify-center text-[#c5a059] hover:bg-[#c5a059] hover:text-gray-900 transition-all">
+                        <button onclick="AdminSettings.openEditModal('category', '${cat.id}')" class="w-8 h-8 rounded-lg bg-[#c5a059]/10 border border-[#c5a059]/20 flex items-center justify-center text-[#c5a059] hover:bg-[#c5a059] hover:text-gray-900 transition-all">
                             <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
                         </button>
                     </div>
@@ -533,7 +555,7 @@ const AdminSettings = {
             <div class="px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg flex items-center gap-4 group">
                 <span class="text-xs font-bold text-[#c5a059] uppercase">Floor ${f.floorNumber}</span>
                 <div class="flex items-center gap-2 ml-auto opacity-0 group-hover:opacity-100 transition-all">
-                    <button class="text-gray-600 hover:text-gray-200 transition-colors"><i data-lucide="pencil" class="w-3 h-3"></i></button>
+                    <button onclick="AdminSettings.openEditModal('floor', '${f.id}')" class="text-gray-600 hover:text-gray-200 transition-colors"><i data-lucide="pencil" class="w-3 h-3"></i></button>
                     <button onclick="AdminSettings.deleteFloor('${f.id}')" class="text-red-500/40 hover:text-red-400 transition-colors"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
                 </div>
             </div>
@@ -544,7 +566,7 @@ const AdminSettings = {
             <div class="table-card bg-gray-900 border border-gray-700/50 rounded-xl p-5 text-center group relative hover:border-gray-600">
                 <p class="text-lg font-bold text-gray-200 truncate">${t.tableNumber}</p>
                 <div class="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                    <button class="text-gray-600 hover:text-[#c5a059] transition-colors"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                    <button onclick="AdminSettings.openEditModal('table', '${t.id}')" class="text-gray-600 hover:text-[#c5a059] transition-colors"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
                     <button onclick="AdminSettings.deleteTable('${t.id}')" class="text-gray-600 hover:text-red-400 transition-colors"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                 </div>
             </div>
@@ -567,6 +589,16 @@ const AdminSettings = {
             this.state.data.floors.push(data);
             this.renderTables();
             this.showAlert('Level Protocol Active');
+        } catch (err) { this.showAlert(err.message, 'error'); }
+    },
+
+    async deleteFloor(id) {
+        if(!confirm('Delete this level?')) return;
+        try {
+            await fetch(`api/admin/floors.php?id=${id}`, { method: 'DELETE' });
+            this.state.data.floors = this.state.data.floors.filter(f => f.id !== id);
+            this.renderTables();
+            this.showAlert('Level Excised');
         } catch (err) { this.showAlert(err.message, 'error'); }
     },
 
@@ -595,6 +627,119 @@ const AdminSettings = {
             this.renderTables();
             this.showAlert('Unit Decommissioned');
         } catch (err) { this.showAlert(err.message, 'error'); }
+    },
+
+    openEditModal(type, id) {
+        this.state.editingType = type;
+        const modal = document.getElementById('editModal');
+        const title = document.getElementById('editModalTitle');
+        const content = document.getElementById('editModalContent');
+        
+        let item = null;
+        let fields = '';
+
+        if (type === 'category') {
+            item = this.state.data.categories[this.state.activeCategoryType].find(c => c.id === id);
+            title.textContent = `Edit ${this.state.activeCategoryType.charAt(0).toUpperCase() + this.state.activeCategoryType.slice(1)} Category`;
+            fields = `
+                <div class="space-y-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-gray-500">Category Name</label>
+                        <input type="text" id="editName" value="${item.name}" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-[#c5a059]">
+                    </div>
+                </div>`;
+        } else if (type === 'floor') {
+            item = this.state.data.floors.find(f => f.id === id);
+            title.textContent = 'Edit Floor';
+            fields = `
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold uppercase tracking-wider text-gray-500">Floor Number</label>
+                            <input type="text" id="editFloorNumber" value="${item.floorNumber}" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-[#c5a059]">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold uppercase tracking-wider text-gray-500">Sort Order</label>
+                            <input type="number" id="editFloorOrder" value="${item.order || 0}" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-[#c5a059]">
+                        </div>
+                    </div>
+                </div>`;
+        } else if (type === 'table') {
+            item = this.state.data.tables.find(t => t.id === id);
+            title.textContent = 'Edit Table';
+            fields = `
+                <div class="space-y-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-gray-500">Table Number</label>
+                        <input type="text" id="editTableNumber" value="${item.tableNumber}" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-[#c5a059]">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-gray-500">Capacity (Seats)</label>
+                        <input type="number" id="editTableCapacity" value="${item.capacity}" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-[#c5a059]">
+                    </div>
+                </div>`;
+        }
+
+        this.state.editingItem = item;
+        content.innerHTML = fields;
+        modal.classList.remove('hidden');
+        lucide.createIcons();
+    },
+
+    closeEditModal() {
+        document.getElementById('editModal').classList.add('hidden');
+        this.state.editingItem = null;
+        this.state.editingType = null;
+    },
+
+    async saveEdit() {
+        if (!this.state.editingItem) return;
+        const id = this.state.editingItem.id;
+        const type = this.state.editingType;
+        let url = '';
+        let payload = {};
+
+        try {
+            if (type === 'category') {
+                url = `api/admin/categories.php?type=${this.state.activeCategoryType}&id=${id}`;
+                payload = { name: document.getElementById('editName').value };
+            } else if (type === 'floor') {
+                url = `api/admin/floors.php?id=${id}`;
+                payload = { floorNumber: document.getElementById('editFloorNumber').value, order: parseInt(document.getElementById('editFloorOrder').value) };
+            } else if (type === 'table') {
+                url = `api/admin/tables.php?id=${id}`;
+                payload = { tableNumber: document.getElementById('editTableNumber').value, capacity: parseInt(document.getElementById('editTableCapacity').value) };
+            }
+
+            const res = await fetch(url, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) throw new Error('Update failed');
+
+            // Update local state
+            if (type === 'category') {
+                const list = this.state.data.categories[this.state.activeCategoryType];
+                const idx = list.findIndex(c => c.id === id);
+                list[idx] = { ...list[idx], ...payload };
+                this.renderCategories();
+            } else if (type === 'floor') {
+                const idx = this.state.data.floors.findIndex(f => f.id === id);
+                this.state.data.floors[idx] = { ...this.state.data.floors[idx], ...payload };
+                this.renderTables();
+            } else if (type === 'table') {
+                const idx = this.state.data.tables.findIndex(t => t.id === id);
+                this.state.data.tables[idx] = { ...this.state.data.tables[idx], ...payload };
+                this.renderTables();
+            }
+
+            this.showAlert('Entity Data Updated');
+            this.closeEditModal();
+        } catch (err) {
+            this.showAlert(err.message, 'error');
+        }
     },
 
     showAlert(msg, type = 'success') {

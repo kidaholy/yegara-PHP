@@ -95,13 +95,20 @@ function buildTierMenuFromStandard(float $percentage, string $tierId): array {
 
 function writeTierMenuFile(array $tier, array $items): void {
     $collection = getMenuTierCollection($tier);
-    $filePath = DATA_DIR . '/' . $collection . '.json';
-    file_put_contents($filePath, json_encode($items, JSON_PRETTY_PRINT));
+    // Delete existing to replace
+    db($collection)->deleteMany(['where' => ['id' => ['not' => '']]]);
+    foreach ($items as $item) {
+        db($collection)->create(['data' => $item]);
+    }
 }
 
 function deleteTierMenuFile(array $tier): void {
-    $filePath = DATA_DIR . '/' . getMenuTierCollection($tier) . '.json';
-    if (file_exists($filePath)) {
-        unlink($filePath);
+    $collection = getMenuTierCollection($tier);
+    // In SQLite, we can just drop the table or delete all records
+    // Dropping tables dynamically might be risky, so we'll just clear it
+    try {
+        db($collection)->deleteMany(['where' => ['id' => ['not' => '']]]);
+    } catch (Exception $e) {
+        // Table might not exist or already be gone
     }
 }

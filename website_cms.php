@@ -19,9 +19,6 @@ renderHeader($title);
             <p class="text-sm text-white/40 mt-1">Manage your public landing page — hero, about, services, contact, social & menu gallery.</p>
         </div>
         <div class="flex items-center gap-3 shrink-0">
-            <button type="button" id="cmsDefaultsBtn" class="inline-flex items-center gap-2 px-5 py-2.5 border border-white/15 rounded-xl text-sm font-semibold text-white/70 hover:text-white hover:border-white/30 transition-all">
-                <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Load Defaults
-            </button>
             <button type="button" id="cmsPreviewBtn" class="inline-flex items-center gap-2 px-5 py-2.5 border border-white/15 rounded-xl text-sm font-semibold text-white/70 hover:text-white hover:border-white/30 transition-all">
                 <i data-lucide="external-link" class="w-4 h-4"></i> Preview Site
             </button>

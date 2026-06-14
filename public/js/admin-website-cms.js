@@ -65,7 +65,6 @@ const WebsiteCMS = {
 
     bindGlobal() {
         document.getElementById('cmsSaveBtn')?.addEventListener('click', () => this.save());
-        document.getElementById('cmsDefaultsBtn')?.addEventListener('click', () => this.loadDefaults());
         document.getElementById('cmsPreviewBtn')?.addEventListener('click', () => window.open('index.php', '_blank'));
 
         document.getElementById('cmsPrevSlide')?.addEventListener('click', () => this.goSlide(this.currentSlide - 1));
@@ -737,43 +736,6 @@ const WebsiteCMS = {
         }
     },
 
-    async loadDefaults() {
-        if (!confirm('Load default sample content for all sections? Your current CMS text will be replaced (default images are kept in assets/cms/defaults/).')) {
-            return;
-        }
-        const btn = document.getElementById('cmsDefaultsBtn');
-        const orig = btn?.innerHTML;
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Loading…';
-            lucide.createIcons();
-        }
-        try {
-            const res = await fetch('api/website-cms.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'reset_defaults' }),
-            });
-            const result = await res.json();
-            if (result.success) {
-                this.data = result.data;
-                this.renderNav();
-                this.renderSlide();
-                lucide.createIcons();
-                this.showToast('Default content loaded — replace with your own');
-            } else {
-                alert(result.message || 'Failed to load defaults');
-            }
-        } catch (e) {
-            alert('Failed to load defaults');
-        } finally {
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = orig || '';
-                lucide.createIcons();
-            }
-        }
-    },
 
     async save() {
         const btn = document.getElementById('cmsSaveBtn');

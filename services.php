@@ -5,8 +5,7 @@ $title = "Services Hub";
 renderHeader($title);
 
 // Load dynamic tiers for initial server-side render
-$tiersDataPath = 'data/menuTiers.json';
-$menuTiers = file_exists($tiersDataPath) ? json_decode(file_get_contents($tiersDataPath), true) : [];
+$menuTiers = db('menuTiers')->findMany(['where' => ['isDeleted' => false]]) ?: [];
 ?>
 
 <style>
