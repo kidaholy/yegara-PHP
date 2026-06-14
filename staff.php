@@ -187,6 +187,6 @@ $currentUser = getCurrentUser();
     window.currentUserId = <?php echo json_encode($currentUser['id']); ?>;
     window.SUPER_ADMIN_ID = <?php echo json_encode(SUPER_ADMIN_ID); ?>;
 </script>
-<script src="public/js/admin-users.js?v=1.1"></script>
+<script src="public/js/admin-users.js?v=1.2"></script>
 
 <?php renderFooter(); ?>

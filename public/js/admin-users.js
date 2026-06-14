@@ -191,8 +191,8 @@ function renderUserCard(u) {
                             <i data-lucide="${isDeactivated ? 'eye' : 'eye-off'}" class="w-4 h-4"></i>
                         </button>
                     ` : ''}
-                    <button data-id="${u.id}" class="edit-btn w-9 h-9 rounded-lg bg-gray-800 border border-gray-700 hover:bg-gray-700 flex items-center justify-center transition-colors text-blue-400 relative z-20">
-                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                    <button type="button" data-id="${u.id}" onclick="event.stopPropagation(); window.editUser('${u.id}')" class="edit-btn w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500 hover:text-white flex items-center justify-center transition-all text-blue-400 relative z-[50] shadow-lg">
+                        <i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i>
                     </button>
                     ${!isMe ? `
                         <button onclick="deleteUser('${u.id}')" class="w-9 h-9 rounded-lg bg-gray-800 border border-gray-700 hover:bg-red-600 hover:text-white hover:border-red-500 flex items-center justify-center transition-colors text-gray-400">
@@ -237,56 +237,82 @@ window.closeModal = () => {
 };
 
 window.editUser = (id) => {
-    const searchId = String(id).trim();
-    console.log('[Staff] Edit requested for ID:', searchId);
+    try {
+        console.log('[Staff] editUser call:', id);
+        const searchId = String(id || '').trim();
 
-    // Strategy 1: Direct Match
-    let user = state.users.find(u => String(u.id).trim() === searchId);
-    
-    // Strategy 2: Fallback for Super Admin (Match by currentUserId)
-    if (!user && window.currentUserId) {
-        if (searchId === String(window.currentUserId).trim()) {
-            user = state.users.find(u => String(u.id).trim() === String(window.currentUserId).trim());
+        if (!searchId && window.currentUserId) {
+            console.warn('[Staff] editUser called without ID, falling back to currentUserId');
+            return window.editUser(window.currentUserId);
         }
-    }
 
-    // Strategy 3: Global Fallback for Super Admin (Match by SUPER_ADMIN_ID)
-    if (!user && window.SUPER_ADMIN_ID) {
-        if (searchId === String(window.SUPER_ADMIN_ID).trim()) {
-             user = state.users.find(u => String(u.id).trim() === String(window.SUPER_ADMIN_ID).trim());
+        // Strategy 1: Direct Match
+        let user = state.users.find(u => String(u.id).trim() === searchId);
+        
+        // Strategy 2: Fallback for Super Admin (Match by currentUserId)
+        if (!user && window.currentUserId) {
+            if (searchId === String(window.currentUserId).trim()) {
+                user = state.users.find(u => String(u.id).trim() === String(window.currentUserId).trim());
+            }
         }
-    }
 
-    // Strategy 4: Soft Match (Role + Admin status) if it's the current user's card
-    if (!user && searchId === String(window.currentUserId).trim()) {
-        user = state.users.find(u => u.role === 'admin' && (u.email.includes('kidayos') || u.name.includes('Super')));
-    }
-    
-    if (!user) {
-        console.error('[Staff] Edit Failed: User not found in state:', searchId);
-        alert('Error: Could not find user data. Please refresh.');
-        return;
-    }
+        // Strategy 3: Global Fallback for Super Admin (Match by SUPER_ADMIN_ID)
+        if (!user && window.SUPER_ADMIN_ID) {
+            if (searchId === String(window.SUPER_ADMIN_ID).trim()) {
+                 user = state.users.find(u => String(u.id).trim() === String(window.SUPER_ADMIN_ID).trim());
+            }
+        }
 
-    state.editingUser = user;
-    state.formData = {
-        name: user.name,
-        email: user.email,
-        password: '', // blank on edit
-        role: user.role,
-        floorId: user.floorId || '',
-        assignedCategories: user.assignedCategories || [],
-        permissions: user.permissions || []
-    };
-    
-    renderForm();
-    document.getElementById('user-modal').classList.remove('hidden');
+        // Strategy 4: Soft Match (Role + Admin status) if it's the current user's card
+        if (!user && (searchId === String(window.currentUserId).trim() || searchId === String(window.SUPER_ADMIN_ID).trim())) {
+            user = state.users.find(u => u.role === 'admin' && (u.email.includes('kidayos') || u.name.toLowerCase().includes('super')));
+        }
+
+        // Strategy 5: Last ditch
+        if (!user && searchId === String(window.currentUserId).trim()) {
+            user = state.users.find(u => u.role === 'admin');
+        }
+        
+        if (!user) {
+            console.error('[Staff] Edit Failed: User not found in state:', searchId);
+            alert('Error: Could not find user data. Please refresh.');
+            return;
+        }
+
+        state.editingUser = user;
+        state.formData = {
+            name: user.name,
+            email: user.email,
+            password: '', 
+            role: user.role,
+            floorId: user.floorId || '',
+            assignedCategories: user.assignedCategories || [],
+            permissions: user.permissions || []
+        };
+        
+        renderForm();
+        
+        const modal = document.getElementById('user-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+        } else {
+            console.error('[Staff] Modal element not found!');
+            alert('UI Error: Modal element not found.');
+        }
+    } catch (err) {
+        console.error('[Staff] Fatal error in editUser:', err);
+        alert('Critical Error: ' + err.message);
+    }
 };
 
 function renderForm() {
-    const role = state.formData.role;
-    const form = document.getElementById('user-form');
-    if (!form) return;
+    try {
+        const role = state.formData.role;
+        const form = document.getElementById('user-form');
+        if (!form) {
+            console.error('[Staff] Form element not found in renderForm');
+            return;
+        }
 
     // Title
     document.getElementById('form-title').textContent = state.editingUser ? 'Edit Profile' : 'New Member';
@@ -343,6 +369,9 @@ function renderForm() {
     }).join('');
 
     lucide.createIcons();
+    } catch (err) {
+        console.error('[Staff] Error in renderForm:', err);
+    }
 }
 
 /**
