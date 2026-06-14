@@ -95,12 +95,22 @@ function getCmsData(): array {
     $defaults = getDefaultCmsData();
     $file = __DIR__ . '/../data/cms.json';
     if (!file_exists($file)) {
+        // Return defaults but mark them as "default" so we can check later
+        $defaults['__is_default'] = true;
         return $defaults;
     }
-    $stored = json_decode(file_get_contents($file), true);
+    $content = @file_get_contents($file);
+    if ($content === false || trim($content) === '') {
+        $defaults['__is_default'] = true;
+        return $defaults;
+    }
+    $stored = json_decode($content, true);
     if (!is_array($stored)) {
+        $defaults['__is_default'] = true;
         return $defaults;
     }
+    
+    // Merging logic:
     
     // Merging logic:
     // 1. Start with defaults
@@ -157,6 +167,11 @@ function saveCmsPayload(array $input): array {
 }
 
 function writeCmsData(array $data): bool {
+    // Remove internal flags before writing
+    if (isset($data['__is_default'])) {
+        unset($data['__is_default']);
+    }
+
     $file = __DIR__ . '/../data/cms.json';
     $dir = dirname($file);
     if (!is_dir($dir)) {
@@ -167,12 +182,14 @@ function writeCmsData(array $data): bool {
     }
     $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     if ($json === false) {
+        error_log("[CMS] JSON encoding failed: " . json_last_error_msg());
         return false;
     }
     
     // Atomic-ish write: Use a temporary file first
     $tmp = $file . '.tmp.' . bin2hex(random_bytes(4));
     if (file_put_contents($tmp, $json, LOCK_EX) === false) {
+        error_log("[CMS] Failed to write temporary file: $tmp");
         return false;
     }
 
@@ -184,6 +201,9 @@ function writeCmsData(array $data): bool {
 
     // Fallback: direct write with lock
     $success = file_put_contents($file, $json, LOCK_EX) !== false;
+    if (!$success) {
+        error_log("[CMS] Failed to write file: $file");
+    }
     @unlink($tmp);
     return $success;
 }

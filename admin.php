@@ -4,14 +4,37 @@
  * High-Fidelity "Luxury-First" Edition (Spec-Corrected)
  */
 require_once 'includes/layout.php';
-requireAuth(['admin']); // spec: ProtectedRoute requiredRoles=["admin"]
-$title = "Admin Dashboard";
-
-renderHeader($title);
-?>
-
-<div class="min-h-screen w-full bg-[#0f1110] p-6 lg:p-12 flex justify-center">
-    <div class="max-w-screen-2xl w-full space-y-12">
+    requireAuth(['admin']); // spec: ProtectedRoute requiredRoles=["admin"]
+    
+    // Check for missing configuration files
+    $missingConfigs = [];
+    if (!file_exists(__DIR__ . '/data/cms.json')) $missingConfigs[] = 'Website CMS (cms.json)';
+    if (!file_exists(__DIR__ . '/storage/settings.json')) $missingConfigs[] = 'System Settings (settings.json)';
+    
+    $title = "Admin Dashboard";
+    renderHeader($title);
+    ?>
+    
+    <div class="min-h-screen w-full bg-[#0f1110] p-6 lg:p-12 flex justify-center">
+        <div class="max-w-screen-2xl w-full space-y-12">
+            
+            <?php if (!empty($missingConfigs)): ?>
+            <!-- CRITICAL CONFIG ALERT -->
+            <div class="p-6 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-between gap-6 shadow-xl shadow-red-500/5">
+                <div class="flex items-center gap-5">
+                    <div class="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center text-red-400">
+                        <i data-lucide="alert-triangle" class="w-7 h-7"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-bold text-white">Missing Configuration Files</h4>
+                        <p class="text-sm text-red-200/60 mt-0.5">The following files are missing: <?php echo implode(', ', $missingConfigs); ?>. Default settings are being used temporarily.</p>
+                    </div>
+                </div>
+                <a href="website_cms.php" class="px-5 py-2.5 bg-red-500 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20">
+                    Fix Now
+                </a>
+            </div>
+            <?php endif; ?>
         
         <!-- SECTION 1: HEADER -->
         <div class="glass p-8 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-8 bg-gray-900/40">

@@ -9,9 +9,8 @@ requireAuth(['admin']);
 
 $cmsFile = __DIR__ . '/../data/cms.json';
 
-if (!file_exists($cmsFile)) {
-    file_put_contents($cmsFile, json_encode(getDefaultCmsData(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-}
+// REMOVED: Automatic reset on missing file to prevent accidental reversion.
+// Restoration now requires explicit admin action via the "Load Defaults" button.
 
 $method = $_SERVER['REQUEST_METHOD'];
 

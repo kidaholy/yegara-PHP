@@ -13,7 +13,7 @@ class SettingsManager {
     private $tablesFile;
     private $floorsFile;
 
-    public function __construct() {
+    public function __construct($autoInit = false) {
         // Adjust paths to be absolute and consistent with project root
         $baseDir = dirname(__DIR__);
         $this->storageDir = $baseDir . '/storage';
@@ -23,7 +23,9 @@ class SettingsManager {
         $this->floorsFile = $this->storageDir . '/floors.json';
         
         $this->ensureStorageDir();
-        $this->initializeFiles();
+        if ($autoInit) {
+            $this->initializeFiles();
+        }
     }
 
     private function ensureStorageDir() {
@@ -35,9 +37,10 @@ class SettingsManager {
         }
     }
 
-    private function initializeFiles() {
+    public function initializeFiles($force = false) {
         // Initialize settings.json
-        if (!file_exists($this->settingsFile)) {
+        if ($force || !file_exists($this->settingsFile)) {
+            error_log("[SettingsManager] Initializing settings.json with defaults" . ($force ? " (forced)" : ""));
             $defaults = [
                 'branding' => [
                     'logo_url' => '',
