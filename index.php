@@ -48,9 +48,9 @@ renderSocialIconsStylesheet();
     <header class="fixed inset-x-0 top-0 z-50 border-b border-[#1e211d]/10 bg-[#eee8de]/95 shadow-sm shadow-black/5 backdrop-blur-xl">
         <div class="mx-auto flex h-[76px] max-w-[1500px] items-center justify-between px-5 sm:px-8 lg:px-12">
             <a href="#" class="flex min-w-0 items-center gap-3" aria-label="<?php echo htmlspecialchars($appName); ?> home">
-                <?php if ($logoUrl): ?>
+                <?php if ($publicLogoUrl): ?>
                     <span class="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full border border-[#1e211d]/10 bg-white shadow-sm">
-                        <img src="<?php echo htmlspecialchars($logoUrl); ?>" alt="<?php echo htmlspecialchars($appName); ?> logo" class="h-full w-full object-cover">
+                        <img src="<?php echo htmlspecialchars($publicLogoUrl); ?>" alt="<?php echo htmlspecialchars($appName); ?> logo" class="h-full w-full object-cover">
                     </span>
                 <?php else: ?>
                     <span class="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#1e211d] text-[10px] font-black uppercase tracking-[0.16em] text-[#f6f1e8] shadow-sm">

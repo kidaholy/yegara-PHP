@@ -123,11 +123,17 @@ class SettingsManager {
     public function getBrandingVars() {
         $b = $this->getBranding();
         $logo = $b['logo_url'] ?? '';
+        
+        // Provide stable URLs for public headers/SEOs
+        $apiLogo = !empty($logo) ? 'api/branding-image.php?type=logo' : '';
+        $apiFav  = !empty($b['favicon_url']) ? 'api/branding-image.php?type=favicon' : $apiLogo;
+
         return [
             'appName' => !empty($b['app_name']) ? $b['app_name'] : 'ABE HOTEL',
             'appTagline' => !empty($b['app_tagline']) ? $b['app_tagline'] : 'HOTEL MANAGEMENT SYSTEM',
-            'logoUrl' => $logo,
-            'faviconUrl' => !empty($b['favicon_url']) ? $b['favicon_url'] : $logo,
+            'logoUrl' => $logo, // Still keep raw for internal/admin use
+            'publicLogoUrl' => $apiLogo,
+            'faviconUrl' => $apiFav,
         ];
     }
 

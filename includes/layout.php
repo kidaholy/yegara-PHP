@@ -48,6 +48,24 @@ function renderHeader($title = "Management System", $options = []) {
         <link rel="icon" href="<?php echo htmlspecialchars($faviconUrl); ?>" />
         <?php endif; ?>
 
+        <?php if ($publicLogoUrl): ?>
+        <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "Hotel",
+          "name": "<?php echo addslashes($appName); ?>",
+          "logo": "<?php echo addslashes((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]/" . $publicLogoUrl); ?>",
+          "url": "<?php echo addslashes((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]/"); ?>",
+          "description": "<?php echo addslashes($metaDesc); ?>",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Dilla",
+            "addressCountry": "ET"
+          }
+        }
+        </script>
+        <?php endif; ?>
+
         <!-- Tailwind CSS CDN -->
         <script src="https://cdn.tailwindcss.com"></script>
         <!-- Google Fonts: Inter -->
