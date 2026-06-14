@@ -87,27 +87,27 @@ function renderTable() {
 
         return `
         <tr class="hover:bg-gray-800/50 border-b border-gray-700/30 group transition-colors">
-          <td class="p-4">
-            <p class="text-sm font-bold text-gray-200">${esc(i.name)}</p>
-            <p class="text-xs text-gray-500 font-semibold mt-0.5">${i.totalPurchased||0} total purchased</p>
+          <td class="p-3 lg:p-4">
+            <p class="text-xs lg:text-sm font-bold text-gray-200">${esc(i.name)}</p>
+            <p class="text-[10px] lg:text-xs text-gray-500 font-semibold mt-0.5">${esc(i.category||'')} · ${i.totalPurchased||0} total</p>
           </td>
-          <td class="p-4">
+          <td class="p-3 lg:p-4 hidden sm:table-cell">
             <span class="text-xs px-2 py-1 rounded-md bg-gray-800 border border-gray-700 font-semibold text-gray-400">${esc(i.category||'')}</span>
           </td>
-          <td class="p-4">
-            <span class="text-lg font-bold ${qtyColor}">${qty % 1 === 0 ? qty : parseFloat(qty.toFixed(2))}</span>
-            <span class="text-xs text-gray-500 ml-1">${i.unit||''}</span>
+          <td class="p-3 lg:p-4">
+            <span class="text-base lg:text-lg font-bold ${qtyColor}">${qty % 1 === 0 ? qty : parseFloat(qty.toFixed(2))}</span>
+            <span class="text-[10px] lg:text-xs text-gray-500 ml-0.5 lg:ml-1">${i.unit||''}</span>
           </td>
-          <td class="p-4">${badge}</td>
-          <td class="p-4">
-            <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onclick="openEdit('${i.id}')" title="Edit"
-                class="w-8 h-8 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 flex items-center justify-center hover:text-white transition-colors">
-                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+          <td class="p-3 lg:p-4 text-center lg:text-left">${badge}</td>
+          <td class="p-3 lg:p-4 text-right">
+            <div class="flex items-center justify-end gap-1 lg:gap-2">
+              <button onclick="openEdit('${i.id}')"
+                class="w-7 h-7 lg:w-8 lg:h-8 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 flex items-center justify-center">
+                <i data-lucide="pencil" class="w-3 lg:w-3.5 h-3 lg:h-3.5"></i>
               </button>
-              <button onclick="deleteStock('${i.id}')" title="Remove from POS"
-                class="w-8 h-8 rounded-lg bg-gray-800 border border-gray-700 text-red-500 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors">
-                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              <button onclick="deleteStock('${i.id}')"
+                class="w-7 h-7 lg:w-8 lg:h-8 rounded-lg bg-gray-800 border border-gray-700 text-red-500 flex items-center justify-center">
+                <i data-lucide="trash-2" class="w-3 lg:w-3.5 h-3 lg:h-3.5"></i>
               </button>
             </div>
           </td>

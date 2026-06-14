@@ -17,87 +17,78 @@ renderHeader("Warehouse Store");
   window.storeIsAdmin = <?= $isAdmin ? 'true' : 'false' ?>;
 </script>
 
-<div class="flex-1 w-full bg-[#0f1110] py-8 px-4 lg:px-8 xl:px-12">
+<div class="flex-1 w-full bg-[#0f1110] py-4 lg:py-8 px-4 lg:px-8 xl:px-12 transition-all">
   <div class="max-w-[1600px] mx-auto">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    <div class="flex flex-col lg:grid lg:grid-cols-12 gap-6 lg:gap-8 items-start">
 
       <!-- ═══════════ SIDEBAR ═══════════ -->
-      <aside class="lg:col-span-4 xl:col-span-3 space-y-5 sticky top-24">
+      <aside class="lg:col-span-4 xl:col-span-3 space-y-4 lg:space-y-5 lg:sticky lg:top-24 w-full">
 
         <!-- Valuation Card -->
-        <div class="glass p-7 rounded-2xl border border-gray-700/50 bg-gray-800/80 relative overflow-hidden">
+        <div class="glass p-5 lg:p-7 rounded-xl lg:rounded-2xl border border-gray-700/50 bg-gray-800/80 relative overflow-hidden transition-all">
           <div class="absolute -right-4 -bottom-4 opacity-[0.04] pointer-events-none">
-            <i data-lucide="warehouse" class="w-32 h-32 text-[#c5a059]"></i>
+            <i data-lucide="warehouse" class="w-24 lg:w-32 h-24 lg:h-32 text-[#c5a059]"></i>
           </div>
-          <div class="flex items-center gap-4 mb-7">
-            <div class="w-11 h-11 rounded-xl bg-gray-900 border border-gray-700 flex items-center justify-center text-[#c5a059]">
-              <i data-lucide="warehouse" class="w-5 h-5"></i>
+          <div class="flex items-center gap-3 lg:gap-4 mb-4 lg:mb-7">
+            <div class="w-10 h-10 lg:w-11 lg:h-11 rounded-xl bg-gray-900 border border-gray-700 flex items-center justify-center text-[#c5a059]">
+              <i data-lucide="warehouse" class="w-4 lg:w-5 h-4 lg:h-5"></i>
             </div>
             <div>
-              <h2 class="text-xl font-bold text-white">Store</h2>
-              <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Warehouse Valuation</p>
+              <h2 class="text-lg lg:text-xl font-bold text-white leading-none mb-1">Store</h2>
+              <p class="text-[10px] lg:text-xs font-semibold uppercase tracking-wider text-gray-500">Warehouse Valuation</p>
             </div>
           </div>
 
-          <div class="space-y-4 mb-7">
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Total Bulk Value</p>
-              <h3 id="si-store-value" class="text-3xl font-bold text-white">0.00 Br</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-col gap-4 mb-4 lg:mb-7">
+            <div class="bg-gray-900/40 p-4 rounded-xl border border-gray-700/30">
+              <p class="text-[10px] lg:text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Total Bulk Value</p>
+              <h3 id="si-store-value" class="text-xl lg:text-3xl font-bold text-white">0.00 Br</h3>
             </div>
             <div class="grid grid-cols-2 gap-3">
-              <div class="p-3 rounded-xl bg-gray-900 border border-gray-700">
-                <p id="si-sku-count" class="text-lg font-bold text-white">0</p>
-                <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mt-0.5">SKU Count</p>
+              <div class="p-3 rounded-xl bg-gray-900/40 border border-gray-700/30">
+                <p id="si-sku-count" class="text-base lg:text-lg font-bold text-white leading-none">0</p>
+                <p class="text-[10px] uppercase tracking-wider text-gray-500 mt-1">SKU Count</p>
               </div>
-              <div class="p-3 rounded-xl bg-gray-900 border border-gray-700">
-                <p id="si-asset-value" class="text-lg font-bold text-white">0.00 Br</p>
-                <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mt-0.5">Fixed Assets</p>
+              <div class="p-3 rounded-xl bg-gray-900/40 border border-gray-700/30">
+                <p id="si-asset-value" class="text-base lg:text-lg font-bold text-white leading-none">0.00 Br</p>
+                <p class="text-[10px] uppercase tracking-wider text-gray-500 mt-1">Assets</p>
               </div>
             </div>
-            <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3">
-              <i data-lucide="receipt" class="w-5 h-5 text-emerald-400 flex-shrink-0"></i>
-              <div>
-                <p id="si-expense-total" class="text-base font-bold text-emerald-400">0.00 Br</p>
-                <p class="text-xs font-semibold uppercase tracking-wider text-emerald-600">Total Expenses</p>
+            <div class="sm:col-span-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3">
+              <i data-lucide="receipt" class="w-4 h-4 lg:w-5 lg:h-5 text-emerald-400 flex-shrink-0"></i>
+              <div class="flex-1 flex justify-between sm:block">
+                <p class="text-[10px] uppercase tracking-wider text-emerald-600 sm:mb-0.5">Expenses</p>
+                <p id="si-expense-total" class="text-sm lg:text-base font-bold text-emerald-400">0.00 Br</p>
               </div>
             </div>
           </div>
 
           <?php if ($isAdmin): ?>
-          <div class="space-y-2.5">
-            <button onclick="openAddItem()" class="w-full py-3 rounded-xl bg-[#c5a059] text-gray-900 font-bold text-sm tracking-wide hover:bg-[#b08d4a] active:scale-95 transition-colors flex items-center justify-center gap-2">
+          <div class="space-y-2 lg:space-y-2.5">
+            <button onclick="openAddItem()" class="w-full py-2.5 lg:py-3 rounded-xl bg-[#c5a059] text-gray-900 font-bold text-xs lg:text-sm tracking-wide hover:bg-[#b08d4a] active:scale-95 transition-colors flex items-center justify-center gap-2">
               <i data-lucide="plus" class="w-4 h-4"></i> Add New Item
             </button>
             <div class="grid grid-cols-3 gap-2">
-              <button onclick="switchTab('categories')" class="py-2.5 rounded-lg bg-gray-900 border border-gray-700 text-xs font-semibold text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">Categories</button>
-              <button onclick="openExpenseForm()" class="py-2.5 rounded-lg bg-gray-900 border border-gray-700 text-xs font-semibold text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">+ Expense</button>
-              <button onclick="openAddAsset()" class="py-2.5 rounded-lg bg-gray-900 border border-gray-700 text-xs font-semibold text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">+ Asset</button>
+              <button onclick="switchTab('categories')" class="py-2 rounded-lg bg-gray-900 border border-gray-700 text-[10px] font-semibold text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">Categories</button>
+              <button onclick="openExpenseForm()" class="py-2 rounded-lg bg-gray-900 border border-gray-700 text-[10px] font-semibold text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">+ Expense</button>
+              <button onclick="openAddAsset()" class="py-2 rounded-lg bg-gray-900 border border-gray-700 text-[10px] font-semibold text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">+ Asset</button>
             </div>
           </div>
           <?php endif; ?>
         </div>
-
-        <!-- Flow Info -->
-        <div class="glass p-5 rounded-2xl border border-gray-700/50 bg-gray-800/40 hidden lg:block">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-[#c5a059] mb-2">Inventory Flow</h3>
-          <p class="text-xs text-gray-400 leading-relaxed">
-            Create items here → bulk enters <span class="text-[#c5a059]">Store</span>.<br>
-            Transfer to <a href="stock.php" class="text-[#c5a059] underline decoration-dotted">Active Stock</a> to make available for POS sales.
-          </p>
-        </div>
       </aside>
 
       <!-- ═══════════ MAIN PANEL ═══════════ -->
-      <main class="lg:col-span-8 xl:col-span-9 space-y-6">
+      <main class="lg:col-span-8 xl:col-span-9 w-full">
 
         <!-- Tabs Bar -->
-        <div class="glass rounded-2xl border border-gray-700/50 bg-gray-900/40 overflow-hidden">
-          <div class="flex items-center justify-between flex-wrap gap-4 px-6 py-4 border-b border-gray-700/50">
-            <nav class="flex items-center gap-1 p-1 bg-gray-800 rounded-lg">
+        <div class="glass rounded-xl lg:rounded-2xl border border-gray-700/50 bg-gray-900/40 overflow-hidden transition-all">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 lg:px-6 py-3 lg:py-4 border-b border-gray-700/50">
+            <nav class="flex items-center gap-1 p-1 bg-gray-800 rounded-lg overflow-x-auto no-scrollbar max-w-full">
               <?php
               $tabs = [
                 ['inventory',    'Bulk Inventory', 'box'],
-                ['fixed-assets', 'Fixed Assets',   'building-2'],
+                ['fixed-assets', 'Assets',         'building-2'],
                 ['categories',   'Categories',     'tag'],
                 ['expenses',     'Expenses',       'receipt'],
                 ['transfers',    'Transfers',      'arrow-right-left'],
@@ -105,16 +96,16 @@ renderHeader("Warehouse Store");
               foreach ($tabs as [$key, $label, $icon]):
               ?>
               <button onclick="switchTab('<?= $key ?>')" data-tab="<?= $key ?>"
-                class="store-tab-btn flex items-center gap-2 px-3 py-2 rounded-md text-xs font-semibold text-gray-400 transition-colors hover:text-gray-200 whitespace-nowrap">
+                class="store-tab-btn flex items-center gap-2 px-2.5 lg:px-3 py-1.5 lg:py-2 rounded-md text-[10px] lg:text-xs font-semibold text-gray-400 transition-colors hover:text-gray-200 whitespace-nowrap">
                 <i data-lucide="<?= $icon ?>" class="w-3.5 h-3.5"></i><?= $label ?>
               </button>
               <?php endforeach; ?>
             </nav>
             <!-- Search -->
-            <div class="relative">
-              <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+            <div class="relative w-full sm:w-auto">
+              <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
               <input type="text" oninput="handleSearch(event)" placeholder="Search..."
-                class="bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:border-[#c5a059] outline-none w-52 transition-colors placeholder:text-gray-500">
+                class="bg-gray-800 border border-gray-700/50 rounded-lg pl-9 pr-4 py-2 text-xs lg:text-sm text-white focus:border-[#c5a059] outline-none w-full sm:w-48 transition-all placeholder:text-gray-500">
             </div>
           </div>
 

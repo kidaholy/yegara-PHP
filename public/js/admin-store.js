@@ -117,39 +117,35 @@ function renderInventory() {
         const lowStore = i.storeMinLimit && storeQty <= i.storeMinLimit;
         return `
         <tr class="hover:bg-gray-800/50 transition-colors group border-b border-gray-700/30">
-          <td class="p-4">
-            <p class="text-sm font-bold text-gray-200 leading-tight">${esc(i.name)}</p>
-            <p class="text-xs font-semibold text-gray-500 mt-0.5">${esc(i.category)} · ${i.unit}</p>
+          <td class="p-3 lg:p-4">
+            <p class="text-xs lg:text-sm font-bold text-gray-200 leading-tight">${esc(i.name)}</p>
+            <p class="text-[10px] lg:text-xs font-semibold text-gray-500 mt-0.5">${esc(i.category)} · ${i.unit}</p>
           </td>
-          <td class="p-4">
-            <span class="text-xl font-bold ${lowStore ? 'text-amber-400' : 'text-white'}">${storeQty}</span>
-            <span class="text-xs text-gray-500 ml-1">${i.unit}</span>
-            ${lowStore ? '<span class="ml-2 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 text-xs font-bold border border-amber-500/20">LOW</span>' : ''}
+          <td class="p-3 lg:p-4 text-center lg:text-left">
+            <span class="text-lg lg:text-xl font-bold ${lowStore ? 'text-amber-400' : 'text-white'}">${storeQty}</span>
+            <span class="text-[10px] text-gray-500 ml-0.5 lg:ml-1">${i.unit}</span>
+            ${lowStore ? '<span class="block lg:inline-block mt-1 lg:mt-0 lg:ml-2 px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-400 text-[9px] lg:text-xs font-bold border border-amber-500/20">LOW</span>' : ''}
           </td>
-          <td class="p-4">
+          <td class="p-3 lg:p-4 hidden sm:table-cell">
             ${posQty > 0
-              ? `<span class="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold">${posQty} ${i.unit} Active</span>`
-              : `<span class="px-2.5 py-1 rounded-lg bg-gray-800 text-gray-500 border border-gray-700 text-xs font-semibold">Inactive in POS</span>`
+              ? `<span class="px-2 lg:px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] lg:text-xs font-semibold">${posQty} ${i.unit}</span>`
+              : `<span class="px-2 lg:px-2.5 py-1 rounded-lg bg-gray-800 text-gray-500 border border-gray-700 text-[10px] lg:text-xs font-semibold">0</span>`
             }
           </td>
-          <td class="p-4">
-            <div class="flex items-center gap-2">
+          <td class="p-3 lg:p-4 text-right sm:text-left">
+            <div class="flex items-center justify-end sm:justify-start gap-1 lg:gap-2">
               <button onclick="openTransfer('${i.id}')" ${storeQty <= 0 ? 'disabled' : ''} title="Transfer to POS"
-                class="w-8 h-8 rounded-lg flex items-center justify-center border transition-colors
-                ${storeQty > 0 ? 'bg-[#c5a059]/10 border-[#c5a059]/30 text-[#c5a059] hover:bg-[#c5a059] hover:text-gray-900' : 'bg-gray-800 border-gray-700 text-gray-600 cursor-not-allowed'}">
-                <i data-lucide="arrow-right-left" class="w-3.5 h-3.5"></i>
+                class="w-7 h-7 lg:w-8 lg:h-8 rounded-lg flex items-center justify-center border transition-colors
+                ${storeQty > 0 ? 'bg-[#c5a059]/10 border-[#c5a059]/30 text-[#c5a059]' : 'bg-gray-800 border-gray-700 text-gray-600 cursor-not-allowed'}">
+                <i data-lucide="arrow-right-left" class="w-3 lg:w-3.5 h-3 lg:h-3.5"></i>
               </button>
-              <button onclick="openRestock('${i.id}')" title="Restock Bulk"
-                class="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center hover:bg-blue-500 hover:text-white transition-colors">
-                <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+              <button onclick="openRestock('${i.id}')"
+                class="w-7 h-7 lg:w-8 lg:h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center hover:bg-blue-500 hover:text-white">
+                <i data-lucide="plus-circle" class="w-3 lg:w-3.5 h-3 lg:h-3.5"></i>
               </button>
-              <button onclick="openEditItem('${i.id}')" title="Edit"
-                class="w-8 h-8 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 flex items-center justify-center hover:text-white transition-colors">
-                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-              </button>
-              <button onclick="deleteItem('${i.id}')" title="Remove from Store"
-                class="w-8 h-8 rounded-lg bg-gray-800 border border-gray-700 text-red-500 flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors">
-                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              <button onclick="openEditItem('${i.id}')"
+                class="w-7 h-7 lg:w-8 lg:h-8 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 flex items-center justify-center">
+                <i data-lucide="pencil" class="w-3 lg:w-3.5 h-3 lg:h-3.5"></i>
               </button>
             </div>
           </td>
@@ -170,12 +166,12 @@ function renderInventory() {
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-left">
-          <thead class="bg-gray-800/50 border-b border-gray-700/50">
-            <tr>
-              <th class="p-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Item Details</th>
-              <th class="p-4 text-xs font-semibold uppercase tracking-wider text-gray-500">In Store</th>
-              <th class="p-4 text-xs font-semibold uppercase tracking-wider text-gray-500">POS Active</th>
-              <th class="p-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Actions</th>
+          <thead>
+            <tr class="bg-gray-800/50 border-b border-gray-700/50">
+              <th class="p-3 lg:p-4 text-[10px] lg:text-xs font-semibold uppercase tracking-wider text-gray-500">Item</th>
+              <th class="p-3 lg:p-4 text-[10px] lg:text-xs font-semibold uppercase tracking-wider text-gray-500 text-center lg:text-left">Store</th>
+              <th class="p-3 lg:p-4 text-[10px] lg:text-xs font-semibold uppercase tracking-wider text-gray-500 hidden sm:table-cell">POS</th>
+              <th class="p-3 lg:p-4 text-[10px] lg:text-xs font-semibold uppercase tracking-wider text-gray-500 text-right sm:text-left">Actions</th>
             </tr>
           </thead>
           <tbody>${rows.join('')}</tbody>
@@ -316,24 +312,22 @@ function renderExpenses() {
 
     const rows = exps.filter(e => esc(e.name||'').toLowerCase().includes(S.searchTerm.toLowerCase())).map(e => `
     <tr class="hover:bg-white/[0.02] border-b border-white/5 group transition-colors">
-      <td class="p-5"><p class="text-[10px] font-bold text-gray-400">${e.date ? new Date(e.date).toLocaleDateString() : '—'}</p></td>
-      <td class="p-5">
-        <p class="text-sm font-black text-white">${esc(e.name)}</p>
-        <p class="text-[9px] text-gray-600 uppercase font-bold">${esc(e.description||'')}</p>
+      <td class="p-3 lg:p-5 hidden md:table-cell"><p class="text-[10px] font-bold text-gray-400">${e.date ? new Date(e.date).toLocaleDateString() : '—'}</p></td>
+      <td class="p-3 lg:p-5">
+        <p class="text-xs lg:text-sm font-black text-white">${esc(e.name)}</p>
+        <p class="text-[9px] text-gray-600 uppercase font-black tracking-widest mt-0.5 md:hidden">${e.date ? new Date(e.date).toLocaleDateString() : ''} · ${esc(e.category||'')}</p>
       </td>
-      <td class="p-5"><span class="px-2 py-1 rounded-full bg-white/5 text-[9px] font-black text-gray-500 border border-white/5">${esc(e.category||'')}</span></td>
-      <td class="p-5 font-mono text-sm text-white">${fmt(e.unit_cost||e.unitCost||0)}</td>
-      <td class="p-5 font-mono text-sm text-white">${(e.quantity||0)} ${e.unit||''}</td>
-      <td class="p-5 font-mono text-sm font-black text-[#f3cf7a]">${fmt(e.amount||0)}</td>
-      <td class="p-5">
+      <td class="p-3 lg:p-5 hidden sm:table-cell"><span class="px-2 py-1 rounded-full bg-white/5 text-[9px] font-black text-gray-500 border border-white/5">${esc(e.category||'')}</span></td>
+      <td class="p-3 lg:p-5 font-mono text-xs lg:text-sm text-white hidden lg:table-cell">${fmt(e.unit_cost||e.unitCost||0)}</td>
+      <td class="p-3 lg:p-5 font-mono text-xs lg:text-sm text-white">${(e.quantity||0)} ${e.unit||''}</td>
+      <td class="p-3 lg:p-5 font-mono text-sm font-black text-[#f3cf7a]">${fmt(e.amount||0)}</td>
+      <td class="p-3 lg:p-5">
         ${S.isAdmin ? `
-        <div class="flex gap-2">
-          <button onclick="openRestockExpense('${e.id}')" title="Restock / Add Quantity"
-            class="w-8 h-8 rounded-xl bg-white/5 text-blue-400 flex items-center justify-center hover:bg-blue-500/10 transition-all"><i data-lucide="plus-circle" class="w-3.5 h-3.5"></i></button>
-          <button onclick="openDecreaseExpense('${e.id}')" title="Decrease Quantity"
-            class="w-8 h-8 rounded-xl bg-white/5 text-amber-500 flex items-center justify-center hover:bg-amber-500/10 transition-all"><i data-lucide="minus-circle" class="w-3.5 h-3.5"></i></button>
-          <button onclick="deleteExpense('${e.id}')" title="Delete record"
-            class="w-8 h-8 rounded-xl bg-white/5 text-red-400 flex items-center justify-center hover:bg-red-500/10 transition-all"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        <div class="flex gap-1.5 lg:gap-2">
+          <button onclick="openRestockExpense('${e.id}')"
+            class="w-7 h-7 lg:w-8 lg:h-8 rounded-xl bg-white/5 text-blue-400 flex items-center justify-center"><i data-lucide="plus-circle" class="w-3 lg:w-3.5 h-3 lg:h-3.5"></i></button>
+          <button onclick="deleteExpense('${e.id}')"
+            class="w-7 h-7 lg:w-8 lg:h-8 rounded-xl bg-white/5 text-red-400 flex items-center justify-center"><i data-lucide="trash-2" class="w-3 lg:w-3.5 h-3 lg:h-3.5"></i></button>
         </div>` : ''}
       </td>
     </tr>`);
@@ -354,7 +348,15 @@ function renderExpenses() {
       <div class="glass rounded-[2rem] border border-white/5 overflow-hidden shadow-xl">
         <table class="w-full text-left">
           <thead class="bg-white/[0.03] border-b border-white/5">
-            <tr>${['Date','Item','Category','Unit Cost','Qty','Amount',''].map(h=>`<th class="p-5 text-[9px] uppercase font-black tracking-widest text-gray-600">${h}</th>`).join('')}</tr>
+            <tr>
+              <th class="p-3 lg:p-5 text-[9px] uppercase font-black tracking-widest text-gray-600 hidden md:table-cell">Date</th>
+              <th class="p-3 lg:p-5 text-[9px] uppercase font-black tracking-widest text-gray-600">Item</th>
+              <th class="p-3 lg:p-5 text-[9px] uppercase font-black tracking-widest text-gray-600 hidden sm:table-cell">Category</th>
+              <th class="p-3 lg:p-5 text-[9px] uppercase font-black tracking-widest text-gray-600 hidden lg:table-cell">Unit Cost</th>
+              <th class="p-3 lg:p-5 text-[9px] uppercase font-black tracking-widest text-gray-600">Qty</th>
+              <th class="p-3 lg:p-5 text-[9px] uppercase font-black tracking-widest text-gray-600">Amount</th>
+              <th class="p-3 lg:p-5 text-[9px] uppercase font-black tracking-widest text-gray-600 text-right sm:text-left"></th>
+            </tr>
           </thead>
           <tbody>${rows.length ? rows.join('') : `<tr><td colspan="7" class="py-16 text-center text-[10px] uppercase font-black text-gray-600">No expenses for this period.</td></tr>`}</tbody>
         </table>

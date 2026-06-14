@@ -9,86 +9,88 @@ requireAuth(['admin'], 'stock:view');
 renderHeader("Active Stock");
 ?>
 
-<div class="flex-1 w-full bg-[#0f1110] py-10 px-4 lg:px-10 xl:px-16">
+<div class="flex-1 w-full bg-[#0f1110] py-4 lg:py-10 px-4 lg:px-10 xl:px-16 transition-all">
   <div class="max-w-[1600px] mx-auto">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+    <div class="flex flex-col lg:grid lg:grid-cols-12 gap-6 lg:gap-10 items-start">
 
       <!-- ═══════ SIDEBAR ═══════ -->
-      <aside class="lg:col-span-3 space-y-6 sticky top-24">
+      <aside class="lg:col-span-3 space-y-4 lg:space-y-6 lg:sticky lg:top-24 w-full">
 
         <!-- Quick Stats -->
-        <div class="p-6 rounded-2xl border border-gray-700/50 bg-gray-800/80">
-          <div class="flex items-center gap-4 mb-6">
-            <div class="w-12 h-12 rounded-xl bg-[#c5a059]/10 border border-[#c5a059]/20 flex items-center justify-center text-[#c5a059]">
-              <i data-lucide="shopping-cart" class="w-6 h-6"></i>
+        <div class="p-4 lg:p-6 rounded-xl lg:rounded-2xl border border-gray-700/50 bg-gray-800/80 transition-all">
+          <div class="flex items-center gap-3 lg:gap-4 mb-4 lg:mb-6">
+            <div class="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-[#c5a059]/10 border border-[#c5a059]/20 flex items-center justify-center text-[#c5a059]">
+              <i data-lucide="shopping-cart" class="w-5 lg:w-6 h-5 lg:h-6"></i>
             </div>
             <div>
-              <h2 class="text-xl font-bold text-gray-200">POS Stock</h2>
+              <h2 class="text-lg lg:text-xl font-bold text-gray-200 leading-none mb-1">POS Stock</h2>
               <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Active Inventory</p>
             </div>
           </div>
 
-          <div class="space-y-4">
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">POS Inventory Value</p>
-              <h3 id="stat-pos-value" class="text-2xl font-bold text-white">0.00 Br</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 lg:flex lg:flex-col gap-3 lg:space-y-4">
+            <div class="bg-gray-900/40 p-4 rounded-xl border border-gray-700/30">
+              <p class="text-[10px] uppercase tracking-wider text-gray-500 mb-1">POS Value</p>
+              <h3 id="stat-pos-value" class="text-xl lg:text-2xl font-bold text-white">0 Br</h3>
             </div>
-            <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
-              <p id="stat-low-stock" class="text-xl font-bold text-amber-400">0</p>
-              <p class="text-[10px] font-semibold uppercase tracking-wider text-amber-500">Low Stock Items</p>
+            <div class="p-4 rounded-xl bg-amber-500/5 border border-amber-500/10">
+              <p class="text-[10px] uppercase tracking-wider text-amber-600 mb-1">Low Stock</p>
+              <h3 id="stat-low-stock" class="text-xl lg:text-2xl font-bold text-amber-400">0</h3>
             </div>
-            <div class="p-4 rounded-xl bg-gray-900 border border-gray-700">
-              <p id="stat-in-store" class="text-xl font-bold text-gray-300">0</p>
-              <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Units in Bulk Store</p>
+            <div class="p-4 rounded-xl bg-gray-900/40 border border-gray-700/30">
+              <p class="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Bulk Units</p>
+              <h3 id="stat-in-store" class="text-xl lg:text-2xl font-bold text-gray-300">0</h3>
             </div>
           </div>
         </div>
 
-        <!-- Restock CTA -->
-        <a href="store.php" class="block p-5 rounded-2xl border border-gray-700/50 bg-gray-800/80 hover:bg-gray-800 transition-colors no-underline group relative overflow-hidden">
+        <!-- Restock CTA (Hidden on small mobile to save space) -->
+        <a href="store.php" class="hidden sm:block p-4 lg:p-5 rounded-xl lg:rounded-2xl border border-gray-700/50 bg-gray-800/80 hover:bg-gray-800 transition-all no-underline group relative overflow-hidden">
           <div class="absolute -right-4 -top-4 opacity-[0.05] group-hover:rotate-12 transition-transform duration-500">
-            <i data-lucide="package-plus" class="w-20 h-20 text-[#c5a059]"></i>
+            <i data-lucide="package-plus" class="w-16 lg:w-20 h-16 lg:h-20 text-[#c5a059]"></i>
           </div>
-          <h3 class="text-xs font-semibold uppercase tracking-wider text-[#c5a059] mb-2">Need to Restock?</h3>
-          <p class="text-sm text-gray-400 font-semibold mb-4 leading-relaxed">
-            Transfer items from bulk storage to make them available for POS sales.
+          <h3 class="text-[10px] font-semibold uppercase tracking-wider text-[#c5a059] mb-1">Restock</h3>
+          <p class="text-xs text-gray-400 font-semibold mb-3 leading-relaxed hidden lg:block">
+            Transfer items from bulk storage for POS sales.
           </p>
-          <div class="flex items-center gap-2 text-[#c5a059] text-xs font-bold uppercase tracking-wider">
-            Go to Store Hub <i data-lucide="arrow-right" class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform"></i>
+          <div class="flex items-center gap-2 text-[#c5a059] text-[10px] font-bold uppercase tracking-wider">
+            Go to Store <i data-lucide="arrow-right" class="w-3 h-3 group-hover:translate-x-1 transition-transform"></i>
           </div>
         </a>
       </aside>
 
       <!-- ═══════ MAIN ═══════ -->
-      <main class="lg:col-span-9 space-y-8">
+      <main class="lg:col-span-9 space-y-6 lg:space-y-8 w-full">
 
         <!-- Header -->
-        <div class="flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <div class="flex items-center gap-3">
-              <i data-lucide="shopping-cart" class="w-6 h-6 text-[#c5a059]"></i>
-              <h1 class="text-2xl font-bold text-gray-200">Active Stock</h1>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="sm:hidden w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center text-[#c5a059]">
+              <i data-lucide="shopping-cart" class="w-4 h-4"></i>
             </div>
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-1">Inventory currently available for POS sales</p>
+            <div>
+              <h1 class="text-xl lg:text-2xl font-bold text-gray-200 leading-tight">Active Stock</h1>
+              <p class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mt-0.5">Available for POS sales</p>
+            </div>
           </div>
 
           <!-- Search + Export -->
-          <div class="flex items-center gap-2">
-            <div class="relative">
-              <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
-              <input type="text" oninput="handleSearch(event)" placeholder="Search items..."
-                class="bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:border-[#c5a059] outline-none w-52 transition-colors placeholder:text-gray-500">
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <div class="relative flex-1 sm:flex-initial">
+              <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+              <input type="text" oninput="handleSearch(event)" placeholder="Search..."
+                class="bg-gray-800 border border-gray-700/50 rounded-lg pl-9 pr-4 py-2 text-xs lg:text-sm text-white focus:border-[#c5a059] outline-none w-full sm:w-48 transition-all">
             </div>
             <!-- Export Dropdown -->
             <div id="export-btn-wrap" class="relative flex items-center gap-2">
               <button onclick="clearAllStockQuantities()"
-                class="flex items-center gap-2 px-3 py-2 rounded-lg border border-red-500/20 bg-red-500/10 text-xs font-semibold text-red-500 hover:bg-red-500 hover:text-white transition-colors">
-                <i data-lucide="trash-2" class="w-4 h-4"></i> Clear All
+                class="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-500/20 bg-red-500/10 text-[10px] font-bold uppercase text-red-500 hover:bg-red-500 hover:text-white transition-colors">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">Clear</span>
               </button>
               <button id="export-btn" onclick="toggleExport()"
-                class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-700 bg-gray-800 text-xs font-semibold text-gray-400 hover:text-white transition-colors">
-                <i data-lucide="download" class="w-4 h-4"></i> Export
-                <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                class="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-700 bg-gray-800 text-[10px] font-bold uppercase text-gray-400 hover:text-white">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">Export</span>
+                <i data-lucide="chevron-down" class="w-3 h-3"></i>
               </button>
               <!-- Dropdown -->
               <div id="export-dropdown" class="hidden absolute right-0 top-full mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50 overflow-hidden py-1">
@@ -113,9 +115,11 @@ renderHeader("Active Stock");
             <table class="w-full text-left">
               <thead class="bg-gray-800/50 border-b border-gray-700/50">
                 <tr>
-                  <?php foreach(['Item','Category','Active Stock','Status','Management'] as $h): ?>
-                  <th class="p-4 text-xs font-semibold uppercase tracking-wider text-gray-500"><?= $h ?></th>
-                  <?php endforeach; ?>
+                  <th class="p-3 lg:p-4 text-[10px] lg:text-xs font-semibold uppercase tracking-wider text-gray-500">Item</th>
+                  <th class="p-3 lg:p-4 text-[10px] lg:text-xs font-semibold uppercase tracking-wider text-gray-500 hidden sm:table-cell">Category</th>
+                  <th class="p-3 lg:p-4 text-[10px] lg:text-xs font-semibold uppercase tracking-wider text-gray-500 text-center lg:text-left">Stock</th>
+                  <th class="p-3 lg:p-4 text-[10px] lg:text-xs font-semibold uppercase tracking-wider text-gray-500 text-center lg:text-left">Status</th>
+                  <th class="p-3 lg:p-4 text-[10px] lg:text-xs font-semibold uppercase tracking-wider text-gray-500 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody id="stock-tbody"></tbody>
