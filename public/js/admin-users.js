@@ -113,21 +113,23 @@ function renderUserCard(u) {
     return `
         <div class="bg-gray-800/60 p-6 rounded-2xl border border-gray-700/50 hover:bg-gray-800 hover:border-[#c5a059]/30 transition-colors group relative ${isDeactivated ? 'opacity-50 grayscale border-dashed border-gray-600' : ''}">
             <!-- Badges -->
-            <div class="absolute top-6 right-6 flex items-center gap-2">
-                ${isMe ? '<span class="px-2.5 py-1 rounded-md bg-[#1a1712] text-[#c5a059] border border-[#c5a059]/20 text-xs font-bold uppercase tracking-wider">You</span>' : ''}
-                <span class="px-2.5 py-1 rounded-md ${isActive ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'} border text-xs font-bold uppercase tracking-wider">
-                    ${isActive ? 'Active' : 'Deactivated'}
-                </span>
-            </div>
-
-            <!-- Header -->
-            <div class="flex items-center gap-4 mb-6">
-                <div class="w-12 h-12 rounded-xl ${roleColor} flex items-center justify-center border">
-                    <i data-lucide="${roleIcon}" class="w-5 h-5"></i>
+            <div class="flex items-center justify-between gap-4 mb-6">
+                <!-- Header -->
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl ${roleColor} flex items-center justify-center border shrink-0">
+                        <i data-lucide="${roleIcon}" class="w-5 h-5"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="text-base font-bold text-gray-200 truncate ${isDeactivated ? 'line-through opacity-40' : ''}">${u.name}</h3>
+                        <p class="text-[10px] font-semibold text-gray-500 truncate">${u.email}</p>
+                    </div>
                 </div>
-                <div>
-                    <h3 class="text-lg font-bold text-gray-200 ${isDeactivated ? 'line-through opacity-40' : ''}">${u.name}</h3>
-                    <p class="text-xs font-semibold text-gray-500 truncate max-w-[200px]">${u.email}</p>
+
+                <div class="flex flex-col items-end gap-1.5 shrink-0">
+                    ${isMe ? '<span class="px-2 py-0.5 rounded bg-[#1a1712] text-[#c5a059] border border-[#c5a059]/20 text-[9px] font-bold uppercase tracking-wider">You</span>' : ''}
+                    <span class="px-2 py-0.5 rounded ${isActive ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'} border text-[9px] font-bold uppercase tracking-wider">
+                        ${isActive ? 'Active' : 'Deactivated'}
+                    </span>
                 </div>
             </div>
 
@@ -185,11 +187,11 @@ function renderUserCard(u) {
                 </span>
                 <div class="flex items-center gap-2">
                     ${!isMe ? `
-                        <button onclick="toggleActive('${u.id}', ${!u.isActive})" class="w-9 h-9 rounded-lg bg-gray-800 border border-gray-700 hover:bg-gray-700 flex items-center justify-center transition-colors ${isDeactivated ? 'text-emerald-500' : 'text-red-500'}">
+                        <button data-id="${u.id}" data-status="${!u.isActive}" class="toggle-btn w-9 h-9 rounded-lg bg-gray-800 border border-gray-700 hover:bg-gray-700 flex items-center justify-center transition-colors ${isDeactivated ? 'text-emerald-500' : 'text-red-500'}">
                             <i data-lucide="${isDeactivated ? 'eye' : 'eye-off'}" class="w-4 h-4"></i>
                         </button>
                     ` : ''}
-                    <button onclick="editUser('${u.id}')" class="w-9 h-9 rounded-lg bg-gray-800 border border-gray-700 hover:bg-gray-700 flex items-center justify-center transition-colors text-blue-400">
+                    <button data-id="${u.id}" class="edit-btn w-9 h-9 rounded-lg bg-gray-800 border border-gray-700 hover:bg-gray-700 flex items-center justify-center transition-colors text-blue-400 relative z-20">
                         <i data-lucide="pencil" class="w-4 h-4"></i>
                     </button>
                     ${!isMe ? `
@@ -235,8 +237,36 @@ window.closeModal = () => {
 };
 
 window.editUser = (id) => {
-    const user = state.users.find(u => u.id == id);
-    if (!user) return;
+    const searchId = String(id).trim();
+    console.log('[Staff] Edit requested for ID:', searchId);
+
+    // Strategy 1: Direct Match
+    let user = state.users.find(u => String(u.id).trim() === searchId);
+    
+    // Strategy 2: Fallback for Super Admin (Match by currentUserId)
+    if (!user && window.currentUserId) {
+        if (searchId === String(window.currentUserId).trim()) {
+            user = state.users.find(u => String(u.id).trim() === String(window.currentUserId).trim());
+        }
+    }
+
+    // Strategy 3: Global Fallback for Super Admin (Match by SUPER_ADMIN_ID)
+    if (!user && window.SUPER_ADMIN_ID) {
+        if (searchId === String(window.SUPER_ADMIN_ID).trim()) {
+             user = state.users.find(u => String(u.id).trim() === String(window.SUPER_ADMIN_ID).trim());
+        }
+    }
+
+    // Strategy 4: Soft Match (Role + Admin status) if it's the current user's card
+    if (!user && searchId === String(window.currentUserId).trim()) {
+        user = state.users.find(u => u.role === 'admin' && (u.email.includes('kidayos') || u.name.includes('Super')));
+    }
+    
+    if (!user) {
+        console.error('[Staff] Edit Failed: User not found in state:', searchId);
+        alert('Error: Could not find user data. Please refresh.');
+        return;
+    }
 
     state.editingUser = user;
     state.formData = {
@@ -443,3 +473,22 @@ function showToast(title, msg) {
 
 // Global listeners
 document.addEventListener('DOMContentLoaded', fetchAll);
+
+// DELEGATED EVENT LISTENER FOR ROBUST ACTION HANDLING
+document.addEventListener('click', (e) => {
+    const editBtn = e.target.closest('.edit-btn');
+    if (editBtn) {
+        const id = editBtn.getAttribute('data-id');
+        console.log('[Staff] Delegated Edit Click:', id);
+        if (id) window.editUser(id);
+        return;
+    }
+
+    const toggleBtn = e.target.closest('.toggle-btn');
+    if (toggleBtn) {
+        const id = toggleBtn.getAttribute('data-id');
+        const status = toggleBtn.getAttribute('data-status') === 'true';
+        if (id) window.toggleActive(id, status);
+        return;
+    }
+});

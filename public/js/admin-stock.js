@@ -182,8 +182,8 @@ window.exportCSV = function(filter) {
         return [i.name, i.category||'', Math.round(i.quantity||0), i.unit||'pcs', status, Math.round(i.minLimit||0), Math.round(i.unitCost||0), Math.round((i.quantity||0)*(i.unitCost||0))];
     });
 
-    const csv = [headers, ...data].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const csvString = [headers, ...data].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a'); a.href = url; a.download = `stock-${filter}.csv`; a.click();
     URL.revokeObjectURL(url);

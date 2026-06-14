@@ -46,13 +46,13 @@ function routeUserBasedOnRole($role) {
             if (in_array('overview:view', $perms)) return 'admin.php';
             
             // Priority 3: Feature Specific Hubs (Granular checks)
-            if (!empty(preg_grep('/^orders:/', $perms))) return 'orders.php';
-            if (!empty(preg_grep('/^reports:/', $perms))) return 'reports.php';
-            if (!empty(preg_grep('/^stock:/', $perms))) return 'stock.php';
-            if (!empty(preg_grep('/^store:/', $perms))) return 'store.php';
-            if (!empty(preg_grep('/^users:/', $perms))) return 'staff.php';
-            if (!empty(preg_grep('/^services:/', $perms))) return 'services.php';
-            if (!empty(preg_grep('/^settings:/', $perms))) return 'settings.php';
+            if (hasPermissionPattern('/^orders:/')) return 'orders.php';
+            if (hasPermissionPattern('/^reports:/')) return 'reports.php';
+            if (hasPermissionPattern('/^stock:/')) return 'stock.php';
+            if (hasPermissionPattern('/^store:/')) return 'store.php';
+            if (hasPermissionPattern('/^users:/')) return 'staff.php';
+            if (hasPermissionPattern('/^services:/')) return 'services.php';
+            if (hasPermissionPattern('/^settings:/')) return 'settings.php';
             
             return 'index.php';
         default:

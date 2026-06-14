@@ -100,13 +100,8 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
                     </div>
                 </div>
 
-                <div class="flex gap-2 shrink-0 mb-3">
-                    <button type="button" id="main-tab-food" data-tab="Food" class="main-cat-tab flex-1 py-3 rounded-xl text-sm font-bold border transition-all">
-                        Food <span id="food-count" class="opacity-60"></span>
-                    </button>
-                    <button type="button" id="main-tab-drinks" data-tab="Drinks" class="main-cat-tab flex-1 py-3 rounded-xl text-sm font-bold border transition-all">
-                        Drinks <span id="drinks-count" class="opacity-60"></span>
-                    </button>
+                <div class="flex gap-2 shrink-0 mb-3" id="main-tabs-container">
+                    <!-- Dynamic tabs populated by JS -->
                 </div>
 
                 <div class="relative group/cat-slider mb-4">
@@ -144,13 +139,8 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
                 </div>
 
                 <!-- Tabs -->
-                <div class="flex gap-2 shrink-0 mb-6">
-                    <button type="button" id="cart-tab-food" data-tab="Food" class="cart-cat-tab flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-2">
-                        <i data-lucide="utensils-crossed" class="w-3.5 h-3.5"></i> BUTCHER
-                    </button>
-                    <button type="button" id="cart-tab-drinks" data-tab="Drinks" class="cart-cat-tab flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-2">
-                        <i data-lucide="wine" class="w-3.5 h-3.5"></i> DRINKS
-                    </button>
+                <div class="flex gap-2 shrink-0 mb-6" id="cart-tabs-container">
+                    <!-- Dynamic cart tabs populated by JS -->
                 </div>
 
                 <!-- Input Boxes -->
@@ -313,8 +303,8 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
     let floorPlan = [];
     let allRooms = [];
     let cart = [];
-    let activeTab = 'Food';
-    let selectedCategory = '';
+    let activeTab = '';
+    let mainCategories = [];
     let activeFloorId = '';
     let appName = 'ABE HOTEL';
     let enablePrinting = true;
@@ -565,7 +555,10 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
     function getFilteredItems() {
         const nameQ = document.getElementById('search-name').value.toLowerCase().trim();
         const idQ = document.getElementById('search-id').value.trim();
-        let list = allItems.filter(i => i.mainCategory === activeTab);
+        let list = allItems;
+        if (activeTab !== 'all') {
+            list = list.filter(i => i.mainCategory === activeTab);
+        }
         if (selectedCategory) list = list.filter(i => i.category === selectedCategory);
         if (nameQ) list = list.filter(i => (i.name || '').toLowerCase().includes(nameQ) || (i.category || '').toLowerCase().includes(nameQ));
         if (idQ) list = list.filter(i => (i.menuId || '').toString().includes(idQ));
@@ -748,7 +741,8 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
 
     function renderCategoryChips() {
         const bar = document.getElementById('category-chips');
-        const cats = [...new Set(allItems.filter(i => i.mainCategory === activeTab).map(i => i.category).filter(Boolean))].sort();
+        const itemsToUse = activeTab === 'all' ? allItems : allItems.filter(i => i.mainCategory === activeTab);
+        const cats = [...new Set(itemsToUse.map(i => i.category).filter(Boolean))].sort();
         const genBtn = (label, cat, active) => `
             <button type="button" data-cat="${esc(cat)}" 
                     class="cat-chip shrink-0 px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${active ? 'bg-amber-500 text-black border-amber-500' : 'bg-gray-900/40 border-gray-800 text-gray-500 hover:text-gray-300'}">
@@ -760,29 +754,68 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
     }
 
     function renderMainTabs() {
-        const foodN = allItems.filter(i => i.mainCategory === 'Food').length;
-        const drinkN = allItems.filter(i => i.mainCategory === 'Drinks').length;
+        const mainContainer = document.getElementById('main-tabs-container');
+        const cartContainer = document.getElementById('cart-tabs-container');
         
-        ['Food', 'Drinks'].forEach(tab => {
-            const on = activeTab === tab;
-            const mainCls = on ? 'bg-white/10 text-white border-gray-600' : 'bg-gray-900/20 border-gray-800/50 text-gray-600 hover:text-gray-400';
-            const cartCls = on ? 'bg-gray-900 text-white border-gray-700 shadow-lg' : 'bg-[#1a1c1b]/30 border-gray-800/40 text-gray-600 hover:text-gray-400';
-            
-            const mainBtn = document.getElementById(tab === 'Food' ? 'main-tab-food' : 'main-tab-drinks');
-            if (mainBtn) {
-                mainBtn.className = `main-cat-tab flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border transition-all ${mainCls}`;
-                const mainIcon = tab === 'Food' ? 'utensils-crossed' : 'wine';
-                mainBtn.innerHTML = `<span class="inline-flex items-center gap-2"><i data-lucide="${mainIcon}" class="w-3.5 h-3.5"></i>${esc(tab)}</span> <span class="opacity-30 ml-1">(${tab === 'Food' ? foodN : drinkN})</span>`;
-            }
-            
-            const cartBtn = document.getElementById(tab === 'Food' ? 'cart-tab-food' : 'cart-tab-drinks');
-            if (cartBtn) {
-                cartBtn.className = `cart-cat-tab flex-1 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-2 ${cartCls}`;
-                const cartIcon = tab === 'Food' ? 'utensils-crossed' : 'wine';
-                const cartLabel = tab === 'Food' ? 'BUTCHER' : 'DRINKS';
-                cartBtn.innerHTML = `<i data-lucide="${cartIcon}" class="w-3.5 h-3.5"></i> ${cartLabel}`;
-            }
-        });
+        // Detect all active main categories from allItems
+        const cats = [...new Set(allItems.map(i => i.mainCategory || 'Food'))].sort();
+        mainCategories = cats;
+
+        // Set default active tab
+        if (!activeTab || (activeTab !== 'all' && !cats.includes(activeTab))) {
+            activeTab = cats.includes('Food') ? 'Food' : (cats[0] || 'all');
+        }
+        
+        const allCats = ['all', ...cats];
+
+        if (mainContainer) {
+            mainContainer.innerHTML = allCats.map(tab => {
+                const on = activeTab === tab;
+                const count = tab === 'all' ? allItems.length : allItems.filter(i => i.mainCategory === tab).length;
+                const cls = on ? 'bg-white/10 text-white border-gray-600' : 'bg-gray-900/20 border-gray-800/50 text-gray-600 hover:text-gray-400';
+                
+                let icon = 'layers';
+                if (tab === 'Food') icon = 'utensils-crossed';
+                else if (tab === 'Drinks') icon = 'wine';
+                else if (tab === 'all') icon = 'layout-grid';
+
+                const label = tab === 'all' ? 'All' : tab;
+                
+                return `
+                    <button type="button" onclick="activeTab='${tab}';selectedCategory='';renderAll()" 
+                        class="main-cat-tab flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border transition-all ${cls}">
+                        <span class="inline-flex items-center gap-2">
+                            <i data-lucide="${icon}" class="w-3.5 h-3.5"></i>${esc(label)}
+                        </span> 
+                        <span class="opacity-30 ml-1">(${count})</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        if (cartContainer) {
+            cartContainer.innerHTML = allCats.map(tab => {
+                const on = activeTab === tab;
+                const cls = on ? 'bg-gray-900 text-white border-gray-700 shadow-lg' : 'bg-[#1a1c1b]/30 border-gray-800/40 text-gray-600 hover:text-gray-400';
+                let icon = 'layers';
+                if (tab === 'Food') icon = 'utensils-crossed';
+                else if (tab === 'Drinks') icon = 'wine';
+                else if (tab === 'all') icon = 'layout-grid';
+
+                let label = tab.toUpperCase();
+                if (tab === 'Food') label = 'BUTCHER';
+                else if (tab === 'Drinks') label = 'DRINKS';
+                else if (tab === 'all') label = 'ALL ITEMS';
+                
+                return `
+                    <button type="button" onclick="activeTab='${tab}';selectedCategory='';renderAll()" 
+                        class="cart-cat-tab flex-1 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-2 ${cls}">
+                        <i data-lucide="${icon}" class="w-3.5 h-3.5"></i> ${label}
+                    </button>
+                `;
+            }).join('');
+        }
+        
         lucide.createIcons();
     }
 

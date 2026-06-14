@@ -133,10 +133,8 @@ renderHeader($title);
             
             data.collection = collectionName;
             
-            if (!id && AdminServices.menuManager.state.activeTab !== 'all') {
-                data.mainCategory = AdminServices.menuManager.state.activeTab;
-            } else if (!id) {
-                 data.mainCategory = 'Food';
+            if (!id) {
+                data.mainCategory = AdminServices.menuManager.state.activeTab || 'Food';
             }
             
             await fetch(url, { 

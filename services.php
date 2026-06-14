@@ -212,6 +212,8 @@ $menuTiers = db('menuTiers')->findMany(['where' => ['isDeleted' => false]]) ?: [
                         <select id="menu-main-cat" class="inp appearance-none">
                             <option value="Food">Food</option>
                             <option value="Drinks">Drinks</option>
+                            <option value="Services">Services</option>
+                            <option value="Other">Room Items / Other</option>
                         </select>
                     </div>
                 </div>

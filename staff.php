@@ -18,25 +18,25 @@ $currentUser = getCurrentUser();
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
             
             <!-- SIDEBAR (lg:col-span-3) -->
-            <div class="lg:col-span-3 space-y-8 sticky top-24">
+            <div class="lg:col-span-3 space-y-8 lg:sticky lg:top-24 z-10">
                 
                 <!-- Staff Header Card -->
-                <div class="glass p-8 rounded-2xl border border-gray-700/50 bg-gray-800/80 relative overflow-hidden group">
+                <div class="glass p-6 lg:p-8 rounded-2xl border border-gray-700/50 bg-gray-800/80 relative overflow-hidden group">
                     <div class="absolute -right-4 -bottom-4 opacity-[0.03] transition-transform duration-1000">
                         <i data-lucide="users" class="w-32 h-32 text-[#c5a059]"></i>
                     </div>
                     
-                    <div class="flex items-center gap-4 mb-8">
+                    <div class="flex items-center gap-4 mb-6 lg:mb-8">
                         <div class="w-12 h-12 rounded-xl bg-gray-900 border border-gray-700 flex items-center justify-center text-[#c5a059]">
                             <i data-lucide="users" class="w-6 h-6"></i>
                         </div>
                         <div>
-                            <h2 class="text-2xl font-bold text-white">Staff</h2>
-                            <p id="staff-count" class="text-xs font-semibold uppercase tracking-wider text-gray-500">Total Active Staff: ...</p>
+                            <h2 class="text-xl lg:text-2xl font-bold text-white">Staff</h2>
+                            <p id="staff-count" class="text-[10px] lg:text-xs font-semibold uppercase tracking-wider text-gray-500">Total Active Staff: ...</p>
                         </div>
                     </div>
 
-                    <button onclick="openCreateModal()" class="w-full py-3.5 rounded-xl bg-[#c5a059] text-gray-900 font-bold text-sm tracking-wide hover:bg-[#b08d4a] active:scale-95 transition-colors flex items-center justify-center gap-2">
+                    <button onclick="openCreateModal()" class="w-full py-3.5 rounded-xl bg-[#c5a059] text-gray-900 font-bold text-xs lg:text-sm tracking-wide hover:bg-[#b08d4a] active:scale-95 transition-colors flex items-center justify-center gap-2">
                         <i data-lucide="plus" class="w-4 h-4"></i>
                         Add New Member
                     </button>
@@ -185,7 +185,8 @@ $currentUser = getCurrentUser();
 
 <script>
     window.currentUserId = <?php echo json_encode($currentUser['id']); ?>;
+    window.SUPER_ADMIN_ID = <?php echo json_encode(SUPER_ADMIN_ID); ?>;
 </script>
-<script src="public/js/admin-users.js"></script>
+<script src="public/js/admin-users.js?v=1.1"></script>
 
 <?php renderFooter(); ?>

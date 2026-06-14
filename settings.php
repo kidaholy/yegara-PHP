@@ -119,7 +119,7 @@ renderHeader("Settings");
                     <div id="alert" class="alert hidden p-4 text-sm font-bold text-center"></div>
 
                     <!-- Tab Nav -->
-                    <div class="flex gap-1 border-b border-gray-700/50 px-6 pt-5">
+                    <div class="flex gap-1 border-b border-gray-700/50 px-6 pt-5 overflow-x-auto no-scrollbar">
                         <button onclick="AdminSettings.switchTab('branding')" id="tab-branding"
                             class="tab-btn px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 border-[#c5a059] text-[#c5a059] transition-all">Branding</button>
                         <button onclick="AdminSettings.switchTab('categories')" id="tab-categories"

@@ -24,16 +24,25 @@ try {
 
         if ($fullMode) {
             // Full data for the staff admin grid — exclude hashed password
-            $result = array_map(function($u) {
+            $result = [];
+            foreach ($users as $u) {
+                // HIDE SUPER ADMIN from others (but allow them to see themselves)
+                if ($u['id'] === SUPER_ADMIN_ID && !isSuperAdmin()) {
+                    continue;
+                }
                 unset($u['password']);
-                return $u;
-            }, $users);
+                $result[] = $u;
+            }
             sendJson($result);
         } else {
             // Minimal data for assignment dropdowns
-            $minimal = array_map(function($u) {
-                return ['id' => $u['id'], 'name' => $u['name'], 'role' => $u['role']];
-            }, $users);
+            $minimal = [];
+            foreach ($users as $u) {
+                if ($u['id'] === SUPER_ADMIN_ID && !isSuperAdmin()) {
+                    continue;
+                }
+                $minimal[] = ['id' => $u['id'], 'name' => $u['name'], 'role' => $u['role']];
+            }
             sendJson(['status' => 'success', 'data' => $minimal]);
         }
     }
@@ -67,6 +76,10 @@ try {
 
         // If just toggling active status
         if (isset($data['isActive']) && count($data) === 1) {
+            // PROTECT SUPER ADMIN from deactivation by OTHERS
+            if ($id === SUPER_ADMIN_ID && !isSuperAdmin()) {
+                sendJson(['message' => 'Super Admin cannot be deactivated'], 403);
+            }
             $db->update(['where' => ['id' => $id], 'data' => ['isActive' => $data['isActive']]]);
             sendJson(['message' => 'Status updated']);
         }
@@ -92,6 +105,12 @@ try {
         requireAuth(['admin'], 'users:delete');
         $id = $_GET['id'] ?? null;
         if (!$id) sendJson(['message' => 'ID required'], 400);
+
+        // PROTECT SUPER ADMIN from deletion
+        if ($id === SUPER_ADMIN_ID) {
+            sendJson(['message' => 'Super Admin cannot be deleted'], 403);
+        }
+
         $db->update(['where' => ['id' => $id], 'data' => ['isDeleted' => true]]);
         sendJson(['message' => 'User deleted']);
     }

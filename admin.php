@@ -106,7 +106,7 @@ require_once 'includes/layout.php';
         <!-- SECTION 3: QUICK ACTIONS GRID -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
             
-            <?php if (hasPermission('reports:view') || !empty(preg_grep('/^reports:/', $_SESSION['permissions'] ?? []))): ?>
+            <?php if (hasPermission('reports:view') || hasPermissionPattern('/^reports:/')): ?>
             <a href="reports.php" class="group h-full">
                 <div class="glass p-8 rounded-2xl border border-gray-700/50 bg-gray-800/60 hover:bg-gray-800 transition-colors flex flex-col h-full">
                     <div class="flex items-start justify-between mb-8">

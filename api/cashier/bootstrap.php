@@ -83,7 +83,8 @@ try {
         }
 
         $mainCategory = $item['mainCategory'] ?? 'Food';
-        if (!in_array($mainCategory, ['Food', 'Drinks'], true)) {
+        // Allow dynamic main categories (e.g. Services, Laundry, etc.)
+        if (empty($mainCategory)) {
             $mainCategory = 'Food';
         }
 

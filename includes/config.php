@@ -15,16 +15,9 @@ define('SESSION_LIFETIME', 7 * 24 * 60 * 60); // 7 days in seconds
 
 // Production Settings (Disable display errors to keep UI clean)
 ini_set('display_errors', 0);
-error_reporting(E_ALL & ~E_NOTICE);
+ini_set('display_startup_errors', 0);
+error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
 define('JWT_SECRET', 'your-secret-key-change-this-in-production'); // Kept for consistency if needed
-
-// Timezone (matching the existing app)
-date_default_timezone_set('Africa/Addis_Ababa');
-
-// Error reporting (disable in production)
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
 // Security Headers
 header("X-Content-Type-Options: nosniff");

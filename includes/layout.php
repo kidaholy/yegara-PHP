@@ -155,6 +155,11 @@ function renderHeader($title = "Management System", $options = []) {
                 border-radius: 9999px; 
             }
             ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+
+            /* Mobile Menu State */
+            #mobile-menu.active {
+                transform: translateX(0);
+            }
         </style>
         <script>
             tailwind.config = {
@@ -228,15 +233,70 @@ function renderHeader($title = "Management System", $options = []) {
             </div>
 
             <!-- Right Side -->
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 md:gap-4">
                 <span class="hidden lg:block text-sm font-medium text-white/80">
                     Hi, <?php echo htmlspecialchars($user['name'] ?? 'User'); ?>!
                 </span>
-                <a href="logout.php" class="px-4 py-2 bg-white/10 hover:bg-red-500/80 hover:text-white text-white text-sm font-medium rounded-lg transition-colors border border-white/10">
+                <a href="logout.php" class="px-3 py-1.5 md:px-4 md:py-2 bg-white/10 hover:bg-red-500/80 hover:text-white text-white text-sm font-medium rounded-lg transition-colors border border-white/10">
                     Logout
                 </a>
+                
+                <!-- Mobile Menu Toggle -->
+                <button id="mobile-menu-toggle" class="md:hidden p-2 text-white/70 hover:text-white transition-colors">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
             </div>
         </nav>
+
+        <!-- Mobile Navigation Drawer -->
+        <div id="mobile-menu" class="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl translate-x-full transition-transform duration-300 md:hidden">
+            <div class="flex flex-col h-full">
+                <!-- Mobile Header -->
+                <div class="h-[60px] px-6 flex items-center justify-between border-b border-white/10 bg-[#111413]">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+                            <span class="text-[8px] font-bold text-white"><?php echo htmlspecialchars(strtoupper(substr($appName, 0, 3))); ?></span>
+                        </div>
+                        <span class="text-white font-bold">Menu</span>
+                    </div>
+                    <button id="mobile-menu-close" class="p-2 text-white/70 hover:text-white transition-colors">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+
+                <!-- Mobile Body -->
+                <div class="flex-1 overflow-y-auto p-6 space-y-8">
+                    <div class="space-y-4">
+                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-[#c5a059]/40 border-b border-[#c5a059]/10 pb-2">Main Navigation</p>
+                        <div class="flex flex-col gap-1">
+                            <?php 
+                            if ($navMode === 'pos') {
+                                renderPosNavLinks($posTab);
+                            } elseif ($navMode === 'kitchen') {
+                                echo '<span class="text-sm font-bold uppercase tracking-[0.25em] text-white">Kitchen</span>';
+                            } else {
+                                // For standard admin, we use the sidebar links as they are more complete and include icons
+                                renderSidebarLinks($user['role']);
+                            }
+                            ?>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mobile Footer -->
+                <div class="p-6 border-t border-white/10 bg-[#111413]/50">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-[#c5a059]/20 flex items-center justify-center text-[#c5a059]">
+                            <i data-lucide="user" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-white"><?php echo htmlspecialchars($user['name'] ?? 'User'); ?></p>
+                            <p class="text-[10px] text-white/40 uppercase tracking-wider"><?php echo htmlspecialchars($user['role'] ?? ''); ?></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <?php endif; ?>
 
         <!-- Main Content -->
@@ -252,6 +312,34 @@ function renderFooter() {
 
         <script>
             lucide.createIcons();
+
+            // Mobile Menu Toggle Logic
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileToggle = document.getElementById('mobile-menu-toggle');
+            const mobileClose = document.getElementById('mobile-menu-close');
+
+            if (mobileToggle && mobileMenu) {
+                mobileToggle.addEventListener('click', () => {
+                    mobileMenu.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                });
+            }
+
+            if (mobileClose && mobileMenu) {
+                mobileClose.addEventListener('click', () => {
+                    mobileMenu.classList.remove('active');
+                    document.body.style.overflow = '';
+                });
+            }
+
+            // Close menu on link click
+            const mobileLinks = mobileMenu?.querySelectorAll('a');
+            mobileLinks?.forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.remove('active');
+                    document.body.style.overflow = '';
+                });
+            });
         </script>
     </body>
     </html>
@@ -278,7 +366,10 @@ function renderTopNavLinks($role) {
         $hasPerm = isset($link['perm']) && hasPermission($link['perm']);
         
         // Special case for reports: check any reports:* permission
-        if ($link['url'] === 'reports.php' && !empty(preg_grep('/^reports:/', $_SESSION['permissions'] ?? []))) {
+        $hasPerm = isset($link['perm']) && hasPermission($link['perm']);
+        
+        // Special case for reports: check any reports:* permission
+        if ($link['url'] === 'reports.php' && hasPermissionPattern('/^reports:/')) {
             $hasPerm = true;
         }
 
@@ -320,11 +411,15 @@ function renderSidebarLinks($role) {
     $links = [
         ['name' => __('dashboard'), 'icon' => 'layout-dashboard', 'url' => 'admin.php', 'roles' => ['admin'], 'perm' => 'overview:view'],
         ['name' => __('reception'), 'icon' => 'key-round', 'url' => 'services.php', 'roles' => ['receptionist', 'admin'], 'perm' => 'services:view'],
-        ['name' => __('cashier_pos'), 'icon' => 'shopping-cart', 'url' => 'cashier.php', 'roles' => ['cashier', 'admin'], 'perm' => 'cashier:access'],
+        ['name' => __('orders'), 'icon' => 'shopping-cart', 'url' => 'orders.php', 'roles' => ['admin', 'cashier'], 'perm' => 'orders:view'],
+        ['name' => __('cashier_pos'), 'icon' => 'monitor', 'url' => 'cashier.php', 'roles' => ['cashier', 'admin'], 'perm' => 'cashier:access'],
         ['name' => __('kitchen'), 'icon' => 'utensils', 'url' => 'chef.php', 'roles' => ['chef', 'admin'], 'perm' => 'chef:access'],
         ['name' => __('bar_monitor'), 'icon' => 'beer', 'url' => 'bar.php', 'roles' => ['bar', 'admin'], 'perm' => 'bar:access'],
+        ['name' => __('store'), 'icon' => 'door-closed', 'url' => 'store.php', 'roles' => ['admin', 'store_keeper'], 'perm' => 'store:view'],
+        ['name' => __('stock'), 'icon' => 'package', 'url' => 'stock.php', 'roles' => ['admin'], 'perm' => 'stock:view'],
         ['name' => __('strategic_reports'), 'icon' => 'bar-chart-3', 'url' => 'reports.php', 'roles' => ['admin'], 'perm' => 'reports:view'],
         ['name' => __('staff_directory'), 'icon' => 'users', 'url' => 'staff.php', 'roles' => ['admin'], 'perm' => 'users:view'],
+        ['name' => __('website_cms'), 'icon' => 'globe', 'url' => 'website_cms.php', 'roles' => ['admin'], 'perm' => 'settings:update'],
         ['name' => __('menu_settings'), 'icon' => 'settings', 'url' => 'settings.php', 'roles' => ['admin'], 'perm' => 'settings:view'],
     ];
 
@@ -335,7 +430,7 @@ function renderSidebarLinks($role) {
         $hasPerm = isset($link['perm']) && hasPermission($link['perm']);
         
         // Special case for reports
-        if ($link['url'] === 'reports.php' && !empty(preg_grep('/^reports:/', $_SESSION['permissions'] ?? []))) {
+        if ($link['url'] === 'reports.php' && hasPermissionPattern('/^reports:/')) {
             $hasPerm = true;
         }
 

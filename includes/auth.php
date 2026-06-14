@@ -15,6 +15,12 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 /**
+ * Super Admin Protection Constants
+ */
+define('SUPER_ADMIN_ID', '69c45a78ba1175fcacd0abd3');
+
+
+/**
  * Check if a user is logged in
  */
 function isAuthenticated() {
@@ -150,7 +156,9 @@ function login($email, $password) {
             $_SESSION['name'] = $user['name'];
             $_SESSION['email'] = $user['email'];
             $_SESSION['role'] = $user['role'];
-            $_SESSION['permissions'] = $user['permissions'] ?? [];
+            $_SESSION['permissions'] = is_array($user['permissions'] ?? []) 
+                ? ($user['permissions'] ?? []) 
+                : (json_decode($user['permissions'] ?? '[]', true) ?: []);
             $_SESSION['floorId'] = $user['floorId'] ?? null;
             
             return ['success' => true, 'user' => $user];
@@ -199,5 +207,33 @@ function hasPermission($permission) {
     if (!isAuthenticated()) return false;
     if (($_SESSION['role'] ?? '') === 'admin') return true;
     $permissions = $_SESSION['permissions'] ?? [];
+    if (!is_array($permissions)) {
+        $permissions = is_string($permissions) ? (json_decode($permissions, true) ?: []) : [];
+    }
     return in_array($permission, $permissions);
+}
+
+/**
+ * Check if the current user or a specific ID is the protected Super Admin
+ */
+function isSuperAdmin($userId = null) {
+    if ($userId === null) {
+        if (!isAuthenticated()) return false;
+        $userId = $_SESSION['user_id'];
+    }
+    return $userId === SUPER_ADMIN_ID;
+}
+
+
+/**
+ * Check if the current user has any permission matching a pattern (e.g. 'reports:*')
+ */
+function hasPermissionPattern($pattern) {
+    if (!isAuthenticated()) return false;
+    if (($_SESSION['role'] ?? '') === 'admin') return true;
+    $permissions = $_SESSION['permissions'] ?? [];
+    if (!is_array($permissions)) {
+        $permissions = is_string($permissions) ? (json_decode($permissions, true) ?: []) : [];
+    }
+    return !empty(preg_grep($pattern, $permissions));
 }

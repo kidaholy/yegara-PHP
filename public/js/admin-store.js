@@ -710,8 +710,8 @@ window.exportCSV = function(type) {
         rows = S.assets.map(a => [a.name, a.category||'', a.quantity||0, a.unit_price||a.unitPrice||0, a.total_value||a.totalValue||0, a.value_lost||a.valueLost||0, a.status||'', a.purchase_date||a.purchaseDate||'']);
         filename = 'fixed-assets.csv';
     }
-    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const csvString = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
     URL.revokeObjectURL(url);

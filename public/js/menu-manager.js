@@ -19,7 +19,8 @@ class MenuManager {
             items: [],
             categories: [],
             distributions: [],
-            activeTab: 'Food',        // Food | Drinks
+            activeTab: '',            // Auto-detected
+            mainCategories: [],       // Auto-detected from items
             searchQuery: '',
             selectedCategory: '',
             selectedDistribution: '',
@@ -90,9 +91,8 @@ class MenuManager {
                 <!-- Tab header -->
                 <div class="flex items-center justify-between flex-wrap gap-4">
                     <h2 class="text-lg font-bold text-gray-200">Menu Items</h2>
-                    <div class="flex gap-2">
-                        <button onclick="menuMgr.setActiveTab('Food')" id="mm-tab-food" class="mm-tab px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border transition-all">Food <span id="mm-food-count" class="opacity-50"></span></button>
-                        <button onclick="menuMgr.setActiveTab('Drinks')" id="mm-tab-drinks" class="mm-tab px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border transition-all">Drinks <span id="mm-drinks-count" class="opacity-50"></span></button>
+                    <div class="flex gap-2" id="mm-tabs-container">
+                        <!-- Dynamic tabs -->
                     </div>
                 </div>
                 <!-- Item grid -->
@@ -134,18 +134,31 @@ class MenuManager {
     }
 
     _renderTabs() {
-        const foodBtn = document.getElementById('mm-tab-food');
-        const drinkBtn = document.getElementById('mm-tab-drinks');
-        if (!foodBtn) return;
-        const foodCount = this.state.items.filter(i => i.mainCategory === 'Food').length;
-        const drinkCount = this.state.items.filter(i => i.mainCategory === 'Drinks').length;
-        document.getElementById('mm-food-count').textContent = `(${foodCount})`;
-        document.getElementById('mm-drinks-count').textContent = `(${drinkCount})`;
+        const container = document.getElementById('mm-tabs-container');
+        if (!container) return;
+
+        // Detect all active main categories
+        const cats = [...new Set(this.state.items.map(i => i.mainCategory || 'Food'))].sort();
+        this.state.mainCategories = cats;
+
+        // Set default tab if none active
+        if (!this.state.activeTab || (this.state.activeTab !== 'all' && !cats.includes(this.state.activeTab))) {
+            this.state.activeTab = cats.includes('Food') ? 'Food' : (cats[0] || 'all');
+        }
+
+        const allCats = ['all', ...cats];
         
-        [foodBtn, drinkBtn].forEach(b => {
-            const on = (b === foodBtn && this.state.activeTab === 'Food') || (b === drinkBtn && this.state.activeTab === 'Drinks');
-            b.className = `mm-tab px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border transition-all ${on ? 'bg-[#c5a059]/15 text-[#c5a059] border-[#c5a059]/30' : 'border-gray-600 text-gray-500 hover:text-gray-200 hover:border-gray-500'}`;
-        });
+        container.innerHTML = allCats.map(cat => {
+            const count = cat === 'all' ? this.state.items.length : this.state.items.filter(i => i.mainCategory === cat).length;
+            const on = this.state.activeTab === cat;
+            const label = cat === 'all' ? 'All Items' : cat;
+            return `
+                <button onclick="menuMgr.setActiveTab('${cat}')" 
+                    class="mm-tab px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border transition-all ${on ? 'bg-[#c5a059]/15 text-[#c5a059] border-[#c5a059]/30' : 'border-gray-600 text-gray-500 hover:text-gray-200 hover:border-gray-500'}">
+                    ${label} <span class="opacity-50">(${count})</span>
+                </button>
+            `;
+        }).join('');
     }
 
     _renderFilters() {
@@ -159,7 +172,11 @@ class MenuManager {
     }
 
     _getFiltered() {
-        let list = this.state.items.filter(i => i.mainCategory === this.state.activeTab);
+        let list = this.state.items;
+        if (this.state.activeTab !== 'all') {
+            list = list.filter(i => i.mainCategory === this.state.activeTab);
+        }
+        
         if (this.state.searchQuery) {
             const q = this.state.searchQuery.toLowerCase();
             list = list.filter(i => (i.name||'').toLowerCase().includes(q) || (i.menuId||'').toString().includes(q) || (i.category||'').toLowerCase().includes(q));
