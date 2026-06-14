@@ -91,14 +91,15 @@ class SettingsManager {
 
     // CATEGORIES METHODS
     public function getCategories($type = null) {
-        $where = $type ? ['group' => $type] : [];
+        $where = $type ? ['type' => $type] : [];
         $all = db('categories')->findMany(['where' => $where]);
         
         if ($type) return $all;
         
         $grouped = [];
         foreach ($all as $cat) {
-            $grouped[$cat['group']][] = $cat;
+            $grp = $cat['type'] ?? ($cat['group'] ?? 'menu');
+            $grouped[$grp][] = $cat;
         }
         return $grouped;
     }
