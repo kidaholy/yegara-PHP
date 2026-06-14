@@ -153,12 +153,28 @@ renderHeader("Settings");
                                     </button>
                                 </div>
                             </div>
-                            <div id="url-input-container">
-                                <input type="url" id="logoUrlInput" value="<?php echo htmlspecialchars($branding['logo_url'] ?? ''); ?>"
-                                    placeholder="Enter image URL..."
-                                    oninput="AdminSettings.updatePreviews(this.value)"
-                                    class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-[#c5a059] transition-colors">
-                                <input type="hidden" id="faviconUrlInput" value="<?php echo htmlspecialchars($branding['favicon_url'] ?? ($branding['logo_url'] ?? '')); ?>">
+                            <div id="url-input-container" class="space-y-4">
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black uppercase tracking-widest text-gray-500">Logo Image URL</label>
+                                    <input type="url" id="logoUrlInput" value="<?php echo htmlspecialchars($branding['logo_url'] ?? ''); ?>"
+                                        placeholder="Enter image URL..."
+                                        oninput="AdminSettings.updatePreviews(this.value)"
+                                        class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-[#c5a059] transition-colors">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black uppercase tracking-widest text-gray-500">Favicon URL (Tab Icon)</label>
+                                    <div class="flex gap-4">
+                                        <div class="w-11 h-11 rounded-lg border border-gray-700 bg-gray-900 flex items-center justify-center overflow-hidden shrink-0">
+                                            <img id="faviconPreview" src="<?php echo htmlspecialchars($branding['favicon_url'] ?? ($branding['logo_url'] ?? '')); ?>"
+                                                class="w-6 h-6 object-contain"
+                                                onerror="this.src='/assets/favicon.ico'">
+                                        </div>
+                                        <input type="url" id="faviconUrlInput" value="<?php echo htmlspecialchars($branding['favicon_url'] ?? ($branding['logo_url'] ?? '')); ?>"
+                                            placeholder="Enter favicon URL..."
+                                            oninput="document.getElementById('faviconPreview').src = this.value"
+                                            class="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-[#c5a059] transition-colors">
+                                    </div>
+                                </div>
                             </div>
                             <div id="file-input-container" class="hidden relative group">
                                 <div id="logo-drop-zone" onclick="document.getElementById('logoFileInput').click()"
@@ -474,7 +490,7 @@ const AdminSettings = {
                 else el.src = url;
             }
         });
-        const favEl = document.getElementById('tabFaviconPreview');
+        const favEl = document.getElementById('faviconPreview');
         const favInput = document.getElementById('faviconUrlInput');
         if (favEl) favEl.src = fav;
         if (favInput) favInput.value = fav;

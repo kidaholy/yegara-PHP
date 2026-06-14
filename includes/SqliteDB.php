@@ -286,4 +286,16 @@ class SqliteDB {
     public function truncate() {
         return self::$pdo->exec("DELETE FROM `{$this->table}`");
     }
+
+    public static function beginTransaction() {
+        self::$pdo->beginTransaction();
+    }
+
+    public static function commit() {
+        self::$pdo->commit();
+    }
+
+    public static function rollBack() {
+        self::$pdo->rollBack();
+    }
 }
