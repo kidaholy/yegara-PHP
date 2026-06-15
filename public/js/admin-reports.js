@@ -512,11 +512,6 @@ const ReportHub = {
                         class="bg-[#111413] border border-gray-800 rounded-xl px-5 py-2.5 text-xs font-black uppercase tracking-wider text-gray-400 outline-none focus:border-[#c5a059]/50 transition-all min-w-[240px]">
                         ${cashiers.map(c => `<option value="${c}" ${this.menuCashierFilter === c ? 'selected' : ''}>${c.toUpperCase()}</option>`).join('')}
                     </select>
-
-                    <button onclick="ReportHub.exportMenuCSV()" 
-                        class="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-500 text-[11px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all shadow-lg shadow-emerald-950/20">
-                        <i data-lucide="download" class="w-3.5 h-3.5"></i> CSV
-                    </button>
                 </div>
 
                 <!-- Summary Stats -->
