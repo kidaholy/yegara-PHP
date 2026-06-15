@@ -706,12 +706,47 @@ const ReportHub = {
     },
 
     exportMenuCSV() {
-        // Spec Headers: Menu Item, Cashier, Sub Category, Quantity Sold, Total Revenue
         const stats = this.getCalculatedStats();
-        const f = stats.menuItemSales.filter(i => i.mainCategory === this.menuSalesTab);
-        const h = ['Menu Item', 'Cashier', 'Sub Category', 'Quantity Sold', 'Total Revenue'];
-        const rows = f.map(i => [i.name, i.cashier, i.category, Math.round(i.quantity||0), Math.round(i.revenue||0)]);
-        ReportExporter.toCSV(`Menu-Sales-${this.menuSalesTab}.csv`, h, rows);
+
+        // Use the exact same filter logic as the rendered report table
+        const filtered = stats.menuItemSales.filter(s => {
+            const currentTab = this.menuSalesTab.toLowerCase();
+            const itemMainCat = (s.mainCategory || '').toLowerCase();
+            if (currentTab !== 'all' && itemMainCat !== currentTab) return false;
+            if (this.menuCashierFilter !== 'All' && s.cashier !== this.menuCashierFilter) return false;
+            if (this.menuSearchTerm && !s.name.toLowerCase().includes(this.menuSearchTerm.toLowerCase())) return false;
+            return true;
+        }).sort((a, b) => b.quantity - a.quantity);
+
+        const period = this.timeRange.toUpperCase();
+        const cashierLabel = this.menuCashierFilter === 'All' ? 'All Staff' : this.menuCashierFilter;
+        const tabLabel = this.menuSalesTab;
+
+        const h = ['Menu Item', 'Category', 'Sub-Category', 'Cashier', 'Quantity Sold', 'Revenue (Br)'];
+
+        const rows = filtered.map(i => [
+            i.name,
+            i.mainCategory || 'Food',
+            i.category || 'General',
+            i.cashier,
+            Math.round(i.quantity || 0),
+            Math.round(i.revenue || 0)
+        ]);
+
+        // Totals row
+        const totalQty = filtered.reduce((s, i) => s + (i.quantity || 0), 0);
+        const totalRev = filtered.reduce((s, i) => s + (i.revenue || 0), 0);
+        rows.push(['', '', '', 'TOTAL', Math.round(totalQty), Math.round(totalRev)]);
+
+        // Metadata banner rows at top
+        const meta = [
+            [`Menu Item Sales Report — Period: ${period} | Filter: ${tabLabel} | Cashier: ${cashierLabel}`, '', '', '', '', ''],
+            [`Generated: ${new Date().toLocaleString()}`, '', '', '', '', ''],
+            ['', '', '', '', '', ''],
+        ];
+
+        const filename = `Menu-Sales-${tabLabel}-${cashierLabel.replace(/\s+/g, '_')}-${period}.csv`;
+        ReportExporter.toCSV(filename, h, [...meta, ...rows]);
     }
 };
 
