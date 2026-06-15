@@ -304,6 +304,7 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
     let allRooms = [];
     let cart = [];
     let activeTab = '';
+    let selectedCategory = '';
     let mainCategories = [];
     let activeFloorId = '';
     let appName = 'ABE HOTEL';
@@ -378,8 +379,16 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
             let bootUrl = 'api/cashier/bootstrap.php?collection=' + encodeURIComponent(POS_COLLECTION);
             if (MENU_TIER_ID) bootUrl += '&tier=' + encodeURIComponent(MENU_TIER_ID);
             const resp = await fetch(bootUrl);
-            const data = JSON.parse(await resp.text());
-            if (!resp.ok) throw new Error(data.message || 'Failed to load');
+            const text = await resp.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (jsonErr) {
+                console.error('Invalid JSON:', text);
+                if (!resp.ok) throw new Error(`Server Error (${resp.status})`);
+                throw new Error('Invalid response from server');
+            }
+            if (!resp.ok) throw new Error(data.message || `Failed to load (${resp.status})`);
 
             allItems = data.items || [];
             categories = data.categories || [];
@@ -977,10 +986,6 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
         finally { btn.disabled = !cart.length; btn.innerHTML = old; }
     }
 
-    document.getElementById('main-tab-food').onclick = () => setActiveTab('Food');
-    document.getElementById('main-tab-drinks').onclick = () => setActiveTab('Drinks');
-    document.getElementById('cart-tab-food').onclick = () => setActiveTab('Food');
-    document.getElementById('cart-tab-drinks').onclick = () => setActiveTab('Drinks');
 
     document.getElementById('category-chips').addEventListener('click', e => {
         const chip = e.target.closest('.cat-chip');
