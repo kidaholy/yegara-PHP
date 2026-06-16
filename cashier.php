@@ -971,6 +971,8 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
                 cart = [];
                 document.getElementById('batch-number').value = '';
                 clearRoomSelection();
+                selectDist('', 'All Distributions');
+                setTableSelection('Buy&Go', '', '', 'Select Table');
                 renderCart();
 
                 setTimeout(() => {
