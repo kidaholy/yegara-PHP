@@ -137,12 +137,13 @@ try {
         }
 
         $limit = (int)($_GET['limit'] ?? 500);
-        $requests = $db->findMany(['where' => ['isDeleted' => false], 'orderBy' => ['createdAt' => 'desc'], 'take' => $limit]);
-
-        $minimal = array_map(function ($r) {
-            unset($r['idPhotoFront'], $r['idPhotoBack'], $r['profilePhoto']);
-            return $r;
-        }, $requests);
+        $limit = (int)($_GET['limit'] ?? 500);
+        $minimal = $db->findMany([
+            'where' => ['isDeleted' => false], 
+            'orderBy' => ['createdAt' => 'desc'], 
+            'take' => $limit,
+            'exclude' => ['profilePhoto', 'idPhotoFront', 'idPhotoBack']
+        ]);
 
         sendJson(['status' => 'success', 'data' => $minimal, 'total' => count($minimal)]);
     }

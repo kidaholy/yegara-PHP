@@ -158,7 +158,16 @@ class SqliteDB {
 
     public function findMany($args = []) {
         $params = [];
-        $sql = "SELECT * FROM `{$this->table}`";
+        $select = "*";
+        
+        if (isset($args['exclude']) && is_array($args['exclude']) && !empty($args['exclude'])) {
+            $paths = array_map(function($field) {
+                return "'$.{$field}'";
+            }, $args['exclude']);
+            $select = "id, json_remove(data, " . implode(", ", $paths) . ") as data";
+        }
+
+        $sql = "SELECT {$select} FROM `{$this->table}`";
         
         if (isset($args['where'])) {
             $sql .= " WHERE " . $this->buildWhere($args['where'], $params);

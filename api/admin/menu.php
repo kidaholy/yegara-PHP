@@ -27,7 +27,15 @@ try {
     $db = db($type);
 
     if ($method === 'GET') {
-        $items = $db->findMany(['where' => ['isDeleted' => false], 'orderBy' => ['menuId' => 'asc']]);
+        $excludeImages = isset($_GET['excludeImages']) && $_GET['excludeImages'] === 'true';
+        $args = [
+            'where' => ['isDeleted' => false], 
+            'orderBy' => ['menuId' => 'asc']
+        ];
+        if ($excludeImages) {
+            $args['exclude'] = ['image'];
+        }
+        $items = $db->findMany($args);
         
         // Spec: Standard menu GET filters OUT VIP items
         if ($type === 'menuItems') {
@@ -36,13 +44,6 @@ try {
                 $cat = strtolower($i['category'] ?? '');
                 return !(strpos($name, 'vip') !== false || strpos($cat, 'vip') !== false || ($i['isVIP'] ?? false));
             }));
-        }
-
-        // Optimization: Strip images if requested
-        if (isset($_GET['excludeImages']) && $_GET['excludeImages'] === 'true') {
-            foreach ($items as &$item) {
-                unset($item['image']);
-            }
         }
 
         sendJson(['status' => 'success', 'data' => $items, 'total' => count($items)]);
