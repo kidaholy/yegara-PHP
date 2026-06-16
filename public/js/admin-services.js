@@ -939,13 +939,13 @@ const AdminServices = {
         // This prevents double-booking if a request is pending but room status isn't yet 'occupied'
         const activeStatuses = ['PENDING_APPROVAL', 'CHECKIN_PENDING', 'CHECKIN_APPROVED', 'CHECKOUT_PENDING', 'EXTEND_PENDING', 'pending', 'check_in', 'ACTIVE', 'guests', 'staying'];
         const heldRoomNumbers = this.receptionRequests
-            .filter(r => activeStatuses.includes(r.status))
-            .map(r => String(r.roomNumber));
+            .filter(r => !r.isDeleted && activeStatuses.includes(r.status))
+            .map(r => String(r.roomNumber).trim());
 
         const rmFilters = this.rooms.filter(r => 
             r.floorId === floorId && 
             r.status === 'available' &&
-            !heldRoomNumbers.includes(String(r.roomNumber))
+            !heldRoomNumbers.includes(String(r.roomNumber).trim())
         );
 
         if (rmFilters.length === 0) {
