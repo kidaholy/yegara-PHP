@@ -37,10 +37,7 @@ renderHeader("Active Stock");
               <p class="text-[10px] uppercase tracking-wider text-amber-600 mb-1">Low Stock</p>
               <h3 id="stat-low-stock" class="text-xl lg:text-2xl font-bold text-amber-400">0</h3>
             </div>
-            <div class="p-4 rounded-xl bg-gray-900/40 border border-gray-700/30">
-              <p class="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Bulk Units</p>
-              <h3 id="stat-in-store" class="text-xl lg:text-2xl font-bold text-gray-300">0</h3>
-            </div>
+
           </div>
         </div>
 

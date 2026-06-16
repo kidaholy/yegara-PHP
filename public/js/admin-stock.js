@@ -41,11 +41,9 @@ async function fetchStock() {
 function renderStats() {
     const totalValue  = S.items.reduce((a, i) => a + (i.quantity||0) * (i.unitCost||0), 0);
     const lowStock    = S.items.filter(i => i.trackQuantity && (i.quantity||0) <= (i.minLimit||0) && Math.round(i.quantity||0) > 0).length;
-    const totalInStore= S.items.reduce((a, i) => a + (i.storeQuantity||0), 0);
 
     setText('stat-pos-value',   fmt(totalValue));
     setText('stat-low-stock',   lowStock);
-    setText('stat-in-store',    totalInStore.toLocaleString());
 }
 
 // ─── TABLE ────────────────────────────────────────────────────────────────────
