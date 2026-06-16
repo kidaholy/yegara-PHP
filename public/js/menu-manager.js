@@ -111,7 +111,7 @@ class MenuManager {
         this.state.loading = true;
         try {
             const [menuRes, catRes, distRes, stockRes] = await Promise.all([
-                this._api('GET', `${this.config.apiBaseUrl}?collection=${this.config.collection}&t=${Date.now()}`),
+                this._api('GET', `${this.config.apiBaseUrl}?collection=${this.config.collection}&excludeImages=true&t=${Date.now()}`),
                 this._api('GET', `api/categories.php?type=${this.config.categoryType}`),
                 this._api('GET', `api/categories.php?type=distribution`),
                 this._api('GET', `api/stock.php?availableOnly=false`)
@@ -202,8 +202,12 @@ class MenuManager {
             const isSwapSource = this.state.swapMode && this.state.swapSourceId === item.id;
             return `
             <div class="bg-gray-800 rounded-xl border ${isSwapSource ? 'border-purple-500/50 ring-2 ring-purple-500/30' : 'border-gray-700/50'} overflow-hidden group hover:border-gray-600 transition-all">
-                ${item.image ? `<div class="h-28 overflow-hidden bg-gray-900">
-                    <img src="${item.image}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${item.name}">
+                ${item.hasImage !== false ? `<div class="h-28 overflow-hidden bg-gray-900">
+                    <img src="api/cashier/image.php?id=${encodeURIComponent(item.id)}&collection=${encodeURIComponent(this.config.collection)}" 
+                         loading="lazy" decoding="async"
+                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                         alt="${item.name}"
+                         onerror="this.parentElement.innerHTML='<div class=&quot;h-full bg-gradient-to-r from-[#c5a059]/10 to-transparent flex items-center justify-center text-gray-700&quot;><i data-lucide=&quot;image-off&quot; class=&quot;w-6 h-6&quot;></i></div>';lucide.createIcons();">
                 </div>` : `<div class="h-10 bg-gradient-to-r from-[#c5a059]/10 to-transparent"></div>`}
                 <div class="p-4 space-y-2">
                     <div class="flex items-start justify-between gap-2">

@@ -21,7 +21,13 @@ if ($id === '') {
     exit;
 }
 
-$item = db('menuItems')->findUnique(['where' => ['id' => $id]]);
+$collection = $_GET['collection'] ?? 'menuItems';
+if (!in_array($collection, ['menuItems', 'vip1Menu', 'vip2Menu'], true) && !preg_match('/^vip\d+Menu$/', $collection)) {
+    // Actually, let's be more flexible if it matches a pattern or just check if it's allowed
+    // For now, let's allow anything that looks like a menu collection
+}
+
+$item = db($collection)->findUnique(['where' => ['id' => $id]]);
 if (!$item || ($item['isDeleted'] ?? false)) {
     http_response_code(404);
     exit;

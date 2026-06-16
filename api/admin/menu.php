@@ -38,6 +38,13 @@ try {
             }));
         }
 
+        // Optimization: Strip images if requested
+        if (isset($_GET['excludeImages']) && $_GET['excludeImages'] === 'true') {
+            foreach ($items as &$item) {
+                unset($item['image']);
+            }
+        }
+
         sendJson(['status' => 'success', 'data' => $items, 'total' => count($items)]);
     }
     elseif ($method === 'POST') {

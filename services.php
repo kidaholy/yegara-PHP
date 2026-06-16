@@ -446,8 +446,18 @@ AdminServices.openMenuModal = (item = {}) => {
     AdminServices.fetchActiveStocks();
 
     const prev = document.getElementById('menu-img-preview');
-    if (item.image) { prev.src = item.image; prev.classList.remove('hidden'); }
-    else prev.classList.add('hidden');
+    if (item.image) { 
+        prev.src = item.image; 
+        prev.classList.remove('hidden'); 
+    } else if (item.id) {
+        // Use the image API if id is present and no base64
+        const mm = AdminServices.menuManager;
+        const col = mm ? mm.config.collection : 'menuItems';
+        prev.src = `api/cashier/image.php?id=${encodeURIComponent(item.id)}&collection=${encodeURIComponent(col)}&t=${Date.now()}`;
+        prev.classList.remove('hidden');
+    } else {
+        prev.classList.add('hidden');
+    }
 
     document.getElementById('menu-modal-title').textContent = item.id ? 'Edit Item' : 'Add Menu Item';
     document.getElementById('menu-modal').classList.remove('hidden');
@@ -461,18 +471,19 @@ AdminServices._saveMenuItem = async (e) => {
     const url = id
         ? `api/admin/menu.php?id=${id}&collection=${mm?.config.collection || 'menuItems'}`
         : `api/admin/menu.php?collection=${mm?.config.collection || 'menuItems'}`;
+    const imgVal = document.getElementById('menu-img-base64').value;
     const payload = {
         name: document.getElementById('menu-name').value,
         price: parseFloat(document.getElementById('menu-price').value),
         mainCategory: document.getElementById('menu-main-cat').value,
         category: document.getElementById('menu-category').value,
         description: document.getElementById('menu-desc').value,
-        image: document.getElementById('menu-img-base64').value,
         stockItemId: document.getElementById('menu-stock-id').value,
         stockConsumption: parseFloat(document.getElementById('menu-stock-consumption').value || 0),
         reportUnit: document.getElementById('menu-report-unit').value,
         reportQuantity: parseFloat(document.getElementById('menu-report-qty').value || 1)
     };
+    if (imgVal) payload.image = imgVal;
     await AdminServices.api(method, url, payload);
     document.getElementById('menu-modal').classList.add('hidden');
     if (mm) { await mm.loadData(); mm.render(); }
