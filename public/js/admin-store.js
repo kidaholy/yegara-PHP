@@ -72,7 +72,7 @@ async function api(method, url, body) {
 
 // ─── SIDEBAR STATS ────────────────────────────────────────────────────────────
 function renderSidebar() {
-    const storeVal     = S.items.reduce((a, i) => a + (i.storeQuantity||0) * (i.averagePurchasePrice||0), 0);
+    const storeVal     = S.items.reduce((a, i) => a + (i.totalInvestment || (i.storeQuantity||0) * (i.averagePurchasePrice||0)), 0);
     const assetVal     = S.assets.reduce((a, x) => a + (x.total_value||x.totalValue||0), 0);
     const monthExpense = S.expenses.reduce((a, e) => a + (e.amount||0), 0);
 

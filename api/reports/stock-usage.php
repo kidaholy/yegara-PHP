@@ -105,7 +105,7 @@ try {
             'weightedAvgCost' => $weightedAvgCost,
             'currentUnitCost' => $currentUnitCost,
             'storeQuantity' => $storeQuantity,
-            'storeClosingValue' => $storeQuantity * $weightedAvgCost,
+            'storeClosingValue' => (float)($stock['totalInvestment'] ?? ($storeQuantity * $weightedAvgCost)),
             'storeIn' => $storeIn,
             'storeOut' => $storeOut,
             'transferred' => $storeOut,

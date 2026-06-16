@@ -29,9 +29,13 @@ try {
     $newStore  = $available - $qty;
     $newActive = floatval($stock['quantity'] ?? 0) + $qty;
 
+    $unitPrice = floatval($stock['averagePurchasePrice'] ?? 0);
+    $newInvest = max(0, floatval($stock['totalInvestment'] ?? 0) - ($qty * $unitPrice));
+
     db('stocks')->update(['where'=>['id'=>$stockId], 'data'=>[
         'storeQuantity' => $newStore,
         'quantity'      => $newActive,
+        'totalInvestment' => $newInvest,
         'status'        => 'active',
     ]]);
 

@@ -144,6 +144,17 @@ try {
         }
 
         $updated = db('stocks')->update(['where' => ['id' => $id], 'data' => $patch]);
+
+        // After update, ensure totalInvestment is consistent if storeQuantity or averagePurchasePrice changed
+        if (isset($patch['storeQuantity']) || isset($patch['averagePurchasePrice'])) {
+            $refreshed = db('stocks')->findUnique(['where' => ['id' => $id]]);
+            if ($refreshed && !isset($d['totalInvestment'])) {
+                $q = floatval($refreshed['storeQuantity'] ?? 0);
+                $p = floatval($refreshed['averagePurchasePrice'] ?? 0);
+                db('stocks')->update(['where' => ['id' => $id], 'data' => ['totalInvestment' => $q * $p]]);
+            }
+        }
+
         j(['message' => 'Updated', 'item' => $updated]);
     }
 
