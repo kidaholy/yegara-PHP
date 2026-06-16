@@ -225,12 +225,35 @@ try {
     elseif ($method === 'DELETE') {
         if (isset($_GET['action']) && $_GET['action'] === 'wipe') {
             requireAuth(['admin']);
+            
+            // Release rooms for all active requests before wiping
+            $activeStatuses = ['CHECKIN_APPROVED', 'EXTEND_PENDING', 'CHECKOUT_PENDING'];
+            $activeRequests = $db->findMany(['where' => [
+                'status' => ['in' => $activeStatuses],
+                'isDeleted' => false
+            ]]);
+            foreach ($activeRequests as $req) {
+                if ($req['roomNumber'] ?? '') {
+                    setRoomStatus($req['roomNumber'], 'available');
+                }
+            }
+
             $db->deleteMany(['where' => []]);
-            sendJson(['status' => 'success', 'message' => 'All requests cleared']);
+            sendJson(['status' => 'success', 'message' => 'All requests cleared and rooms released']);
         }
 
         $id = $_GET['id'] ?? '';
         if (!$id) throw new Exception("ID required");
+
+        // Fetch request details before deletion to check if room needs releasing
+        $request = $db->findUnique(['where' => ['id' => $id]]);
+        if ($request && !($request['isDeleted'] ?? false)) {
+            $activeStatuses = ['CHECKIN_APPROVED', 'EXTEND_PENDING', 'CHECKOUT_PENDING'];
+            if (in_array($request['status'], $activeStatuses) && !empty($request['roomNumber'])) {
+                setRoomStatus($request['roomNumber'], 'available');
+            }
+        }
+
         $db->update(['where' => ['id' => $id], 'data' => ['isDeleted' => true]]);
         sendJson(['status' => 'success']);
     }
