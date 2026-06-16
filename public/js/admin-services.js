@@ -1205,7 +1205,10 @@ const AdminServices = {
             <div class="flex justify-between items-start gap-4 mb-6">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 rounded-xl bg-gray-900 border border-[#2a2c2a] flex items-center justify-center shrink-0">
-                        ${r.profilePhoto ? `<img src="${r.profilePhoto}" class="w-full h-full object-cover rounded-xl">` : `<i data-lucide="user" class="w-5 h-5 text-gray-500"></i>`}
+                        <img src="api/cashier/image.php?id=${encodeURIComponent(r.id)}&collection=receptionRequests&t=${Date.now()}" 
+                             loading="lazy" decoding="async"
+                             class="w-full h-full object-cover rounded-xl"
+                             onerror="this.parentElement.innerHTML='<i data-lucide=&quot;user&quot; class=&quot;w-5 h-5 text-gray-500&quot;></i>';lucide.createIcons();">
                     </div>
                     <div class="min-w-0">
                         <h4 class="text-sm font-black text-gray-200 uppercase tracking-widest truncate">${r.guestName || 'Guest'}</h4>

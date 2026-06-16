@@ -33,7 +33,15 @@ if (!$item || ($item['isDeleted'] ?? false)) {
     exit;
 }
 
-$image = trim($item['image'] ?? '');
+// Check common image fields: image (menu), profilePhoto (reception), photo
+$image = '';
+foreach (['profilePhoto', 'image', 'photo'] as $f) {
+    if (!empty($item[$f])) {
+        $image = trim($item[$f]);
+        break;
+    }
+}
+
 if ($image === '') {
     http_response_code(404);
     exit;

@@ -140,7 +140,7 @@ try {
         $requests = $db->findMany(['where' => ['isDeleted' => false], 'orderBy' => ['createdAt' => 'desc'], 'take' => $limit]);
 
         $minimal = array_map(function ($r) {
-            unset($r['idPhotoFront'], $r['idPhotoBack']);
+            unset($r['idPhotoFront'], $r['idPhotoBack'], $r['profilePhoto']);
             return $r;
         }, $requests);
 
