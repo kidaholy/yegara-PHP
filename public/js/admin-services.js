@@ -100,7 +100,7 @@ const AdminServices = {
             'vip': () => this._buildVipHTML(),
             'reception': () => this._buildReceptionShellHTML()
         };
-        panel.innerHTML = `<div class="tab-content-anim">${(map[this.activeTab] || (() => ''))()}</div>`;
+        panel.innerHTML = `${(map[this.activeTab] || (() => ''))()}`;
         lucide.createIcons();
         if (this.activeTab === 'reception') this._renderReceptionContent();
     },

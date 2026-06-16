@@ -11,7 +11,7 @@ $menuTiers = db('menuTiers')->findMany(['where' => ['isDeleted' => false]]) ?: [
 <style>
     @keyframes slideInUp { from { transform: translateY(18px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .tab-content-anim { animation: slideInUp .45s cubic-bezier(.4,0,.2,1) both; }
+    .tab-content-anim { animation: slideInUp 0s cubic-bezier(.4,1,1,1) both; }
 
     :root {
         --reception-gold: #c5a059;
