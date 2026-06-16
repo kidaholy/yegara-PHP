@@ -1,3 +1,48 @@
 php -S localhost:8080
 
 1000416508384
+
+Number of Processes
+12 / 100 (12%)
+Entry Processes
+2 / 30 (6.67%)
+Physical Memory Usage
+131.44 MB / 2 GB (6.42%)
+Disk Usage
+3.16 GB / 1 TB (0.31%)
+Bandwidth
+306.33 MB / 1 TB (0.03%)
+I/O Usage
+16 KB/s / 48.83 MB/s (0.03%)
+File Usage
+26,908 / ∞
+Database Disk Usage
+0 bytes / 1,020.84 GB (0%)
+PostgreSQL Disk Usage
+8.41 MB / 1,020.85 GB (0%)
+Addon Domains
+0 / ∞
+Subdomains
+0 / ∞
+Alias Domains
+0 / ∞
+Email Accounts
+1 / ∞
+Mailing Lists
+0 / ∞
+Autoresponders
+0 / ∞
+Forwarders
+0 / ∞
+Email Filters
+0 / ∞
+FTP Accounts
+4 / ∞
+Databases
+0 / ∞
+PostgreSQL Databases
+1 / ∞
+CPU Usage
+0 / 100 (0%)
+IOPS
+0 / 2,048 (0%)

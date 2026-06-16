@@ -934,7 +934,20 @@ const AdminServices = {
             select.innerHTML = '<option value="">Select a floor first</option>';
             return;
         }
-        const rmFilters = this.rooms.filter(r => r.floorId === floorId && r.status === 'available');
+
+        // Identify rooms currently "held" by active reception requests
+        // This prevents double-booking if a request is pending but room status isn't yet 'occupied'
+        const activeStatuses = ['PENDING_APPROVAL', 'CHECKIN_PENDING', 'CHECKIN_APPROVED', 'CHECKOUT_PENDING', 'EXTEND_PENDING', 'pending', 'check_in', 'ACTIVE', 'guests', 'staying'];
+        const heldRoomNumbers = this.receptionRequests
+            .filter(r => activeStatuses.includes(r.status))
+            .map(r => String(r.roomNumber));
+
+        const rmFilters = this.rooms.filter(r => 
+            r.floorId === floorId && 
+            r.status === 'available' &&
+            !heldRoomNumbers.includes(String(r.roomNumber))
+        );
+
         if (rmFilters.length === 0) {
             select.innerHTML = '<option value="">No rooms available</option>';
         } else {
