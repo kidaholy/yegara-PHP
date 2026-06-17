@@ -50,8 +50,8 @@ function applyStatusTransition($request, $newStatus, $input = []) {
         $data['reviewNote'] = $input['reviewNote'];
     }
 
-    // Admin approves check-in
-    if ($newStatus === 'CHECKIN_APPROVED' && in_array($current, ['PENDING_APPROVAL', 'CHECKIN_PENDING', 'pending'], true)) {
+    // Direct check-in or approval
+    if ($newStatus === 'CHECKIN_APPROVED' && in_array($current, ['PENDING_APPROVAL', 'CHECKIN_PENDING', 'pending', ''], true)) {
         $room = findRoomByNumber($request['roomNumber'] ?? '');
         $pricePerNight = floatval($room['price'] ?? 0);
         $stayDuration = (int)($request['stayDuration'] ?? 1);
@@ -68,9 +68,9 @@ function applyStatusTransition($request, $newStatus, $input = []) {
             setRoomStatus($request['roomNumber'], 'occupied');
         }
     }
-    // Admin approves stay extension
-    elseif ($newStatus === 'CHECKIN_APPROVED' && $current === 'EXTEND_PENDING') {
-        $extraDays = (int)($request['pendingExtraDays'] ?? $input['extraDays'] ?? 0);
+    // Direct extension (staying in CHECKIN_APPROVED)
+    elseif ($newStatus === 'CHECKIN_APPROVED' && $current === 'CHECKIN_APPROVED') {
+        $extraDays = (int)($input['extraDays'] ?? 0);
         if ($extraDays > 0) {
             $pricePerNight = floatval($request['pricePerNight'] ?? 0);
             if (!$pricePerNight) {
@@ -82,40 +82,15 @@ function applyStatusTransition($request, $newStatus, $input = []) {
             $data['checkOut'] = addDays($currentCheckOut, $extraDays);
             $data['stayDuration'] = (int)($request['stayDuration'] ?? 1) + $extraDays;
             $data['roomPrice'] = floatval($request['roomPrice'] ?? 0) + ($pricePerNight * $extraDays);
-            $data['pendingExtraDays'] = null;
         }
     }
-    // Admin approves checkout
-    elseif ($newStatus === 'CHECKED_OUT' && $current === 'CHECKOUT_PENDING') {
+    // Direct checkout
+    elseif ($newStatus === 'CHECKED_OUT' && (in_array($current, ['CHECKIN_APPROVED', 'CHECKOUT_PENDING'], true))) {
         $data['checkOut'] = todayDate();
         $data['checkedOutAt'] = date('c');
         if ($request['roomNumber'] ?? '') {
             setRoomStatus($request['roomNumber'], 'available');
         }
-    }
-    // Admin denies checkout — guest stays checked in
-    elseif ($newStatus === 'CHECKIN_APPROVED' && $current === 'CHECKOUT_PENDING') {
-        // keep existing dates
-    }
-    // Admin denies extension — guest stays checked in, clear pending extra days
-    elseif ($newStatus === 'CHECKIN_APPROVED' && $current === 'EXTEND_PENDING') {
-        $data['pendingExtraDays'] = null;
-    }
-    // Admin rejects check-in
-    elseif ($newStatus === 'REJECTED') {
-        if (in_array($current, ['PENDING_APPROVAL', 'CHECKIN_PENDING', 'pending'], true)) {
-            // no room to free yet
-        }
-    }
-    // Reception requests checkout
-    elseif ($newStatus === 'CHECKOUT_PENDING' && $current === 'CHECKIN_APPROVED') {
-        $data['checkoutRequestedAt'] = date('c');
-    }
-    // Reception requests extension
-    elseif ($newStatus === 'EXTEND_PENDING' && $current === 'CHECKIN_APPROVED') {
-        $extraDays = max(1, (int)($input['extraDays'] ?? 1));
-        $data['pendingExtraDays'] = $extraDays;
-        $data['extendRequestedAt'] = date('c');
     }
 
     return $data;
@@ -151,20 +126,15 @@ try {
         $input = json_decode(file_get_contents('php://input'), true);
         if (empty($input['guestName'])) throw new Exception("Guest name is required");
 
-        $room = findRoomByNumber($input['roomNumber'] ?? '');
-        $pricePerNight = floatval($room['price'] ?? 0);
-        $stayDuration = (int)($input['stayDuration'] ?? 1);
-
         $id = bin2hex(random_bytes(16));
-        $db->create(['data' => [
+        $request = [
             'id'             => $id,
             'guestName'      => $input['guestName'],
             'phone'          => $input['phone'] ?? '',
             'faydaId'        => $input['faydaId'] ?? '',
             'roomNumber'     => $input['roomNumber'] ?? '',
             'guests'         => (int)($input['guests'] ?? 1),
-            'stayDuration'   => $stayDuration,
-            'pricePerNight'  => $pricePerNight,
+            'stayDuration'   => (int)($input['stayDuration'] ?? 1),
             'paymentMethod'  => $input['paymentMethod'] ?? 'CASH',
             'receiptNumber'  => $input['receiptNumber'] ?? '',
             'transactionUrl' => $input['transactionUrl'] ?? '',
@@ -172,12 +142,18 @@ try {
             'profilePhoto'   => $input['profilePhoto'] ?? '',
             'idPhotoFront'   => $input['idPhotoFront'] ?? '',
             'idPhotoBack'    => $input['idPhotoBack'] ?? '',
-            'status'         => 'PENDING_APPROVAL',
+            'status'         => 'PENDING_APPROVAL', // Temporary for applyStatusTransition
             'inquiryType'    => $input['inquiryType'] ?? 'WALK_IN',
             'createdAt'      => date('c'),
             'isDeleted'      => false
-        ]]);
-        sendJson(['status' => 'success', 'id' => $id]);
+        ];
+
+        // Apply direct check-in logic
+        $transitionData = applyStatusTransition($request, 'CHECKIN_APPROVED', $input);
+        $finalData = array_merge($request, $transitionData);
+
+        $db->create(['data' => $finalData]);
+        sendJson(['status' => 'success', 'id' => $id, 'data' => $finalData]);
     }
     elseif ($method === 'PUT') {
         $id = $_GET['id'] ?? '';
@@ -192,30 +168,14 @@ try {
 
         $isAdmin = $userRole === 'admin';
         $current = $request['status'] ?? '';
-        $receptionActions = ['CHECKOUT_PENDING', 'EXTEND_PENDING'];
-        $adminActions = ['CHECKIN_APPROVED', 'CHECKED_OUT', 'REJECTED'];
-
-        if (in_array($newStatus, $receptionActions, true)) {
-            if (!$isAdmin && $current !== 'CHECKIN_APPROVED') {
-                throw new Exception("Only checked-in guests can request checkout or extension");
-            }
-            if ($current !== 'CHECKIN_APPROVED') {
-                throw new Exception("Invalid status for this request");
-            }
-        } elseif (in_array($newStatus, $adminActions, true) && !$isAdmin) {
-            throw new Exception("Admin approval required");
-        } elseif (!in_array($newStatus, array_merge($receptionActions, $adminActions), true)) {
-            throw new Exception("Invalid status transition");
+        
+        $allowedActions = ['CHECKIN_APPROVED', 'CHECKED_OUT'];
+        if (!in_array($newStatus, $allowedActions, true)) {
+            throw new Exception("Invalid status transition: " . $newStatus);
         }
 
-        if ($newStatus === 'CHECKIN_APPROVED' && in_array($current, ['PENDING_APPROVAL', 'CHECKIN_PENDING', 'pending'], true) && !$isAdmin) {
-            throw new Exception("Admin approval required");
-        }
-        if ($newStatus === 'CHECKED_OUT' && $current !== 'CHECKOUT_PENDING') {
-            throw new Exception("Checkout must be requested first");
-        }
-        if ($newStatus === 'REJECTED' && !in_array($current, ['PENDING_APPROVAL', 'CHECKIN_PENDING', 'pending'], true)) {
-            throw new Exception("Only pending check-ins can be rejected");
+        if ($newStatus === 'CHECKED_OUT' && (in_array($current, ['CHECKED_OUT'], true))) {
+            throw new Exception("Guest is not currently checked in");
         }
 
         $data = applyStatusTransition($request, $newStatus, $input);

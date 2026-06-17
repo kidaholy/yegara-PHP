@@ -65,7 +65,7 @@ const AdminServices = {
         if (dueGuests.length > 0 && !this.checkoutAlertShown) {
             this.checkoutAlertShown = true;
             const names = dueGuests.map(g => g.guestName).join(', ');
-            alert(`Checkout due today!\n\nPlease submit checkout requests for: ${names}\n\nGo to Guest Status → Checked In to request checkout from admin.`);
+            alert(`Checkout due today!\n\nPlease check out the following guests: ${names}\n\nGo to Guest Status → Checked In to perform direct checkout.`);
         }
         if (dueGuests.length === 0) this.checkoutAlertShown = false;
     },
@@ -385,15 +385,16 @@ const AdminServices = {
             { key: 'pending', label: 'Pending', icon: 'clock' },
             { key: 'checked-in', label: 'Checked In', icon: 'check-square' },
             { key: 'checked-out', label: 'Checked Out', icon: 'log-out' },
-            { key: 'rejected', label: 'Rejected', icon: 'x-circle' },
             { key: 'all', label: 'All', icon: 'users' }
-        ].map(s => `
+        ].map(s => {
+            if (s.key === 'pending') return ''; // Skip pending
+            return `
             <button onclick="AdminServices._setStatusFilter('${s.key}')"
                 class="rec-status-pill flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider px-4 py-2 rounded-lg border transition-all ${s.key === activeKey ? 'bg-[#c5a059]/10 text-[#c5a059] border-[#c5a059]/30' : 'border-transparent text-gray-500 hover:text-gray-300'}"
                 data-status="${s.key}">
                 <i data-lucide="${s.icon}" class="w-3.5 h-3.5"></i>
                 ${s.label} (<span class="rec-count-${s.key}">0</span>)
-            </button>`).join('');
+            </button>`;}).join('');
     },
 
     _buildReceptionStatusHTML() {
@@ -443,8 +444,7 @@ const AdminServices = {
 
             <!-- Status Pills -->
             <div class="flex items-center justify-between border-b border-gray-800 pb-4 gap-4">
-                <div class="flex gap-2 sm:gap-3 flex-wrap" id="rec-status-pills">
-                    ${this._statusFilterPillsHTML(activeFilter)}
+                    ${this._statusFilterPillsHTML(activeFilter === 'pending' ? 'all' : activeFilter)}
                 </div>
                 <div class="flex items-center gap-3">
                     ${window.USER_ROLE === 'admin' ? `
@@ -1028,7 +1028,7 @@ const AdminServices = {
             
             const res = await this.api('POST', 'api/reception-requests.php', body);
             if (res?.status === 'success') {
-                alert('Check-in submitted successfully!');
+                alert('Guest Checked In Successfully!');
                 window.location.reload();
             } else {
                 alert(res?.message || 'Error submitting check-in');
@@ -1063,47 +1063,35 @@ const AdminServices = {
         await this.actionReception(id, 'approve');
     },
 
-    async denyReceptionItem(id) {
-        const req = this.receptionRequests.find(r => r.id === id);
-        if (!req) return;
-        let msg = 'Reject this request?';
-        if (req.status === 'CHECKOUT_PENDING') msg = 'Deny checkout request? Guest will remain checked in.';
-        if (req.status === 'EXTEND_PENDING') msg = 'Deny extension request?';
-        if (!confirm(msg)) return;
-        const note = ['PENDING_APPROVAL', 'CHECKIN_PENDING', 'pending'].includes(req.status)
-            ? prompt('Enter rejection reason (optional):') : '';
-        await this.actionReception(id, 'deny', note);
-    },
+
 
     async requestCheckout(id) {
-        if (!confirm('Submit checkout request to admin?')) return;
-        const res = await this.api('PUT', `api/reception-requests.php?id=${id}`, { status: 'CHECKOUT_PENDING' });
+        if (!confirm('Check out this guest?')) return;
+        const res = await this.api('PUT', `api/reception-requests.php?id=${id}`, { status: 'CHECKED_OUT' });
         if (res.status === 'success') {
-            alert('Checkout request submitted. Waiting for admin approval.');
+            alert('Guest checked out successfully.');
             this.fetchQueueData();
         } else {
-            alert(res?.message || 'Failed to submit checkout request');
+            alert(res?.message || 'Failed to check out guest');
         }
     },
 
     async requestExtend(id) {
         const days = parseInt(prompt('How many extra days does the guest need?', '1'), 10);
         if (!days || days < 1) return;
-        const res = await this.api('PUT', `api/reception-requests.php?id=${id}`, { status: 'EXTEND_PENDING', extraDays: days });
+        const res = await this.api('PUT', `api/reception-requests.php?id=${id}`, { status: 'CHECKIN_APPROVED', extraDays: days });
         if (res.status === 'success') {
-            alert(`Extension request for ${days} day(s) submitted. Waiting for admin approval.`);
+            alert(`Stay extended by ${days} day(s).`);
             this.fetchQueueData();
         } else {
-            alert(res?.message || 'Failed to submit extension request');
+            alert(res?.message || 'Failed to extend stay');
         }
     },
 
     _getReceptionBuckets() {
         return {
             'all': this.receptionRequests,
-            'pending': this.receptionRequests.filter(r => ['PENDING_APPROVAL','CHECKIN_PENDING','CHECKOUT_PENDING','EXTEND_PENDING','pending'].includes(r.status)),
             'checked-in': this.receptionRequests.filter(r => ['CHECKIN_APPROVED','check_in','ACTIVE','guests','staying'].includes(r.status)),
-            'rejected': this.receptionRequests.filter(r => ['REJECTED','denied'].includes(r.status)),
             'checked-out': this.receptionRequests.filter(r => ['CHECKED_OUT','CHECKOUT_APPROVED','check_out','checked-out'].includes(r.status))
         };
     },
@@ -1127,9 +1115,7 @@ const AdminServices = {
         }
         // Status bucket
         const buckets = {
-            'pending': ['PENDING_APPROVAL','CHECKIN_PENDING','CHECKOUT_PENDING','EXTEND_PENDING','pending'],
             'checked-in': ['CHECKIN_APPROVED','check_in','ACTIVE','guests','staying'],
-            'rejected': ['REJECTED','denied'],
             'checked-out': ['CHECKED_OUT','CHECKOUT_APPROVED','check_out','checked-out']
         };
         if (this.receptionFilter !== 'all') list = list.filter(r => (buckets[this.receptionFilter]||[]).includes(r.status));
@@ -1182,9 +1168,8 @@ const AdminServices = {
             return;
         }
 
-        const isReception = this._isReceptionStaff();
         container.innerHTML = list.map(r => this._renderGuestCard(r, {
-            showReceptionActions: isReception && r.status === 'CHECKIN_APPROVED'
+            showReceptionActions: r.status === 'CHECKIN_APPROVED'
         })).join('');
         lucide.createIcons();
     },
@@ -1247,10 +1232,6 @@ const AdminServices = {
 
             <div class="mt-auto pt-6 flex flex-wrap items-center gap-2">
                 <button onclick="AdminServices.viewReceptionDetail('${r.id}')" class="flex-1 min-w-[80px] bg-gray-800 border border-gray-700 text-gray-400 py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest hover:text-white transition-all">Details</button>
-                ${isAdmin && needsApproval ? `
-                    <button onclick="AdminServices.approveReceptionItem('${r.id}')" class="flex-1 min-w-[80px] bg-[#c5a059] text-gray-900 py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-[#b59048] transition-colors">Approve</button>
-                    <button onclick="AdminServices.denyReceptionItem('${r.id}')" class="flex-1 min-w-[80px] bg-red-500/10 border border-red-500/20 text-red-500 py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-colors">Deny</button>
-                ` : ''}
                 ${showActions && isCheckedIn ? `
                     <button onclick="AdminServices.requestExtend('${r.id}')" class="flex-1 min-w-[80px] bg-blue-500/10 border border-blue-500/20 text-blue-400 py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-colors">Extend</button>
                     <button onclick="AdminServices.requestCheckout('${r.id}')" class="flex-1 min-w-[80px] bg-purple-500/10 border border-purple-500/20 text-purple-400 py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-purple-500 hover:text-white transition-colors">Checkout</button>
@@ -1267,8 +1248,7 @@ const AdminServices = {
             'CHECKIN_APPROVED': 'Checked In',
             'CHECKOUT_PENDING': 'Checkout Request',
             'EXTEND_PENDING': 'Extend Request',
-            'CHECKED_OUT': 'Checked Out',
-            'REJECTED': 'Rejected'
+            'CHECKED_OUT': 'Checked Out'
         };
         return map[r.status] || r.status.replace(/_/g, ' ');
     },
@@ -1300,15 +1280,7 @@ const AdminServices = {
     async actionReception(id, action, reviewNote = '') {
         const req = this.receptionRequests.find(r => r.id === id);
         if (!req) return;
-        let status = 'REJECTED';
-        if (action === 'approve') {
-            if (req.status === 'CHECKOUT_PENDING') status = 'CHECKED_OUT';
-            else if (req.status === 'EXTEND_PENDING') status = 'CHECKIN_APPROVED';
-            else status = 'CHECKIN_APPROVED';
-        } else {
-            if (['CHECKOUT_PENDING','EXTEND_PENDING'].includes(req.status)) status = 'CHECKIN_APPROVED';
-            else status = 'REJECTED';
-        }
+        const status = 'CHECKIN_APPROVED';
         const body = { status };
         if (reviewNote) body.reviewNote = reviewNote;
         const res = await this.api('PUT', `api/reception-requests.php?id=${id}`, body);
@@ -1384,18 +1356,16 @@ const AdminServices = {
             </div>
 
             ${isAdmin && needsApproval ? `
-            <div class="grid grid-cols-2 gap-4 mt-8">
+            <div class="grid grid-cols-1 mt-8">
                 <button onclick="AdminServices.approveReceptionItem('${r.id}'); document.getElementById('rec-detail-modal').classList.add('hidden');" 
                     class="bg-[#c5a059] text-gray-900 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[#b59048] transition-all shadow-xl shadow-[#c5a059]/10">Approve</button>
-                <button onclick="AdminServices.denyReceptionItem('${r.id}'); document.getElementById('rec-detail-modal').classList.add('hidden');" 
-                    class="bg-gray-800 border border-gray-700 text-red-500 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-500/10 transition-all">Deny</button>
             </div>` : ''}
-            ${!isAdmin && r.status === 'CHECKIN_APPROVED' ? `
+            ${r.status === 'CHECKIN_APPROVED' ? `
             <div class="grid grid-cols-2 gap-4 mt-8">
                 <button onclick="AdminServices.requestExtend('${r.id}'); document.getElementById('rec-detail-modal').classList.add('hidden');" 
-                    class="bg-blue-500/10 border border-blue-500/20 text-blue-400 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-500 hover:text-white transition-all">Request Extend</button>
+                    class="bg-blue-500/10 border border-blue-500/20 text-blue-400 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-500 hover:text-white transition-all">Extend Stay</button>
                 <button onclick="AdminServices.requestCheckout('${r.id}'); document.getElementById('rec-detail-modal').classList.add('hidden');" 
-                    class="bg-purple-500/10 border border-purple-500/20 text-purple-400 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-purple-500 hover:text-white transition-all">Request Checkout</button>
+                    class="bg-purple-500/10 border border-purple-500/20 text-purple-400 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-purple-500 hover:text-white transition-all">Check Out</button>
             </div>` : ''}
         `;
         document.getElementById('rec-detail-modal').classList.remove('hidden');
