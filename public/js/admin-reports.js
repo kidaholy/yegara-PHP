@@ -329,7 +329,8 @@ const ReportHub = {
         const u = this.stockUsageData?.stockAnalysis || [];
         const filtered = u.filter(i => {
             if (Math.round(i.closingStock||0) <= 0) return false;
-            if (this.inventorySearchTerm && !i.name.toLowerCase().includes(this.inventorySearchTerm.toLowerCase())) return false;
+            const term = (this.inventorySearchTerm || '').toLowerCase();
+            if (term && !i.name.toLowerCase().includes(term) && !i.category.toLowerCase().includes(term)) return false;
             return true;
         });
         const lowCount = filtered.filter(i => i.isLowStock).length;
@@ -388,7 +389,8 @@ const ReportHub = {
     renderStore() {
         const u = this.stockUsageData?.stockAnalysis || [];
         const filtered = u.filter(i => {
-            if (this.inventorySearchTerm && !i.name.toLowerCase().includes(this.inventorySearchTerm.toLowerCase())) return false;
+            const term = (this.inventorySearchTerm || '').toLowerCase();
+            if (term && !i.name.toLowerCase().includes(term) && !i.category.toLowerCase().includes(term)) return false;
             return true;
         });
         
@@ -442,7 +444,12 @@ const ReportHub = {
             const itemMainCat = (s.mainCategory || '').toLowerCase();
             if (currentTab !== 'all' && itemMainCat !== currentTab) return false;
             if (this.menuCashierFilter !== 'All' && s.cashier !== this.menuCashierFilter) return false;
-            if (this.menuSearchTerm && !s.name.toLowerCase().includes(this.menuSearchTerm.toLowerCase())) return false;
+            
+            const term = (this.menuSearchTerm || '').toLowerCase();
+            if (term && 
+                !s.name.toLowerCase().includes(term) && 
+                !s.category.toLowerCase().includes(term) &&
+                !s.cashier.toLowerCase().includes(term)) return false;
             return true;
         });
         const cashiers = ['All', ...new Set(stats.menuItemSales.map(m => m.cashier))];
@@ -494,36 +501,56 @@ const ReportHub = {
         // Cashier Summary Cards
         const isAllCashier = this.menuCashierFilter === 'All';
         const currentTab = this.menuSalesTab; // 'All', 'Food', 'Drinks'
+        const isSearching = !!this.menuSearchTerm;
         
-        const rawStat = isAllCashier 
-            ? { 
-                amount: stats.orderRevenue, 
-                count: stats.totalOrdersCount, 
-                food: stats.foodRevenue, 
-                drinks: stats.drinksRevenue,
-                foodCount: stats.foodOrdersCount,
-                drinksCount: stats.drinksOrdersCount
-              }
-            : (stats.cashierStats[this.menuCashierFilter] || { amount: 0, count: 0, food: 0, drinks: 0, foodCount: 0, drinksCount: 0 });
-        
-        let activeRevenue = rawStat.amount;
-        let activeCount = rawStat.count;
+        let activeRevenue = 0;
+        let activeCount = 0;
         let revLabel = 'Total Revenue';
+        let countLabel = 'Orders Handled';
         let resColor = 'emerald-400';
         let subLabel = isAllCashier ? 'CONSOLIDATED EARNINGS' : 'Contribution to Revenue';
 
-        if (currentTab === 'Food') {
-            activeRevenue = rawStat.food;
-            activeCount = rawStat.foodCount;
-            revLabel = 'Food Revenue';
-            resColor = '#c5a059'; 
-            subLabel = 'Culinary Performance';
-        } else if (currentTab === 'Drinks') {
-            activeRevenue = rawStat.drinks;
-            activeCount = rawStat.drinksCount;
-            revLabel = 'Drinks Revenue';
-            resColor = 'blue-400';
-            subLabel = 'Beverage Sales';
+        if (isSearching) {
+            // When searching, override stats with filtered results
+            activeRevenue = filtered.reduce((sum, item) => sum + item.revenue, 0);
+            activeCount = filtered.reduce((sum, item) => sum + item.quantity, 0);
+            countLabel = 'Units Sold';
+            subLabel = 'Filtered Result Totals';
+            if (currentTab === 'Food') {
+                revLabel = 'Food Revenue';
+                resColor = '#c5a059';
+            } else if (currentTab === 'Drinks') {
+                revLabel = 'Drinks Revenue';
+                resColor = 'blue-400';
+            }
+        } else {
+            const rawStat = isAllCashier 
+                ? { 
+                    amount: stats.orderRevenue, 
+                    count: stats.totalOrdersCount, 
+                    food: stats.foodRevenue, 
+                    drinks: stats.drinksRevenue,
+                    foodCount: stats.foodOrdersCount,
+                    drinksCount: stats.drinksOrdersCount
+                  }
+                : (stats.cashierStats[this.menuCashierFilter] || { amount: 0, count: 0, food: 0, drinks: 0, foodCount: 0, drinksCount: 0 });
+            
+            activeRevenue = rawStat.amount;
+            activeCount = rawStat.count;
+
+            if (currentTab === 'Food') {
+                activeRevenue = rawStat.food;
+                activeCount = rawStat.foodCount;
+                revLabel = 'Food Revenue';
+                resColor = '#c5a059'; 
+                subLabel = 'Culinary Performance';
+            } else if (currentTab === 'Drinks') {
+                activeRevenue = rawStat.drinks;
+                activeCount = rawStat.drinksCount;
+                revLabel = 'Drinks Revenue';
+                resColor = 'blue-400';
+                subLabel = 'Beverage Sales';
+            }
         }
 
         const displayName = isAllCashier ? 'ALL STAFF MEMBERS' : this.menuCashierFilter;
@@ -555,7 +582,7 @@ const ReportHub = {
                 </div>
 
                 <div class="p-8 rounded-2xl border border-gray-800 bg-[#111413] flex flex-col justify-center">
-                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">Orders Handled</p>
+                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">${countLabel}</p>
                     <h4 class="text-4xl font-black text-gray-100">${activeCount}</h4>
                     <div class="flex items-center gap-2 text-[#c5a059] mt-4">
                         <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
@@ -672,7 +699,8 @@ const ReportHub = {
         
         if (invArea || strArea) {
             const filtered = u.filter(i => {
-                if (this.inventorySearchTerm && !i.name.toLowerCase().includes(this.inventorySearchTerm.toLowerCase())) return false;
+                const term = (this.inventorySearchTerm || '').toLowerCase();
+                if (term && !i.name.toLowerCase().includes(term) && !i.category.toLowerCase().includes(term)) return false;
                 return true;
             });
 
@@ -698,7 +726,11 @@ const ReportHub = {
                 const itemMainCat = (s.mainCategory || '').toLowerCase();
                 if (currentTab !== 'all' && itemMainCat !== currentTab) return false;
                 if (this.menuCashierFilter !== 'All' && s.cashier !== this.menuCashierFilter) return false;
-                if (this.menuSearchTerm && !s.name.toLowerCase().includes(this.menuSearchTerm.toLowerCase())) return false;
+                const term = (this.menuSearchTerm || '').toLowerCase();
+                if (term && 
+                    !s.name.toLowerCase().includes(term) && 
+                    !s.category.toLowerCase().includes(term) &&
+                    !s.cashier.toLowerCase().includes(term)) return false;
                 return true;
             });
             resultsArea.innerHTML = this.renderMenuSalesResults(stats, filtered);
