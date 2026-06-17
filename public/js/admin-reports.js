@@ -33,6 +33,7 @@ const ReportHub = {
     menuSearchTerm: '',
     menuCashierFilter: 'All',
     activeCashierIdx: 0,
+    inventorySearchTerm: '',
 
     // ─── INIT ─────────────────────────────────────────────────────────────────────
     async init() {
@@ -326,13 +327,29 @@ const ReportHub = {
 
     renderInventory() {
         const u = this.stockUsageData?.stockAnalysis || [];
-        const lowCount = u.filter(i => i.isLowStock).length;
+        const filtered = u.filter(i => {
+            if (Math.round(i.closingStock||0) <= 0) return false;
+            if (this.inventorySearchTerm && !i.name.toLowerCase().includes(this.inventorySearchTerm.toLowerCase())) return false;
+            return true;
+        });
+        const lowCount = filtered.filter(i => i.isLowStock).length;
+        
         return `
             <div class="space-y-6">
                 ${lowCount > 0 ? `<div class="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400"><i data-lucide="alert-triangle" class="w-4 h-4"></i><p class="text-xs font-bold uppercase tracking-wider">${lowCount} Low Stock items alert.</p></div>` : ''}
-                <div class="flex justify-between items-center px-2">
-                    <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Inventory Turnover · ${u.length} Items</h3>
-                    <div class="flex items-center gap-4">
+                
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-2">
+                    <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Inventory Turnover · ${filtered.length} Items</h3>
+                    
+                    <div class="flex flex-wrap items-center gap-4">
+                        <div class="relative group">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500"></i>
+                            <input type="text" oninput="ReportHub.setInventorySearch(this.value)" 
+                                value="${this.inventorySearchTerm}"
+                                placeholder="Search inventory..." 
+                                class="bg-gray-800/30 border border-gray-700/50 rounded-lg pl-10 pr-4 py-2 text-xs text-gray-200 outline-none w-full lg:w-60 focus:border-[#c5a059]/50 transition-all placeholder:text-gray-600">
+                        </div>
+                        
                         <button onclick="ReportHub.confirmWipe('all_stock')" class="px-3 py-1.5 rounded-lg border border-red-500/20 bg-red-500/10 text-red-400 text-[10px] font-bold uppercase tracking-widest hover:bg-red-500/20 transition-all flex items-center gap-2">
                             <i data-lucide="trash-2" class="w-3 h-3"></i>
                             Clear Stock
@@ -340,33 +357,55 @@ const ReportHub = {
                         <button onclick="ReportHub.exportInventoryCSV()" class="text-xs font-semibold uppercase text-gray-400 hover:text-white transition-colors flex items-center gap-2 outline-none"><i data-lucide="download" class="w-4 h-4"></i> Export CSV</button>
                     </div>
                 </div>
-                <div class="hidden lg:block rounded-xl border border-gray-700/50 bg-gray-800/20 overflow-hidden">
-                    <table class="w-full text-left text-sm">
-                        <thead><tr class="text-xs font-semibold uppercase tracking-wider text-gray-500 bg-gray-800/50 border-b border-gray-700/50"><th class="px-6 py-4">Item Name</th><th class="px-6 py-4 text-right">Sell Price</th><th class="px-6 py-4 text-right">Remains</th><th class="px-6 py-4 text-right">Investment (@avg)</th><th class="px-6 py-4 text-right">Usage</th><th class="px-6 py-4 text-right">Potential Value</th><th class="px-6 py-4 text-center">Status</th></tr></thead>
-                        <tbody class="divide-y divide-gray-700/30">
-                            ${u.filter(i => Math.round(i.closingStock||0) > 0).map(i => `
-                                <tr class="${i.isLowStock ? 'bg-red-500/5' : ''} hover:bg-gray-800/50 transition-colors">
-                                    <td class="px-6 py-4"><p class="font-bold text-gray-200">${i.name}</p><p class="text-xs text-gray-500 font-semibold mt-1">${i.category}</p></td>
-                                    <td class="px-6 py-4 text-right font-bold text-gray-300">${this.fmt(i.currentUnitCost)}</td>
-                                    <td class="px-6 py-4 text-right font-bold text-gray-200">${this.fmtQty(i.closingStock)} ${i.unit}</td>
-                                    <td class="px-6 py-4 text-right font-bold text-[#c5a059]">${this.fmt(i.weightedAvgCost * i.closingStock)}</td>
-                                    <td class="px-6 py-4 text-right text-emerald-400 font-bold">-${this.fmtQty(i.consumed)}</td>
-                                    <td class="px-6 py-4 text-right font-bold text-gray-200">${this.fmt(i.currentUnitCost * i.closingStock)}</td>
-                                    <td class="px-6 py-4 text-center"><span class="px-2 py-1 rounded-md border text-xs font-bold ${i.isLowStock ? 'text-red-400 border-red-500/20 bg-red-500/10' : 'text-emerald-400 border-emerald-500/20 bg-emerald-500/10'}">${i.isLowStock ? 'LOW' : 'OK'}</span></td>
-                                </tr>`).join('')}
-                        </tbody>
-                    </table>
+
+                <div id="inventory-results">
+                    ${this.renderInventoryResults(filtered)}
                 </div>
+            </div>`;
+    },
+
+    renderInventoryResults(filtered) {
+        return `
+            <div class="hidden lg:block rounded-xl border border-gray-700/50 bg-gray-800/20 overflow-hidden">
+                <table class="w-full text-left text-sm">
+                    <thead><tr class="text-xs font-semibold uppercase tracking-wider text-gray-500 bg-gray-800/50 border-b border-gray-700/50"><th class="px-6 py-4">Item Name</th><th class="px-6 py-4 text-right">Sell Price</th><th class="px-6 py-4 text-right">Remains</th><th class="px-6 py-4 text-right">Investment (@avg)</th><th class="px-6 py-4 text-right">Usage</th><th class="px-6 py-4 text-right">Potential Value</th><th class="px-6 py-4 text-center">Status</th></tr></thead>
+                    <tbody class="divide-y divide-gray-700/30">
+                        ${filtered.map(i => `
+                            <tr class="${i.isLowStock ? 'bg-red-500/5' : ''} hover:bg-gray-800/50 transition-colors">
+                                <td class="px-6 py-4"><p class="font-bold text-gray-200">${i.name}</p><p class="text-xs text-gray-500 font-semibold mt-1">${i.category}</p></td>
+                                <td class="px-6 py-4 text-right font-bold text-gray-300">${this.fmt(i.currentUnitCost)}</td>
+                                <td class="px-6 py-4 text-right font-bold text-gray-200">${this.fmtQty(i.closingStock)} ${i.unit}</td>
+                                <td class="px-6 py-4 text-right font-bold text-[#c5a059]">${this.fmt(i.weightedAvgCost * i.closingStock)}</td>
+                                <td class="px-6 py-4 text-right text-emerald-400 font-bold">-${this.fmtQty(i.consumed)}</td>
+                                <td class="px-6 py-4 text-right font-bold text-gray-200">${this.fmt(i.currentUnitCost * i.closingStock)}</td>
+                                <td class="px-6 py-4 text-center"><span class="px-2 py-1 rounded-md border text-xs font-bold ${i.isLowStock ? 'text-red-400 border-red-500/20 bg-red-500/10' : 'text-emerald-400 border-emerald-500/20 bg-emerald-500/10'}">${i.isLowStock ? 'LOW' : 'OK'}</span></td>
+                            </tr>`).join('') || `<tr><td colspan="7" class="py-20 text-center text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">No matching items found</td></tr>`}
+                    </tbody>
+                </table>
             </div>`;
     },
 
     renderStore() {
         const u = this.stockUsageData?.stockAnalysis || [];
+        const filtered = u.filter(i => {
+            if (this.inventorySearchTerm && !i.name.toLowerCase().includes(this.inventorySearchTerm.toLowerCase())) return false;
+            return true;
+        });
+        
         return `
             <div class="space-y-6">
-                <div class="flex justify-between items-center px-2">
-                    <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Store Investment Analytics</h3>
-                    <div class="flex items-center gap-4">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-2">
+                    <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Store Investment Analytics · ${filtered.length} Items</h3>
+                    
+                    <div class="flex flex-wrap items-center gap-4">
+                        <div class="relative group">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500"></i>
+                            <input type="text" oninput="ReportHub.setInventorySearch(this.value)" 
+                                value="${this.inventorySearchTerm}"
+                                placeholder="Search store..." 
+                                class="bg-gray-800/30 border border-gray-700/50 rounded-lg pl-10 pr-4 py-2 text-xs text-gray-200 outline-none w-full lg:w-60 focus:border-[#c5a059]/50 transition-all placeholder:text-gray-600">
+                        </div>
+
                         <button onclick="ReportHub.confirmWipe('all_store')" class="px-3 py-1.5 rounded-lg border border-red-500/20 bg-red-500/10 text-red-400 text-[10px] font-bold uppercase tracking-widest hover:bg-red-500/20 transition-all flex items-center gap-2">
                             <i data-lucide="trash-2" class="w-3 h-3"></i>
                             Clear Store
@@ -376,15 +415,23 @@ const ReportHub = {
                         </button>
                     </div>
                 </div>
-                <div class="hidden lg:block rounded-xl border border-gray-700/50 bg-gray-800/20 overflow-hidden">
-                    <table class="w-full text-left text-sm">
-                        <thead><tr class="text-xs font-semibold uppercase tracking-wider text-gray-500 bg-gray-800/50 border-b border-gray-700/50"><th class="px-6 py-4">Item Name</th><th class="px-6 py-4 text-right">Unit Cost</th><th class="px-6 py-4 text-right">In Store</th><th class="px-6 py-4 text-right">IN (Period)</th><th class="px-6 py-4 text-right">OUT (Period)</th><th class="px-6 py-4 text-right">Total Inv.</th><th class="px-6 py-4 text-center">Status</th></tr></thead>
-                        <tbody class="divide-y divide-gray-700/30">
-                            ${u.filter(i => (i.storeQuantity||0) > 0 || (i.storeIn||0) > 0 || (i.storeOut||0) > 0).map(i => `
-                                <tr class="hover:bg-gray-800/50 transition-colors"><td class="px-6 py-4"><p class="font-bold text-gray-200">${i.name}</p><p class="text-xs text-gray-500 font-semibold mt-1">${i.category}</p></td><td class="px-6 py-4 text-right font-bold text-gray-300">${this.fmt(i.weightedAvgCost).replace(' Br','')}</td><td class="px-6 py-4 text-right font-bold text-gray-200">${this.fmtQty(i.storeQuantity)} ${i.unit}</td><td class="px-6 py-4 text-right text-emerald-400 font-bold">+${this.fmtQty(i.storeIn)}</td><td class="px-6 py-4 text-right text-red-400 font-bold">-${this.fmtQty(i.storeOut)}</td><td class="px-6 py-4 text-right font-bold text-[#c5a059]">${this.fmt(i.storeClosingValue)}</td><td class="px-6 py-4 text-center"><span class="px-2 py-1 rounded-md border border-gray-600 bg-gray-700/50 text-[10px] font-bold uppercase text-gray-400">STORE_OK</span></td></tr>`).join('')}
-                        </tbody>
-                    </table>
+
+                <div id="store-results">
+                    ${this.renderStoreResults(filtered)}
                 </div>
+            </div>`;
+    },
+
+    renderStoreResults(filtered) {
+        return `
+            <div class="hidden lg:block rounded-xl border border-gray-700/50 bg-gray-800/20 overflow-hidden">
+                <table class="w-full text-left text-sm">
+                    <thead><tr class="text-xs font-semibold uppercase tracking-wider text-gray-500 bg-gray-800/50 border-b border-gray-700/50"><th class="px-6 py-4">Item Name</th><th class="px-6 py-4 text-right">Unit Cost</th><th class="px-6 py-4 text-right">In Store</th><th class="px-6 py-4 text-right">IN (Period)</th><th class="px-6 py-4 text-right">OUT (Period)</th><th class="px-6 py-4 text-right">Total Inv.</th><th class="px-6 py-4 text-center">Status</th></tr></thead>
+                    <tbody class="divide-y divide-gray-700/30">
+                        ${filtered.filter(i => (i.storeQuantity||0) > 0 || (i.storeIn||0) > 0 || (i.storeOut||0) > 0).map(i => `
+                            <tr class="hover:bg-gray-800/50 transition-colors"><td class="px-6 py-4"><p class="font-bold text-gray-200">${i.name}</p><p class="text-xs text-gray-500 font-semibold mt-1">${i.category}</p></td><td class="px-6 py-4 text-right font-bold text-gray-300">${this.fmt(i.weightedAvgCost).replace(' Br','')}</td><td class="px-6 py-4 text-right font-bold text-gray-200">${this.fmtQty(i.storeQuantity)} ${i.unit}</td><td class="px-6 py-4 text-right text-emerald-400 font-bold">+${this.fmtQty(i.storeIn)}</td><td class="px-6 py-4 text-right text-red-400 font-bold">-${this.fmtQty(i.storeOut)}</td><td class="px-6 py-4 text-right font-bold text-[#c5a059]">${this.fmt(i.storeClosingValue)}</td><td class="px-6 py-4 text-center"><span class="px-2 py-1 rounded-md border border-gray-600 bg-gray-700/50 text-[10px] font-bold uppercase text-gray-400">STORE_OK</span></td></tr>`).join('') || `<tr><td colspan="7" class="py-20 text-center text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">No matching items found</td></tr>`}
+                    </tbody>
+                </table>
             </div>`;
     },
 
@@ -616,6 +663,31 @@ const ReportHub = {
     setMenuTab(t) { this.menuSalesTab = t; this.updateMenuSalesView(); },
     setMenuSearch(v) { this.menuSearchTerm = v; this.updateMenuSalesView(); },
     setMenuCashier(v) { this.menuCashierFilter = v; this.updateMenuSalesView(); },
+    setInventorySearch(v) { this.inventorySearchTerm = v; this.updateInventoryView(); },
+    
+    updateInventoryView() {
+        const invArea = document.getElementById('inventory-results');
+        const strArea = document.getElementById('store-results');
+        const u = this.stockUsageData?.stockAnalysis || [];
+        
+        if (invArea || strArea) {
+            const filtered = u.filter(i => {
+                if (this.inventorySearchTerm && !i.name.toLowerCase().includes(this.inventorySearchTerm.toLowerCase())) return false;
+                return true;
+            });
+
+            if (invArea) {
+                const invFiltered = filtered.filter(i => Math.round(i.closingStock||0) > 0);
+                invArea.innerHTML = this.renderInventoryResults(invFiltered);
+            }
+            if (strArea) {
+                strArea.innerHTML = this.renderStoreResults(filtered);
+            }
+            lucide.createIcons();
+        } else {
+            this.renderActiveSlide();
+        }
+    },
     
     updateMenuSalesView() {
         const resultsArea = document.getElementById('menu-sales-results');
