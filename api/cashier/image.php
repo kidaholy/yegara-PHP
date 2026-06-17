@@ -10,7 +10,7 @@ if (!isAuthenticated()) {
 }
 
 $role = $_SESSION['role'] ?? '';
-if (!in_array($role, ['cashier', 'admin'], true)) {
+if (!in_array($role, ['cashier', 'admin', 'reception', 'receptionist'], true)) {
     http_response_code(403);
     exit;
 }
@@ -22,9 +22,10 @@ if ($id === '') {
 }
 
 $collection = $_GET['collection'] ?? 'menuItems';
-if (!in_array($collection, ['menuItems', 'vip1Menu', 'vip2Menu'], true) && !preg_match('/^vip\d+Menu$/', $collection)) {
-    // Actually, let's be more flexible if it matches a pattern or just check if it's allowed
-    // For now, let's allow anything that looks like a menu collection
+$allowedCollections = ['menuItems', 'vip1Menu', 'vip2Menu', 'receptionRequests'];
+if (!in_array($collection, $allowedCollections, true) && !preg_match('/^vip\d+Menu$/', $collection)) {
+    http_response_code(403);
+    exit;
 }
 
 $item = db($collection)->findUnique(['where' => ['id' => $id]]);

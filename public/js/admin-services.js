@@ -23,7 +23,7 @@ const AdminServices = {
 
     menuManager: null,
     pollingTimer: null,
-    audio: new Audio('/notification.mp3'),
+    audio: new Audio('public/notification.mp3'),
 
     // ─── INIT ──────────────────────────────────────────────────────────────────
     async init() {
