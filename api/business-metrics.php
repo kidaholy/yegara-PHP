@@ -26,14 +26,14 @@ try {
         'isDeleted' => false
     ]]);
 
-    // Fetch active orders for dashboard display
+    // Fetch active orders for dashboard display (Today's only)
     $activeOrders = db('orders')->findMany([
         'where' => [
             'status' => ['nin' => ['completed', 'served', 'cancelled']],
+            'createdAt' => ['gte' => $todayStart, 'lte' => $todayEnd],
             'isDeleted' => false
         ],
-        'orderBy' => ['createdAt' => 'desc'],
-        'limit' => 5
+        'orderBy' => ['createdAt' => 'desc']
     ]);
     
     // Fetch items for active orders
