@@ -388,8 +388,8 @@ $menuTiers = db('menuTiers')->findMany(['where' => ['isDeleted' => false]]) ?: [
 
 <!-- ═══════════════════════════════════════════════════════ SCRIPTS ═══ -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="public/js/menu-manager.js?v=1.1"></script>
-<script src="public/js/admin-services.js?v=1.1"></script>
+<script src="public/js/menu-manager.js?v=<?php echo time(); ?>"></script>
+<script src="public/js/admin-services.js?v=<?php echo time(); ?>"></script>
 <script>
 // ── Room Modal Integration ───────────────────────────────────────────────────
 AdminServices.openRoomModal = (room = null) => {
