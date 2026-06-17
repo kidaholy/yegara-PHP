@@ -34,9 +34,9 @@ if (!$item || ($item['isDeleted'] ?? false)) {
     exit;
 }
 
-// Check common image fields: image (menu), profilePhoto (reception), photo, idFront/idBack
+// Check common image fields: image (menu), profilePhoto (reception), photo, idPhotoFront/idPhotoBack
 $image = '';
-foreach (['profilePhoto', 'image', 'photo', 'idFront', 'idBack'] as $f) {
+foreach (['profilePhoto', 'image', 'photo', 'idPhotoFront', 'idPhotoBack'] as $f) {
     if (!empty($item[$f])) {
         $image = trim($item[$f]);
         break;
