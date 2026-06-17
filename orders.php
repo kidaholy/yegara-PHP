@@ -499,9 +499,18 @@ try {
 
     if ($search) {
         $filteredOrders = array_filter($filteredOrders, function ($o) use ($search) {
-            return stripos($o['orderNumber'] ?? '', $search) !== false
+            $match = stripos($o['orderNumber'] ?? '', $search) !== false
                 || stripos($o['tableNumber'] ?? '', $search) !== false
                 || stripos($o['customerName'] ?? '', $search) !== false;
+            
+            if (!$match && !empty($o['items'])) {
+                foreach ($o['items'] as $it) {
+                    if (stripos($it['name'] ?? '', $search) !== false) {
+                        return true;
+                    }
+                }
+            }
+            return $match;
         });
     }
     $filteredOrders = array_values($filteredOrders);
@@ -770,9 +779,15 @@ renderHeader($title);
                                     $status = strtolower($o['status'] ?? 'pending');
                                     $tColor = $o['delayColor'];
                                     $metrics = ['totalTaken' => $o['computedTaken'], 'delay' => $o['computedDelay'], 'threshold' => $o['thresholdMinutes'] ?? 20];
+                                    $searchString = strtolower(($o['orderNumber'] ?? '') . ' ' . ($o['tableNumber'] ?? '') . ' ' . ($o['customerName'] ?? ''));
+                                    if (!empty($o['items'])) {
+                                        foreach ($o['items'] as $si) {
+                                            $searchString .= ' ' . strtolower($si['name'] ?? '');
+                                        }
+                                    }
                                     ?>
-                                    <div
-                                        class="bg-gray-800/60 border border-gray-700/50 rounded-2xl px-4 lg:px-8 py-4 lg:py-5 hover:border-[#c5a059]/30 hover:bg-gray-800 transition-colors group relative flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-8">
+                                    <div data-search="<?php echo htmlspecialchars($searchString); ?>"
+                                        class="order-card bg-gray-800/60 border border-gray-700/50 rounded-2xl px-4 lg:px-8 py-4 lg:py-5 hover:border-[#c5a059]/30 hover:bg-gray-800 transition-colors group relative flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-8">
 
                                         <!-- LEFT SECTION -->
                                         <div class="lg:w-48 flex-shrink-0">
@@ -972,6 +987,22 @@ renderHeader($title);
         // The page will now only refresh on user-initiated actions (Serve/Delete).
 
         // Search functionality
+        document.getElementById('order-search')?.addEventListener('input', function (e) {
+            const term = this.value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.order-card');
+            
+            cards.forEach(card => {
+                const searchData = card.getAttribute('data-search') || '';
+                if (searchData.includes(term)) {
+                    card.classList.remove('hidden');
+                    card.classList.add('flex');
+                } else {
+                    card.classList.remove('flex');
+                    card.classList.add('hidden');
+                }
+            });
+        });
+
         document.getElementById('order-search')?.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 const url = new URL(window.location);
