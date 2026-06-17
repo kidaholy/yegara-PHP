@@ -1077,11 +1077,43 @@ const AdminServices = {
     },
 
     async requestExtend(id) {
-        const days = parseInt(prompt('How many extra days does the guest need?', '1'), 10);
+        const req = this.receptionRequests.find(r => r.id === id);
+        if (!req) return;
+        
+        document.getElementById('extend-request-id').value = id;
+        document.getElementById('extend-current-checkout').value = req.checkOut || '';
+        document.getElementById('extend-extra-days').value = 1;
+        document.getElementById('extend-prev-date').textContent = req.checkOut || 'N/A';
+        
+        this._updateExtendPreview();
+        document.getElementById('rec-extend-modal').classList.remove('hidden');
+    },
+
+    _updateExtendPreview() {
+        const currentStr = document.getElementById('extend-current-checkout').value;
+        const extra = parseInt(document.getElementById('extend-extra-days').value, 10) || 0;
+        if (!currentStr) return;
+        
+        const date = new Date(currentStr);
+        date.setDate(date.getDate() + extra);
+        document.getElementById('extend-new-date').textContent = date.toISOString().split('T')[0];
+    },
+
+    async _submitExtension(e) {
+        e.preventDefault();
+        const id = document.getElementById('extend-request-id').value;
+        const days = parseInt(document.getElementById('extend-extra-days').value, 10);
+        
         if (!days || days < 1) return;
-        const res = await this.api('PUT', `api/reception-requests.php?id=${id}`, { status: 'CHECKIN_APPROVED', extraDays: days });
+        
+        const res = await this.api('PUT', `api/reception-requests.php?id=${id}`, { 
+            status: 'CHECKIN_APPROVED', 
+            extraDays: days 
+        });
+        
         if (res.status === 'success') {
             alert(`Stay extended by ${days} day(s).`);
+            document.getElementById('rec-extend-modal').classList.add('hidden');
             this.fetchQueueData();
         } else {
             alert(res?.message || 'Failed to extend stay');

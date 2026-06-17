@@ -296,6 +296,41 @@ $menuTiers = db('menuTiers')->findMany(['where' => ['isDeleted' => false]]) ?: [
     </div>
 </div>
 
+<!-- Extend Stay Modal -->
+<div id="rec-extend-modal" class="hidden fixed inset-0 z-[110] bg-gray-900/80 backdrop-blur-sm flex items-center justify-center p-6">
+    <div class="bg-gray-800 w-full max-w-md rounded-2xl p-8 border border-gray-700 shadow-2xl animate-in">
+        <h2 class="text-xl font-bold text-gray-200 mb-6 border-b border-gray-700/50 pb-4">Extend Stay</h2>
+        <form onsubmit="AdminServices._submitExtension(event)" class="space-y-6">
+            <input type="hidden" id="extend-request-id">
+            <input type="hidden" id="extend-current-checkout">
+            
+            <div class="space-y-2">
+                <label class="ci-label">Extra Days</label>
+                <input type="number" id="extend-extra-days" required min="1" value="1" 
+                    class="inp text-lg font-bold text-[#c5a059]"
+                    oninput="AdminServices._updateExtendPreview()">
+            </div>
+
+            <div class="p-4 rounded-xl bg-gray-900/50 border border-gray-700/50 space-y-3">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-gray-500 font-bold uppercase tracking-wider">Current Checkout</span>
+                    <span id="extend-prev-date" class="text-gray-300 font-medium"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-[#c5a059] font-black uppercase tracking-widest">New Checkout</span>
+                    <span id="extend-new-date" class="text-lg font-black text-white"></span>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4">
+                <button type="button" onclick="document.getElementById('rec-extend-modal').classList.add('hidden')" 
+                    class="px-5 py-2.5 rounded-lg text-sm font-bold text-gray-400 hover:text-white bg-gray-800 border border-gray-700 transition-all">Cancel</button>
+                <button type="submit" class="px-5 py-2.5 rounded-lg text-sm font-bold bg-[#c5a059] text-gray-900 border border-[#c5a059] hover:bg-[#b59048] transition-all shadow-lg shadow-[#c5a059]/10">Confirm Extension</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Receipt Full Preview Modal -->
 <div id="receipt-full-modal" class="hidden fixed inset-0 z-[120] bg-gray-900/95 backdrop-blur-sm flex flex-col p-4 md:p-6">
     <div class="flex items-center justify-between gap-4 mb-4 shrink-0">
