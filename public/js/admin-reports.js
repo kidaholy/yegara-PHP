@@ -391,7 +391,7 @@ const ReportHub = {
     renderMenuSales() {
         const stats = this.getCalculatedStats();
         const filtered = stats.menuItemSales.filter(s => {
-            const currentTab = this.menuSalesTab.toLowerCase();
+            const currentTab = (this.menuSalesTab || 'All').toLowerCase();
             const itemMainCat = (s.mainCategory || '').toLowerCase();
             if (currentTab !== 'all' && itemMainCat !== currentTab) return false;
             if (this.menuCashierFilter !== 'All' && s.cashier !== this.menuCashierFilter) return false;
@@ -400,85 +400,6 @@ const ReportHub = {
         });
         const cashiers = ['All', ...new Set(stats.menuItemSales.map(m => m.cashier))];
         
-        // Cashier Summary Cards
-        let summaryHtml = '';
-        const isAllCashier = this.menuCashierFilter === 'All';
-        const currentTab = this.menuSalesTab; // 'All', 'Food', 'Drinks'
-        
-        const rawStat = isAllCashier 
-            ? { 
-                amount: stats.orderRevenue, 
-                count: stats.totalOrdersCount, 
-                food: stats.foodRevenue, 
-                drinks: stats.drinksRevenue,
-                foodCount: stats.foodOrdersCount,
-                drinksCount: stats.drinksOrdersCount
-              }
-            : (stats.cashierStats[this.menuCashierFilter] || { amount: 0, count: 0, food: 0, drinks: 0, foodCount: 0, drinksCount: 0 });
-        
-        // Active display metrics based on ALL/FOOD/DRINKS tab
-        let activeRevenue = rawStat.amount;
-        let activeCount = rawStat.count;
-        let revLabel = 'Total Revenue';
-        let resColor = 'emerald-400';
-        let subLabel = isAllCashier ? 'CONSOLIDATED EARNINGS' : 'Contribution to Revenue';
-
-        if (currentTab === 'Food') {
-            activeRevenue = rawStat.food;
-            activeCount = rawStat.foodCount;
-            revLabel = 'Food Revenue';
-            resColor = '#c5a059'; // Gold
-            subLabel = 'Culinary Performance';
-        } else if (currentTab === 'Drinks') {
-            activeRevenue = rawStat.drinks;
-            activeCount = rawStat.drinksCount;
-            revLabel = 'Drinks Revenue';
-            resColor = 'blue-400';
-            subLabel = 'Beverage Sales';
-        }
-
-        const displayName = isAllCashier ? 'ALL STAFF MEMBERS' : this.menuCashierFilter;
-        const consistencyText = isAllCashier ? 'SYSTEM STABILITY OK' : 'CONSISTENCY OK';
-
-        summaryHtml = `
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                <!-- Staff Member Card -->
-                <div class="p-8 rounded-2xl border border-gray-800 bg-[#111413] relative overflow-hidden group">
-                    <div class="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                        <i data-lucide="${isAllCashier ? 'users' : 'user'}" class="w-32 h-32"></i>
-                    </div>
-                    <div class="relative z-10">
-                        <p class="text-[10px] font-black text-[#c5a059] uppercase tracking-[0.2em] mb-4">${isAllCashier ? 'Organization' : 'Staff Member'}</p>
-                        <h4 class="text-2xl font-serif italic font-bold text-gray-100 leading-tight mb-6 uppercase">${displayName}</h4>
-                        <div class="flex items-center gap-2 text-emerald-500">
-                            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                            <p class="text-[10px] font-bold uppercase tracking-widest">Active · ${currentTab}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Dynamic Revenue Card -->
-                <div class="p-8 rounded-2xl border border-gray-800 bg-[#111413] flex flex-col justify-center">
-                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">${revLabel}</p>
-                    <div class="flex items-baseline gap-2">
-                        <h4 class="text-4xl font-black text-[${resColor}]">${Number(activeRevenue).toLocaleString('en-US', {maximumFractionDigits:0})}</h4>
-                        <span class="text-xl font-bold text-[${resColor}]/50">Br</span>
-                    </div>
-                    <p class="text-[10px] font-black text-gray-600 uppercase tracking-widest mt-4">${subLabel}</p>
-                </div>
-
-                <!-- Dynamic Orders Card -->
-                <div class="p-8 rounded-2xl border border-gray-800 bg-[#111413] flex flex-col justify-center">
-                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">Orders Handled</p>
-                    <h4 class="text-4xl font-black text-gray-100">${activeCount}</h4>
-                    <div class="flex items-center gap-2 text-[#c5a059] mt-4">
-                        <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
-                        <p class="text-[10px] font-black uppercase tracking-widest">${consistencyText}</p>
-                    </div>
-                </div>
-            </div>
-        `;
-
         return `
             <div class="space-y-8">
                 <!-- Header with Icon & Title -->
@@ -493,6 +414,7 @@ const ReportHub = {
                     <div class="relative group">
                         <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
                         <input type="text" oninput="ReportHub.setMenuSearch(this.value)" 
+                            value="${this.menuSearchTerm}"
                             placeholder="Search menu items..." 
                             class="bg-[#111413] border border-gray-800 rounded-xl pl-12 pr-6 py-3 text-sm text-gray-200 outline-none w-full lg:w-80 focus:border-[#c5a059]/50 transition-all placeholder:text-gray-600">
                     </div>
@@ -514,47 +436,127 @@ const ReportHub = {
                     </select>
                 </div>
 
-                <!-- Summary Stats -->
-                ${summaryHtml}
-
-                <!-- Table Content -->
-                <div class="rounded-2xl border border-gray-800/50 bg-[#111413]/30 overflow-hidden backdrop-blur-sm shadow-2xl">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="text-[10px] font-black uppercase tracking-[0.15em] border-b border-gray-800/50 bg-gray-900/20">
-                                <th class="px-8 py-5 text-gray-500">Menu Item</th>
-                                <th class="px-8 py-5 text-gray-500">Cashier</th>
-                                <th class="px-8 py-5 text-emerald-400 text-right">Quantity Sold</th>
-                                <th class="px-8 py-5 text-[#c5a059] text-right">Revenue Generated</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-800/30">
-                            ${filtered.sort((a,b)=>b.quantity-a.quantity).map(s => `
-                                <tr class="hover:bg-gray-800/20 transition-all group">
-                                    <td class="px-8 py-6">
-                                        <p class="font-bold text-gray-200 text-sm group-hover:text-white">${s.name}</p>
-                                        <p class="text-[9px] font-black text-[#c5a059] uppercase tracking-widest mt-1.5 opacity-60 group-hover:opacity-100 transition-opacity">${s.category}</p>
-                                    </td>
-                                    <td class="px-8 py-6">
-                                        <p class="text-[11px] font-bold text-gray-500 uppercase tracking-tight group-hover:text-gray-400">${s.cashier}</p>
-                                    </td>
-                                    <td class="px-8 py-6 text-right">
-                                        <p class="text-lg font-black text-emerald-400 flex items-center justify-end gap-1.5">
-                                            ${Math.round(s.quantity)}
-                                            <span class="text-[9px] text-emerald-400/50 tracking-widest">SOLD</span>
-                                        </p>
-                                    </td>
-                                    <td class="px-8 py-6 text-right">
-                                        <p class="text-base font-black text-gray-200 flex items-center justify-end gap-1.5">
-                                            ${this.fmt(s.revenue).replace(' Br','')}
-                                            <span class="text-[9px] text-[#c5a059] tracking-widest font-black">BR</span>
-                                        </p>
-                                    </td>
-                                </tr>`).join('') || `<tr><td colspan="4" class="py-20 text-center text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">No matching sales found</td></tr>`}
-                        </tbody>
-                    </table>
+                <!-- Results Area (Dynamic) -->
+                <div id="menu-sales-results">
+                    ${this.renderMenuSalesResults(stats, filtered)}
                 </div>
             </div>`;
+    },
+
+    renderMenuSalesResults(stats, filtered) {
+        // Cashier Summary Cards
+        const isAllCashier = this.menuCashierFilter === 'All';
+        const currentTab = this.menuSalesTab; // 'All', 'Food', 'Drinks'
+        
+        const rawStat = isAllCashier 
+            ? { 
+                amount: stats.orderRevenue, 
+                count: stats.totalOrdersCount, 
+                food: stats.foodRevenue, 
+                drinks: stats.drinksRevenue,
+                foodCount: stats.foodOrdersCount,
+                drinksCount: stats.drinksOrdersCount
+              }
+            : (stats.cashierStats[this.menuCashierFilter] || { amount: 0, count: 0, food: 0, drinks: 0, foodCount: 0, drinksCount: 0 });
+        
+        let activeRevenue = rawStat.amount;
+        let activeCount = rawStat.count;
+        let revLabel = 'Total Revenue';
+        let resColor = 'emerald-400';
+        let subLabel = isAllCashier ? 'CONSOLIDATED EARNINGS' : 'Contribution to Revenue';
+
+        if (currentTab === 'Food') {
+            activeRevenue = rawStat.food;
+            activeCount = rawStat.foodCount;
+            revLabel = 'Food Revenue';
+            resColor = '#c5a059'; 
+            subLabel = 'Culinary Performance';
+        } else if (currentTab === 'Drinks') {
+            activeRevenue = rawStat.drinks;
+            activeCount = rawStat.drinksCount;
+            revLabel = 'Drinks Revenue';
+            resColor = 'blue-400';
+            subLabel = 'Beverage Sales';
+        }
+
+        const displayName = isAllCashier ? 'ALL STAFF MEMBERS' : this.menuCashierFilter;
+        const consistencyText = isAllCashier ? 'SYSTEM STABILITY OK' : 'CONSISTENCY OK';
+
+        const summaryHtml = `
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div class="p-8 rounded-2xl border border-gray-800 bg-[#111413] relative overflow-hidden group">
+                    <div class="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                        <i data-lucide="${isAllCashier ? 'users' : 'user'}" class="w-32 h-32"></i>
+                    </div>
+                    <div class="relative z-10">
+                        <p class="text-[10px] font-black text-[#c5a059] uppercase tracking-[0.2em] mb-4">${isAllCashier ? 'Organization' : 'Staff Member'}</p>
+                        <h4 class="text-2xl font-serif italic font-bold text-gray-100 leading-tight mb-6 uppercase">${displayName}</h4>
+                        <div class="flex items-center gap-2 text-emerald-500">
+                            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <p class="text-[10px] font-bold uppercase tracking-widest">Active · ${currentTab}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-8 rounded-2xl border border-gray-800 bg-[#111413] flex flex-col justify-center">
+                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">${revLabel}</p>
+                    <div class="flex items-baseline gap-2">
+                        <h4 class="text-4xl font-black text-[${resColor}]">${Number(activeRevenue).toLocaleString('en-US', {maximumFractionDigits:0})}</h4>
+                        <span class="text-xl font-bold text-[${resColor}]/50">Br</span>
+                    </div>
+                    <p class="text-[10px] font-black text-gray-600 uppercase tracking-widest mt-4">${subLabel}</p>
+                </div>
+
+                <div class="p-8 rounded-2xl border border-gray-800 bg-[#111413] flex flex-col justify-center">
+                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">Orders Handled</p>
+                    <h4 class="text-4xl font-black text-gray-100">${activeCount}</h4>
+                    <div class="flex items-center gap-2 text-[#c5a059] mt-4">
+                        <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+                        <p class="text-[10px] font-black uppercase tracking-widest">${consistencyText}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const tableHtml = `
+            <div class="rounded-2xl border border-gray-800/50 bg-[#111413]/30 overflow-hidden backdrop-blur-sm shadow-2xl">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-[10px] font-black uppercase tracking-[0.15em] border-b border-gray-800/50 bg-gray-900/20">
+                            <th class="px-8 py-5 text-gray-500">Menu Item</th>
+                            <th class="px-8 py-5 text-gray-500">Cashier</th>
+                            <th class="px-8 py-5 text-emerald-400 text-right">Quantity Sold</th>
+                            <th class="px-8 py-5 text-[#c5a059] text-right">Revenue Generated</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-800/30">
+                        ${filtered.sort((a,b)=>b.quantity-a.quantity).map(s => `
+                            <tr class="hover:bg-gray-800/20 transition-all group">
+                                <td class="px-8 py-6">
+                                    <p class="font-bold text-gray-200 text-sm group-hover:text-white">${s.name}</p>
+                                    <p class="text-[9px] font-black text-[#c5a059] uppercase tracking-widest mt-1.5 opacity-60 group-hover:opacity-100 transition-opacity">${s.category}</p>
+                                </td>
+                                <td class="px-8 py-6">
+                                    <p class="text-[11px] font-bold text-gray-500 uppercase tracking-tight group-hover:text-gray-400">${s.cashier}</p>
+                                </td>
+                                <td class="px-8 py-6 text-right">
+                                    <p class="text-lg font-black text-emerald-400 flex items-center justify-end gap-1.5">
+                                        ${Math.round(s.quantity)}
+                                        <span class="text-[9px] text-emerald-400/50 tracking-widest">SOLD</span>
+                                    </p>
+                                </td>
+                                <td class="px-8 py-6 text-right">
+                                    <p class="text-base font-black text-gray-200 flex items-center justify-end gap-1.5">
+                                        ${this.fmt(s.revenue).replace(' Br','')}
+                                        <span class="text-[9px] text-[#c5a059] tracking-widest font-black">BR</span>
+                                    </p>
+                                </td>
+                            </tr>`).join('') || `<tr><td colspan="4" class="py-20 text-center text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">No matching sales found</td></tr>`}
+                    </tbody>
+                </table>
+            </div>`;
+
+        return summaryHtml + tableHtml;
     },
 
     // ─── HELPERS & SUB-LOGIC ───────────────────────────────────────────────────
@@ -611,9 +613,28 @@ const ReportHub = {
     },
 
     setOrderTab(t) { this.orderHistoryTab = t; this.renderActiveSlide(); },
-    setMenuTab(t) { this.menuSalesTab = t; this.renderActiveSlide(); },
-    setMenuSearch(v) { this.menuSearchTerm = v; this.renderActiveSlide(); },
-    setMenuCashier(v) { this.menuCashierFilter = v; this.renderActiveSlide(); },
+    setMenuTab(t) { this.menuSalesTab = t; this.updateMenuSalesView(); },
+    setMenuSearch(v) { this.menuSearchTerm = v; this.updateMenuSalesView(); },
+    setMenuCashier(v) { this.menuCashierFilter = v; this.updateMenuSalesView(); },
+    
+    updateMenuSalesView() {
+        const resultsArea = document.getElementById('menu-sales-results');
+        if (resultsArea) {
+            const stats = this.getCalculatedStats();
+            const filtered = stats.menuItemSales.filter(s => {
+                const currentTab = (this.menuSalesTab || 'All').toLowerCase();
+                const itemMainCat = (s.mainCategory || '').toLowerCase();
+                if (currentTab !== 'all' && itemMainCat !== currentTab) return false;
+                if (this.menuCashierFilter !== 'All' && s.cashier !== this.menuCashierFilter) return false;
+                if (this.menuSearchTerm && !s.name.toLowerCase().includes(this.menuSearchTerm.toLowerCase())) return false;
+                return true;
+            });
+            resultsArea.innerHTML = this.renderMenuSalesResults(stats, filtered);
+            lucide.createIcons();
+        } else {
+            this.renderActiveSlide();
+        }
+    },
     navCashier(d) {
         let next = this.activeCashierIdx + d;
         if (next < 0) next = 0;
