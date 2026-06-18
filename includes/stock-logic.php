@@ -66,8 +66,8 @@ function applyStockAdjustment($consumptionMap, $direction) {
         $stock = db('stocks')->findUnique(['where' => ['id' => $stockId]]);
         if (!$stock || ($stock['trackQuantity'] ?? true) === false) continue;
 
-        $newQty = max(0, (float)($stock['quantity'] ?? 0) + ($amount * $direction));
-        $newConsumed = (float)($stock['totalConsumed'] ?? 0) + ($amount * (-$direction));
+        $newQty      = round(max(0, (float)($stock['quantity'] ?? 0) + ($amount * $direction)), 2);
+        $newConsumed = round((float)($stock['totalConsumed'] ?? 0) + ($amount * (-$direction)), 2);
         
         $status = ($newQty > 0) ? 'active' : 'out_of_stock';
         if (isset($stock['status']) && $stock['status'] === 'finished') {

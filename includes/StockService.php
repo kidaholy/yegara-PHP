@@ -12,12 +12,12 @@ class StockService {
         $item = db('stock_items')->findUnique(['where' => ['id' => $id]]);
         if (!$item) throw new Exception("Item not found");
 
-        $newStoreQty = ($item['store_quantity'] ?? 0) + $qtyAdded;
-        $newTotalPurchased = ($item['total_purchased'] ?? 0) + $qtyAdded;
-        $newTotalInvestment = ($item['total_investment'] ?? 0) + $totalCost;
+        $newStoreQty = round(($item['store_quantity'] ?? 0) + $qtyAdded, 2);
+        $newTotalPurchased = round(($item['total_purchased'] ?? 0) + $qtyAdded, 2);
+        $newTotalInvestment = round(($item['total_investment'] ?? 0) + $totalCost, 2);
         
         // Calculate new weighted average price
-        $newAvgPrice = ($newTotalPurchased > 0) ? ($newTotalInvestment / $newTotalPurchased) : 0;
+        $newAvgPrice = ($newTotalPurchased > 0) ? round($newTotalInvestment / $newTotalPurchased, 2) : 0;
 
         return db('stock_items')->update([
             'where' => ['id' => $id],
@@ -42,8 +42,8 @@ class StockService {
             throw new Exception("Insufficient bulk storage quantity");
         }
 
-        $newStoreQty = $item['store_quantity'] - $qtyToMove;
-        $newStockQty = ($item['quantity'] ?? 0) + $qtyToMove;
+        $newStoreQty = round($item['store_quantity'] - $qtyToMove, 2);
+        $newStockQty = round(($item['quantity'] ?? 0) + $qtyToMove, 2);
 
         return db('stock_items')->update([
             'where' => ['id' => $id],
@@ -62,8 +62,8 @@ class StockService {
         $item = db('stock_items')->findUnique(['where' => ['id' => $id]]);
         if (!$item) throw new Exception("Item not found");
 
-        $newStockQty = max(0, ($item['quantity'] ?? 0) - $qtyUsed);
-        $newTotalConsumed = ($item['total_consumed'] ?? 0) + $qtyUsed;
+        $newStockQty = round(max(0, ($item['quantity'] ?? 0) - $qtyUsed), 2);
+        $newTotalConsumed = round(($item['total_consumed'] ?? 0) + $qtyUsed, 2);
         
         $status = $item['status'];
         if ($newStockQty <= 0) $status = 'out_of_stock';

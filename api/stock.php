@@ -76,11 +76,11 @@ try {
             $added     = floatval($d['quantityAdded']);
             $unitPrice = floatval($d['unitPrice'] ?? $item['averagePurchasePrice'] ?? 0);
             
-            $newStore  = ($item['storeQuantity'] ?? 0) + $added;
-            $newTotal  = ($item['totalPurchased']  ?? 0) + $added;
+            $newStore  = round(($item['storeQuantity'] ?? 0) + $added, 2);
+            $newTotal  = round(($item['totalPurchased']  ?? 0) + $added, 2);
             
             // Recalibrate total investment based on new unit price (user requirement: unit price goes with new one)
-            $newInvest = $newStore * $unitPrice;
+            $newInvest = round($newStore * $unitPrice, 2);
 
             $entry = [
                 'id'               => uniqid(),
@@ -117,9 +117,9 @@ try {
             $qty = floatval($d['quantity']);
             $currentPrice = floatval($item['averagePurchasePrice'] ?? 0);
             
-            $newStore  = max(0, ($item['storeQuantity'] ?? 0) - $qty);
-            $reduction = $qty * $currentPrice;
-            $newInvest = max(0, ($item['totalInvestment'] ?? 0) - $reduction);
+            $newStore  = round(max(0, ($item['storeQuantity'] ?? 0) - $qty), 2);
+            $reduction = round($qty * $currentPrice, 2);
+            $newInvest = round(max(0, ($item['totalInvestment'] ?? 0) - $reduction), 2);
 
             $updated = db('stocks')->update(['where' => ['id' => $id], 'data' => [
                 'storeQuantity'   => $newStore,

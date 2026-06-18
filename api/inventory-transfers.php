@@ -44,10 +44,10 @@ try {
             $stock = db('stocks')->findUnique(['where'=>['id'=>$req['stockId']]]);
             if ($stock) {
                 $qty       = floatval($req['quantity']);
-                $newStore  = max(0, ($stock['storeQuantity']??0) - $qty);
-                $newActive = ($stock['quantity']??0) + $qty;
+                $newStore  = round(max(0, ($stock['storeQuantity']??0) - $qty), 2);
+                $newActive = round(($stock['quantity']??0) + $qty, 2);
                 $unitPrice = floatval($stock['averagePurchasePrice'] ?? 0);
-                $newInvest = max(0, floatval($stock['totalInvestment'] ?? 0) - ($qty * $unitPrice));
+                $newInvest = round(max(0, floatval($stock['totalInvestment'] ?? 0) - ($qty * $unitPrice)), 2);
                 db('stocks')->update(['where'=>['id'=>$req['stockId']], 'data'=>[
                     'storeQuantity'   => $newStore,
                     'quantity'        => $newActive,
