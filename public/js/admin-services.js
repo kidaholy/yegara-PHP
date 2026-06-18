@@ -1260,6 +1260,11 @@ const AdminServices = {
                     <span class="text-[#c5a059] font-bold">${Number(r.roomPrice).toLocaleString()} ETB</span>
                 </div>` : ''}
                 ${r.status === 'EXTEND_PENDING' && r.pendingExtraDays ? `<div class="text-orange-400 text-[10px] font-bold uppercase tracking-wider">+${r.pendingExtraDays} day(s) requested</div>` : ''}
+                ${checkoutDue ? `
+                <div class="flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 rounded-lg px-3 py-2 mt-1">
+                    <i data-lucide="alarm-clock" class="w-3.5 h-3.5 text-orange-400 shrink-0"></i>
+                    <span class="text-[10px] font-black uppercase tracking-widest text-orange-400">Checkout Due Today</span>
+                </div>` : ''}
             </div>
 
             <div class="mt-auto pt-6 flex flex-wrap items-center gap-2">
