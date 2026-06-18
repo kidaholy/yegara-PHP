@@ -34,6 +34,7 @@ const ReportHub = {
     menuCashierFilter: 'All',
     activeCashierIdx: 0,
     inventorySearchTerm: '',
+    inventoryTab: 'All',
 
     // ─── INIT ─────────────────────────────────────────────────────────────────────
     async init() {
@@ -329,6 +330,17 @@ const ReportHub = {
         const u = this.stockUsageData?.stockAnalysis || [];
         const filtered = u.filter(i => {
             if (Math.round(i.closingStock||0) <= 0) return false;
+            
+            // Tab Filter (Food/Drinks)
+            const tab = this.inventoryTab;
+            if (tab !== 'All') {
+                const cat = (i.category || '').toLowerCase();
+                const isDrink = (cat === 'drinks' || cat === 'wiski');
+                const isFood = (cat === 'food' || cat === 'meat');
+                if (tab === 'Food' && !isFood) return false;
+                if (tab === 'Drinks' && !isDrink) return false;
+            }
+
             const term = (this.inventorySearchTerm || '').toLowerCase();
             if (term && !i.name.toLowerCase().includes(term) && !i.category.toLowerCase().includes(term)) return false;
             return true;
@@ -340,7 +352,16 @@ const ReportHub = {
                 ${lowCount > 0 ? `<div class="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400"><i data-lucide="alert-triangle" class="w-4 h-4"></i><p class="text-xs font-bold uppercase tracking-wider">${lowCount} Low Stock items alert.</p></div>` : ''}
                 
                 <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-2">
-                    <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Inventory Turnover · ${filtered.length} Items</h3>
+                    <div class="flex items-center gap-4">
+                        <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Inventory Turnover · ${filtered.length} Items</h3>
+                        <div class="flex bg-gray-900/50 p-0.5 rounded-lg border border-gray-700/50">
+                            ${['All', 'Food', 'Drinks'].map(t => `
+                                <button onclick="ReportHub.setInventoryTab('${t}')" 
+                                    class="px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${this.inventoryTab === t ? 'bg-[#c5a059]/10 text-[#c5a059] shadow-inner shadow-black/20' : 'text-gray-500 hover:text-gray-300'}">
+                                    ${t}
+                                </button>`).join('')}
+                        </div>
+                    </div>
                     
                     <div class="flex flex-wrap items-center gap-4">
                         <div class="relative group">
@@ -389,6 +410,16 @@ const ReportHub = {
     renderStore() {
         const u = this.stockUsageData?.stockAnalysis || [];
         const filtered = u.filter(i => {
+            // Tab Filter (Food/Drinks)
+            const tab = this.inventoryTab;
+            if (tab !== 'All') {
+                const cat = (i.category || '').toLowerCase();
+                const isDrink = (cat === 'drinks' || cat === 'wiski');
+                const isFood = (cat === 'food' || cat === 'meat');
+                if (tab === 'Food' && !isFood) return false;
+                if (tab === 'Drinks' && !isDrink) return false;
+            }
+
             const term = (this.inventorySearchTerm || '').toLowerCase();
             if (term && !i.name.toLowerCase().includes(term) && !i.category.toLowerCase().includes(term)) return false;
             return true;
@@ -397,7 +428,16 @@ const ReportHub = {
         return `
             <div class="space-y-6">
                 <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-2">
-                    <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Store Investment Analytics · ${filtered.length} Items</h3>
+                    <div class="flex items-center gap-4">
+                        <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Store Investment Analytics · ${filtered.length} Items</h3>
+                        <div class="flex bg-gray-900/50 p-0.5 rounded-lg border border-gray-700/50">
+                            ${['All', 'Food', 'Drinks'].map(t => `
+                                <button onclick="ReportHub.setInventoryTab('${t}')" 
+                                    class="px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${this.inventoryTab === t ? 'bg-[#c5a059]/10 text-[#c5a059] shadow-inner shadow-black/20' : 'text-gray-500 hover:text-gray-300'}">
+                                    ${t}
+                                </button>`).join('')}
+                        </div>
+                    </div>
                     
                     <div class="flex flex-wrap items-center gap-4">
                         <div class="relative group">
@@ -414,6 +454,9 @@ const ReportHub = {
                         </button>
                         <button onclick="ReportHub.confirmWipe('all')" class="px-3 py-1.5 rounded-lg border border-gray-700/50 bg-gray-800/40 text-gray-400 text-[10px] font-bold uppercase tracking-widest hover:bg-gray-800 transition-all flex items-center gap-2">
                             Wipe Global
+                        </button>
+                        <button onclick="ReportHub.exportStoreCSV()" class="text-xs font-semibold uppercase text-gray-400 hover:text-white transition-colors flex items-center gap-2 outline-none">
+                            <i data-lucide="download" class="w-4 h-4"></i> Export CSV
                         </button>
                     </div>
                 </div>
@@ -691,6 +734,7 @@ const ReportHub = {
     setMenuSearch(v) { this.menuSearchTerm = v; this.updateMenuSalesView(); },
     setMenuCashier(v) { this.menuCashierFilter = v; this.updateMenuSalesView(); },
     setInventorySearch(v) { this.inventorySearchTerm = v; this.updateInventoryView(); },
+    setInventoryTab(t) { this.inventoryTab = t; this.updateInventoryView(); },
     
     updateInventoryView() {
         const invArea = document.getElementById('inventory-results');
@@ -699,6 +743,16 @@ const ReportHub = {
         
         if (invArea || strArea) {
             const filtered = u.filter(i => {
+                // Tab Filter (Food/Drinks)
+                const tab = this.inventoryTab;
+                if (tab !== 'All') {
+                    const cat = (i.category || '').toLowerCase();
+                    const isDrink = (cat === 'drinks' || cat === 'wiski');
+                    const isFood = (cat === 'food' || cat === 'meat');
+                    if (tab === 'Food' && !isFood) return false;
+                    if (tab === 'Drinks' && !isDrink) return false;
+                }
+
                 const term = (this.inventorySearchTerm || '').toLowerCase();
                 if (term && !i.name.toLowerCase().includes(term) && !i.category.toLowerCase().includes(term)) return false;
                 return true;
@@ -806,9 +860,9 @@ const ReportHub = {
                     o.tableNumber || 'Walking',
                     i.name,
                     i.category || 'General',
-                    Math.round(i.quantity||0),
-                    Math.round(i.price||0),
-                    Math.round((i.price||0) * (i.quantity||0)),
+                    this.fmtQty(i.quantity||0),
+                    this.fmtQty(i.price||0),
+                    this.fmtQty((i.price||0) * (i.quantity||0)),
                     o.createdBy?.name || '—',
                     o.floor || '—'
                 ]);
@@ -818,11 +872,87 @@ const ReportHub = {
     },
 
     exportInventoryCSV() {
-        // Spec Headers: Item Name, Unit Cost, Quantity, Total Purchase, Consumed, Remains, Potential Rev, Status
         const u = this.stockUsageData?.stockAnalysis || [];
-        const h = ['Item Name', 'Unit Cost', 'Quantity', 'Total Purchase', 'Consumed', 'Remains', 'Potential Rev', 'Status'];
-        const rows = u.map(i => [i.name, Math.round(i.currentUnitCost||0), Math.round(i.openingStock||0), Math.round((i.openingStock||0)*(i.weightedAvgCost||0)), Math.round(i.consumed||0), Math.round(i.closingStock||0), Math.round((i.closingStock||0)*(i.currentUnitCost||0)), i.isLowStock?'LOW':'OK']);
-        ReportExporter.toCSV(`Inventory-Investment-${this.timeRange}.csv`, h, rows);
+        
+        // Use the exact same filter logic as the rendered report table
+        const filtered = u.filter(i => {
+            if (Math.round(i.closingStock||0) <= 0) return false;
+            
+            // Tab Filter (Food/Drinks)
+            const tab = this.inventoryTab;
+            if (tab !== 'All') {
+                const cat = (i.category || '').toLowerCase();
+                const isDrink = (cat === 'drinks' || cat === 'wiski');
+                const isFood = (cat === 'food' || cat === 'meat');
+                if (tab === 'Food' && !isFood) return false;
+                if (tab === 'Drinks' && !isDrink) return false;
+            }
+
+            const term = (this.inventorySearchTerm || '').toLowerCase();
+            if (term && !i.name.toLowerCase().includes(term) && !i.category.toLowerCase().includes(term)) return false;
+            return true;
+        });
+
+        // Match UI table headers: Item Name, Sell Price, Remains, Investment (@avg), Usage, Potential Value, Status
+        const h = ['Item Name', 'Category', 'Sell Price', 'Remains', 'Unit', 'Investment (@avg)', 'Usage', 'Potential Value', 'Status'];
+        
+        const rows = filtered.map(i => [
+            i.name,
+            i.category,
+            this.fmtQty(i.currentUnitCost),
+            this.fmtQty(i.closingStock),
+            i.unit,
+            this.fmtQty(i.weightedAvgCost * i.closingStock),
+            this.fmtQty(i.consumed),
+            this.fmtQty(i.currentUnitCost * i.closingStock),
+            i.isLowStock ? 'LOW' : 'OK'
+        ]);
+
+        const period = this.timeRange.toUpperCase();
+        const tabLabel = this.inventoryTab;
+        const filename = `Inventory-Investment-${tabLabel}-${period}.csv`;
+        
+        ReportExporter.toCSV(filename, h, rows);
+    },
+
+    exportStoreCSV() {
+        // Spec Headers: Item Name, Category, Unit Cost, In Store, IN (Period), OUT (Period), Total Inv.
+        const u = this.stockUsageData?.stockAnalysis || [];
+        
+        const filtered = u.filter(i => {
+            // Tab Filter (Food/Drinks)
+            const tab = this.inventoryTab;
+            if (tab !== 'All') {
+                const cat = (i.category || '').toLowerCase();
+                const isDrink = (cat === 'drinks' || cat === 'wiski');
+                const isFood = (cat === 'food' || cat === 'meat');
+                if (tab === 'Food' && !isFood) return false;
+                if (tab === 'Drinks' && !isDrink) return false;
+            }
+
+            const term = (this.inventorySearchTerm || '').toLowerCase();
+            if (term && !i.name.toLowerCase().includes(term) && !i.category.toLowerCase().includes(term)) return false;
+            return true;
+        }).filter(i => (i.storeQuantity||0) > 0 || (i.storeIn||0) > 0 || (i.storeOut||0) > 0);
+
+        const h = ['Item Name', 'Category', 'Unit Cost', 'In Store', 'Unit', 'IN (Period)', 'OUT (Period)', 'Total Inv.'];
+        
+        const rows = filtered.map(i => [
+            i.name,
+            i.category,
+            this.fmtQty(i.weightedAvgCost),
+            this.fmtQty(i.storeQuantity),
+            i.unit,
+            this.fmtQty(i.storeIn),
+            this.fmtQty(i.storeOut),
+            this.fmtQty(i.storeClosingValue),
+        ]);
+
+        const period = this.timeRange.toUpperCase();
+        const tabLabel = this.inventoryTab;
+        const filename = `Store-Investment-${tabLabel}-${period}.csv`;
+        
+        ReportExporter.toCSV(filename, h, rows);
     },
 
     exportMenuCSV() {
@@ -849,14 +979,14 @@ const ReportHub = {
             i.mainCategory || 'Food',
             i.category || 'General',
             i.cashier,
-            Math.round(i.quantity || 0),
-            Math.round(i.revenue || 0)
+            this.fmtQty(i.quantity || 0),
+            this.fmtQty(i.revenue || 0)
         ]);
 
         // Totals row
         const totalQty = filtered.reduce((s, i) => s + (i.quantity || 0), 0);
         const totalRev = filtered.reduce((s, i) => s + (i.revenue || 0), 0);
-        rows.push(['', '', '', 'TOTAL', Math.round(totalQty), Math.round(totalRev)]);
+        rows.push(['', '', '', 'TOTAL', this.fmtQty(totalQty), this.fmtQty(totalRev)]);
 
         // Metadata banner rows at top
         const meta = [
