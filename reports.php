@@ -165,5 +165,5 @@ renderHeader("Business Intelligence");
 }
 </style>
 
-<script src="public/js/admin-reports.js"></script>
+<script src="public/js/admin-reports.js?v=<?= time() ?>"></script>
 <?php renderFooter(); ?>
