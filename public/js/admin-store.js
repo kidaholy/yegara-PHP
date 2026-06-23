@@ -24,6 +24,7 @@ const S = {
     editExpenseId: null,
     denialRequestId: null,
     catActiveSubtab: 'stock',
+    inventoryCategoryFilter: 'All',
 };
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
@@ -72,15 +73,23 @@ async function api(method, url, body) {
 
 // ─── SIDEBAR STATS ────────────────────────────────────────────────────────────
 function renderSidebar() {
-    const storeVal     = S.items.reduce((a, i) => a + (i.totalInvestment || (i.storeQuantity||0) * (i.averagePurchasePrice||0)), 0);
+    const f = S.inventoryCategoryFilter;
+    const invItems = (S.activeTab === 'inventory') ? S.items.filter(i => matchesInvCatFilter(i, f)) : S.items;
+    
+    const storeVal     = invItems.reduce((a, i) => a + (i.totalInvestment || (i.storeQuantity||0) * (i.averagePurchasePrice||0)), 0);
     const assetVal     = S.assets.reduce((a, x) => a + (x.total_value||x.totalValue||0), 0);
     const monthExpense = S.expenses.reduce((a, e) => a + (e.amount||0), 0);
 
     setText('si-store-value',  fmt(storeVal));
-    setText('si-sku-count',    S.items.length);
+    setText('si-sku-count',    invItems.length);
     setText('si-asset-value',  fmt(assetVal));
     setText('si-asset-count',  S.assets.length);
     setText('si-expense-total',fmt(monthExpense));
+
+    // Update label to reflect filter
+    const label = document.querySelector('#si-store-value + p') || document.querySelector('#si-sku-count + p');
+    const title = document.querySelector('h2.text-lg.lg\\:text-xl.font-bold.text-white');
+    if (title) title.textContent = f === 'All' ? 'Store' : `${f} Store`;
 }
 
 // ─── TAB ──────────────────────────────────────────────────────────────────────
@@ -109,9 +118,33 @@ function renderTab() {
     lucide.createIcons();
 }
 
+// Category tab helper (shared logic)
+function matchesInvCatFilter(item, filter) {
+    if (filter === 'All') return true;
+    const cat = (item.category || '').toLowerCase();
+    const isDrink = cat === 'drinks' || cat === 'wiski' || cat === 'drink' || cat === 'beverage';
+    const isFood  = cat === 'food'   || cat === 'meat'  || cat === 'foods';
+    if (filter === 'Food')   return isFood;
+    if (filter === 'Drinks') return isDrink;
+    return true;
+}
+
+window.setInventoryCategoryFilter = function(f) {
+    S.inventoryCategoryFilter = f;
+    renderSidebar(); // Update stats to reflect the category distribution
+    renderTab(); // Will trigger renderInventory
+};
+
 // ─── TAB 1: BULK INVENTORY ────────────────────────────────────────────────────
 function renderInventory() {
-    const rows = filtered(S.items).map(i => {
+    const term = S.searchTerm.toLowerCase();
+    const items = S.items.filter(i => {
+        const matchesSearch = (i.name||'').toLowerCase().includes(term) || (i.category||'').toLowerCase().includes(term);
+        const matchesCat    = matchesInvCatFilter(i, S.inventoryCategoryFilter);
+        return matchesSearch && matchesCat;
+    });
+
+    const rows = items.map(i => {
         const storeQty = i.storeQuantity || 0;
         const posQty   = i.quantity || 0;
         const lowStore = i.storeMinLimit && storeQty <= i.storeMinLimit;
@@ -156,11 +189,23 @@ function renderInventory() {
 
     return `
     <div class="rounded-xl border border-gray-700/50 overflow-hidden">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-700/50 bg-gray-800/50">
-        <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400">
-          ${S.items.length} Items &nbsp;·&nbsp; ${S.items.filter(i=>(i.storeQuantity||0)>0).length} in Bulk Storage
-        </h3>
-        <button onclick="exportCSV('inventory')" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-xs font-semibold text-gray-400 hover:text-white transition-colors">
+      <!-- Header with Tabs + Export -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between px-5 py-4 border-b border-gray-700/50 bg-gray-800/50 gap-4">
+        <div class="flex items-center gap-4">
+          <div class="flex bg-gray-900/50 p-1 rounded-lg border border-gray-700/50">
+            ${['All', 'Food', 'Drinks'].map(t => `
+              <button onclick="setInventoryCategoryFilter('${t}')"
+                class="px-4 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all
+                ${S.inventoryCategoryFilter === t ? 'bg-[#c5a059]/10 text-[#c5a059]' : 'text-gray-500 hover:text-gray-300'}">
+                ${t}
+              </button>`).join('')}
+          </div>
+          <h3 class="hidden lg:block text-[10px] font-black uppercase tracking-widest text-gray-500">
+            ${items.length} Items &nbsp;·&nbsp; ${items.filter(i=>(i.storeQuantity||0)>0).length} in Bulk
+          </h3>
+        </div>
+        
+        <button onclick="exportCSV('inventory')" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-xs font-semibold text-gray-400 hover:text-white transition-colors w-fit">
           <i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV
         </button>
       </div>

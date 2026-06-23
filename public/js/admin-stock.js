@@ -7,6 +7,7 @@ const S = {
     items: [],
     loading: false,
     searchTerm: '',
+    categoryFilter: 'All',
     editingId: null,
     showExportDropdown: false,
 };
@@ -39,21 +40,70 @@ async function fetchStock() {
 
 // ─── STATS ────────────────────────────────────────────────────────────────────
 function renderStats() {
-    const totalValue  = S.items.reduce((a, i) => a + (i.quantity||0) * (i.unitCost||0), 0);
-    const lowStock    = S.items.filter(i => i.trackQuantity && (i.quantity||0) <= (i.minLimit||0) && Math.round(i.quantity||0) > 0).length;
+    const visible     = S.items.filter(i => matchesCatFilter(i, S.categoryFilter));
+    const totalValue  = visible.reduce((a, i) => a + (i.quantity||0) * (i.unitCost||0), 0);
+    const lowStock    = visible.filter(i => i.trackQuantity && (i.quantity||0) <= (i.minLimit||0) && Math.round(i.quantity||0) > 0).length;
 
     setText('stat-pos-value',   fmt(totalValue));
     setText('stat-low-stock',   lowStock);
 }
 
 // ─── TABLE ────────────────────────────────────────────────────────────────────
+// Category tab helper (shared with store)
+function matchesCatFilter(item, filter) {
+    if (filter === 'All') return true;
+    const cat = (item.category || '').toLowerCase();
+    const isDrink = cat === 'drinks' || cat === 'wiski' || cat === 'drink' || cat === 'beverage';
+    const isFood  = cat === 'food'   || cat === 'meat'  || cat === 'foods';
+    if (filter === 'Food')   return isFood;
+    if (filter === 'Drinks') return isDrink;
+    return true;
+}
+
+window.setCategoryFilter = function(f) {
+    S.categoryFilter = f;
+    // Update tab pill styles
+    document.querySelectorAll('.cat-tab-btn').forEach(b => {
+        const act = b.dataset.cat === f;
+        b.classList.toggle('bg-[#c5a059]/10', act);
+        b.classList.toggle('text-[#c5a059]',   act);
+        b.classList.toggle('text-gray-500',    !act);
+    });
+    renderTable();
+    renderStats();
+};
+
 function renderTable() {
     const tbody = document.getElementById('stock-tbody');
     if (!tbody) return;
 
+    // Inject category tabs above the table if not yet present
+    const tabsId = 'stock-cat-tabs';
+    const wrap   = document.getElementById('stock-table-wrap');
+    if (wrap && !document.getElementById(tabsId)) {
+        const tabsDiv = document.createElement('div');
+        tabsDiv.id = tabsId;
+        tabsDiv.className = 'flex items-center gap-1 p-1 bg-gray-900 rounded-xl border border-gray-700 mb-4 w-fit';
+        tabsDiv.innerHTML = ['All','Food','Drinks'].map(t => `
+            <button data-cat="${t}" onclick="setCategoryFilter('${t}')"
+                class="cat-tab-btn px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all
+                ${S.categoryFilter === t ? 'bg-[#c5a059]/10 text-[#c5a059]' : 'text-gray-500 hover:text-gray-300'}"
+                >${t}</button>`).join('');
+        wrap.insertBefore(tabsDiv, wrap.firstChild);
+    } else if (document.getElementById(tabsId)) {
+        // Re-render tab active state
+        document.querySelectorAll('.cat-tab-btn').forEach(b => {
+            const act = b.dataset.cat === S.categoryFilter;
+            b.classList.toggle('bg-[#c5a059]/10', act);
+            b.classList.toggle('text-[#c5a059]',   act);
+            b.classList.toggle('text-gray-500',    !act);
+        });
+    }
+
     const filtered = S.items.filter(i =>
-        (i.name||'').toLowerCase().includes(S.searchTerm.toLowerCase()) ||
-        (i.category||'').toLowerCase().includes(S.searchTerm.toLowerCase())
+        matchesCatFilter(i, S.categoryFilter) &&
+        ((i.name||'').toLowerCase().includes(S.searchTerm.toLowerCase()) ||
+         (i.category||'').toLowerCase().includes(S.searchTerm.toLowerCase()))
     ).filter(i => Math.round(i.quantity||0) > 0);
 
     if (!filtered.length) {
