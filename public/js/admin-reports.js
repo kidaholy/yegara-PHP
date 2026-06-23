@@ -19,6 +19,9 @@ const ReportHub = {
     initialized: false,
     loadingSlide: false,
     selectedDate: new Date(),
+    dateRangeStart: null,   // for duration mode (YYYY-MM-DD)
+    dateRangeEnd: null,     // for duration mode (YYYY-MM-DD)
+    durationPickerOpen: false,
     
     // Data (Shared)
     orders: [],
@@ -695,22 +698,34 @@ const ReportHub = {
     
     getQueryString() {
         const params = new URLSearchParams();
-        params.append('period', this.timeRange);
-        if (this.timeRange === 'custom') {
+        if (this.timeRange === 'duration' && this.dateRangeStart && this.dateRangeEnd) {
+            params.append('period', 'custom');
+            params.append('startDate', this.dateRangeStart);
+            params.append('endDate', this.dateRangeEnd);
+        } else if (this.timeRange === 'custom') {
+            params.append('period', 'custom');
             const d = this.selectedDate.toISOString().split('T')[0];
             params.append('startDate', d);
             params.append('endDate', d);
+        } else {
+            params.append('period', this.timeRange);
         }
         return `?${params.toString()}`;
     },
 
     setTimeRange(r) {
         this.timeRange = r;
+        // Close duration picker if open
+        this.durationPickerOpen = false;
+        const dp = document.getElementById('duration-picker');
+        if (dp) { dp.classList.remove('flex'); dp.classList.add('hidden'); }
+        // Reset single date picker
+        const sdp = document.getElementById('custom-date-picker');
+        if (sdp) sdp.value = '';
         document.querySelectorAll('.range-btn').forEach(b => {
              const act = b.id === `range-btn-${r}`;
              b.classList.toggle('bg-[#c5a059]', act);
              b.classList.toggle('text-gray-900', act);
-             
              b.classList.toggle('text-gray-500', !act);
              b.classList.toggle('hover:text-white', !act);
              b.classList.toggle('hover:bg-gray-800', !act);
@@ -720,13 +735,95 @@ const ReportHub = {
 
     setCustomDate(v) {
         if (!v) return;
-        this.selectedDate = new Date(v);
+        this.selectedDate = new Date(v + 'T00:00:00');
         this.timeRange = 'custom';
+        // Deactivate all range pills including duration
         document.querySelectorAll('.range-btn').forEach(b => {
              b.classList.remove('bg-[#c5a059]', 'text-gray-900');
              b.classList.add('text-gray-500', 'hover:text-white', 'hover:bg-gray-800');
         });
+        // Close duration picker
+        this.durationPickerOpen = false;
+        const dp = document.getElementById('duration-picker');
+        if (dp) { dp.classList.remove('flex'); dp.classList.add('hidden'); }
         this.fetchAllData();
+    },
+
+    toggleDurationPicker() {
+        this.durationPickerOpen = !this.durationPickerOpen;
+        const dp = document.getElementById('duration-picker');
+        if (!dp) return;
+        if (this.durationPickerOpen) {
+            dp.classList.remove('hidden');
+            dp.classList.add('flex');
+            // Pre-fill inputs if we already have a range
+            if (this.dateRangeStart) document.getElementById('duration-start').value = this.dateRangeStart;
+            if (this.dateRangeEnd) document.getElementById('duration-end').value = this.dateRangeEnd;
+            // Highlight duration button
+            const btn = document.getElementById('range-btn-duration');
+            if (btn) {
+                btn.classList.add('bg-[#c5a059]', 'text-gray-900');
+                btn.classList.remove('text-gray-500', 'hover:text-white', 'hover:bg-gray-800');
+            }
+        } else {
+            dp.classList.add('hidden');
+            dp.classList.remove('flex');
+            // Un-highlight only if not active duration
+            if (this.timeRange !== 'duration') {
+                const btn = document.getElementById('range-btn-duration');
+                if (btn) {
+                    btn.classList.remove('bg-[#c5a059]', 'text-gray-900');
+                    btn.classList.add('text-gray-500', 'hover:text-white', 'hover:bg-gray-800');
+                }
+            }
+        }
+    },
+
+    applyDuration() {
+        const start = document.getElementById('duration-start')?.value;
+        const end = document.getElementById('duration-end')?.value;
+        if (!start || !end) { alert('Please select both a start and end date.'); return; }
+        if (start > end) { alert('Start date must be before or equal to end date.'); return; }
+        this.dateRangeStart = start;
+        this.dateRangeEnd = end;
+        this.timeRange = 'duration';
+        // Deactivate regular pills
+        document.querySelectorAll('.range-btn').forEach(b => {
+            if (b.id !== 'range-btn-duration') {
+                b.classList.remove('bg-[#c5a059]', 'text-gray-900');
+                b.classList.add('text-gray-500', 'hover:text-white', 'hover:bg-gray-800');
+            }
+        });
+        // Highlight duration button
+        const btn = document.getElementById('range-btn-duration');
+        if (btn) {
+            btn.classList.add('bg-[#c5a059]', 'text-gray-900');
+            btn.classList.remove('text-gray-500', 'hover:text-white', 'hover:bg-gray-800');
+        }
+        // Update subtitle to show range
+        const subtitle = document.getElementById('slide-subtitle');
+        if (subtitle) {
+            const labels = window.reportSlides.map(s => s.label);
+            subtitle.textContent = `Consolidated reports · ${labels[this.activeSlide] || 'Analytics'} · ${start} → ${end}`;
+        }
+        // Clear single date picker
+        const sdp = document.getElementById('custom-date-picker');
+        if (sdp) sdp.value = '';
+        this.fetchAllData();
+    },
+
+    clearDuration() {
+        this.dateRangeStart = null;
+        this.dateRangeEnd = null;
+        const start = document.getElementById('duration-start');
+        const end = document.getElementById('duration-end');
+        if (start) start.value = '';
+        if (end) end.value = '';
+        // Close picker and switch back to month
+        this.durationPickerOpen = false;
+        const dp = document.getElementById('duration-picker');
+        if (dp) { dp.classList.add('hidden'); dp.classList.remove('flex'); }
+        this.setTimeRange('month');
     },
 
     setOrderTab(t) { this.orderHistoryTab = t; this.renderActiveSlide(); },
