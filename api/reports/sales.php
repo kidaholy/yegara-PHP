@@ -20,9 +20,19 @@ try {
     $end = $range['end'];
 
     $allOrders = db('orders')->findMany();
+    // Load order items once (avoid N+1 queries)
+    $allOrderItems = db('orderItems')->findMany();
+    $itemsByOrderId = [];
+    foreach ($allOrderItems as $it) {
+        $oid = $it['orderId'] ?? null;
+        if (!$oid) continue;
+        if (!isset($itemsByOrderId[$oid])) $itemsByOrderId[$oid] = [];
+        $itemsByOrderId[$oid][] = $it;
+    }
     $allDailyExpenses = db('dailyExpenses')->findMany();
     $allOperationalExpenses = db('operationalExpenses')->findMany();
-    $allRestocks = db('stockRestockEntries')->findMany();
+    // Restock investment is stored inside each stock item (restockHistory[])
+    $allStocks = db('stocks')->findMany();
     $allReception = db('receptionRequests')->findMany(['where' => ['isDeleted' => false]]);
     
     $filteredOrders = [];
@@ -30,6 +40,7 @@ try {
     $totalOrderRevenue = 0;
     $totalReceptionRevenue = 0;
     
+    // POS category breakdown (used by frontend Financial slide)
     $categoryStats = ['Food' => 0, 'Drink' => 0, 'Other' => 0];
     $cashierStats = [];
     $orderStats = ['total' => 0, 'completed' => 0, 'pending' => 0, 'cancelled' => 0, 'served' => 0];
@@ -58,16 +69,30 @@ try {
             if (!isset($cashierStats[$cashierName])) $cashierStats[$cashierName] = 0;
             $cashierStats[$cashierName] += floatval($order['totalAmount'] ?? 0);
 
-            // Category logic for the REMAINING POS portion
-            if ($orderTotal > 0) {
-                $cat = $order['category'] ?? 'Other';
-                $catMap = [
-                    'Food' => 'Food', 'FOOD' => 'Food', 'Buffet' => 'Food', 'Kitchen' => 'Food',
-                    'Drink' => 'Drink', 'DRINK' => 'Drink', 'Bar' => 'Drink', 'Soft Drinks' => 'Drink', 'Beer' => 'Drink', 'Wine' => 'Drink'
-                ];
-                $mappedCat = $catMap[$cat] ?? 'Other';
-                $categoryStats[$mappedCat] += $orderTotal;
+            // Category breakdown based on actual items (more accurate than order.category)
+            $foodSum = 0;
+            $drinkSum = 0;
+            $otherSum = 0;
+            $items = $itemsByOrderId[$order['id']] ?? [];
+            foreach ($items as $it) {
+                $qty = floatval($it['quantity'] ?? 0);
+                $price = floatval($it['price'] ?? 0);
+                $lineTotal = isset($it['totalPrice']) ? floatval($it['totalPrice']) : ($qty * $price);
+                $main = strtolower(trim($it['mainCategory'] ?? ''));
+                if ($main === 'food') $foodSum += $lineTotal;
+                elseif ($main === 'drinks' || $main === 'drink') $drinkSum += $lineTotal;
+                else $otherSum += $lineTotal;
             }
+            // If items don't sum (older data), fallback the remainder to Other
+            $itemsTotal = $foodSum + $drinkSum + $otherSum;
+            if ($itemsTotal <= 0 && $orderTotal > 0) {
+                $otherSum = $orderTotal;
+            } else if ($orderTotal > $itemsTotal) {
+                $otherSum += ($orderTotal - $itemsTotal);
+            }
+            $categoryStats['Food'] += $foodSum;
+            $categoryStats['Drink'] += $drinkSum;
+            $categoryStats['Other'] += $otherSum;
         }
     }
 
@@ -103,9 +128,19 @@ try {
     }
 
     $periodStockInvestment = 0;
-    foreach ($allRestocks as $entry) {
-        if (!isWithinReportRange($entry['createdAt'] ?? null, $start, $end)) continue;
-        $periodStockInvestment += floatval($entry['totalCost'] ?? 0);
+    foreach ($allStocks as $stock) {
+        $history = $stock['restockHistory'] ?? [];
+        if (!is_array($history)) continue;
+        foreach ($history as $entry) {
+            // Entries are written by api/stock.php with keys: date, quantityAdded, unitPrice, totalPurchaseCost
+            $dateStr = $entry['date'] ?? $entry['createdAt'] ?? null;
+            if (!isWithinReportRange($dateStr, $start, $end)) continue;
+            $periodStockInvestment += floatval(
+                $entry['totalPurchaseCost']
+                ?? $entry['totalCost']
+                ?? ((floatval($entry['quantityAdded'] ?? 0)) * (floatval($entry['unitPrice'] ?? 0)))
+            );
+        }
     }
 
     $totalExpenses = $totalOtherExpenses + $totalOperationalExpenses + $periodStockInvestment;

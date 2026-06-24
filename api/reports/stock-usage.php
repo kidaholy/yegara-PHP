@@ -133,6 +133,8 @@ try {
             'consumed' => round($consumedInPeriod, 2),
             'weightedAvgCost' => $weightedAvgCost,
             'currentUnitCost' => $currentUnitCost,
+            // Remaining stock investment at end of selected period (POS stock only)
+            'remainingInvestmentValue' => round($closingStock * $weightedAvgCost, 2),
             'storeQuantity' => $storeQuantity,
             'storeClosingValue' => (float)($stock['totalInvestment'] ?? ($storeQuantity * $weightedAvgCost)),
             'storeIn' => $storeIn,

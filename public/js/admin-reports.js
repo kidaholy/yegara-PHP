@@ -18,6 +18,8 @@ const ReportHub = {
     direction: 'right',
     initialized: false,
     loadingSlide: false,
+    loadingOrders: false,
+    loadingSecondary: false,
     selectedDate: new Date(),
     dateRangeStart: null,   // for duration mode (YYYY-MM-DD)
     dateRangeEnd: null,     // for duration mode (YYYY-MM-DD)
@@ -64,25 +66,19 @@ const ReportHub = {
         const query = this.getQueryString();
 
         try {
-            const startTime = Date.now();
-            const [salesRes, ordersRes, receptionRes] = await Promise.all([
+            const [salesRes, receptionRes] = await Promise.all([
                 this.api('GET', `api/reports/sales.php${query}`),
-                this.api('GET', `api/reports/orders.php${query}&limit=1000&includeDeleted=true`),
                 this.api('GET', `api/reports/bedroom-revenue.php${query}`, { optional: true })
             ]);
 
             this.periodData = salesRes?.data || null;
-            this.orders = Array.isArray(ordersRes) ? ordersRes : (ordersRes?.data || []);
+            // Orders are heavy (each order pulls items). Load them lazily only when needed.
+            this.orders = [];
             // Use reception revenue from sales summary if available, fallback to separate API
             this.receptionRevenue = salesRes?.data?.summary?.receptionRevenue ?? (receptionRes?.data?.totalRevenue || 0);
-
-            const elapsed = Date.now() - startTime;
-            if (elapsed < 1500) await new Promise(r => setTimeout(r, 1500 - elapsed));
             
             this.setLoading(false);
             this.renderActiveSlide();
-
-            await this.fetchSecondaryData(query);
 
         } catch (e) {
             console.error('Core data fetch failed:', e);
@@ -91,7 +87,25 @@ const ReportHub = {
         }
     },
 
+    async fetchOrdersData(query = null) {
+        if (this.loadingOrders) return;
+        this.loadingOrders = true;
+        try {
+            const q = query ?? this.getQueryString();
+            // Keep this lighter: no deleted orders, smaller limit
+            const ordersRes = await this.api('GET', `api/reports/orders.php${q}&limit=300&includeDeleted=false`);
+            this.orders = Array.isArray(ordersRes) ? ordersRes : (ordersRes?.data || []);
+        } catch (e) {
+            console.warn('Orders data load failed:', e);
+        } finally {
+            this.loadingOrders = false;
+            this.renderActiveSlide();
+        }
+    },
+
     async fetchSecondaryData(query) {
+        if (this.loadingSecondary) return;
+        this.loadingSecondary = true;
         try {
             const [stockRes, usageRes] = await Promise.all([
                 this.api('GET', 'api/stock.php', { optional: true }),
@@ -101,7 +115,11 @@ const ReportHub = {
             this.stockUsageData = usageRes?.data || null;
             
             this.renderActiveSlide();
-        } catch (e) { console.warn('Secondary data load failed:', e); }
+        } catch (e) {
+            console.warn('Secondary data load failed:', e);
+        } finally {
+            this.loadingSecondary = false;
+        }
     },
 
     // ─── CALCULATIONS & AGGREGATIONS ─────────────────────────────────────────────
@@ -114,30 +132,20 @@ const ReportHub = {
 
         let periodInvest = (s.periodStockInvestment || 0) + (s.totalOtherExpenses || 0);
         
-        // If secondary data (stockUsageData) is loaded, override with accurate "Current Inventory Value"
+        // If secondary data (stockUsageData) is loaded, override with accurate "Remaining Inventory Value"
+        // computed per-stock item as: closingStock * unit cost (purchase/avg cost).
         if (this.stockUsageData && this.stockUsageData.stockAnalysis) {
-            const inventoryValue = this.stockUsageData.stockAnalysis.reduce((sum, item) => sum + ((item.closingStock || 0) * (item.weightedAvgCost || 0)), 0);
+            const inventoryValue = this.stockUsageData.stockAnalysis.reduce(
+                (sum, item) => sum + (item.remainingInvestmentValue ?? ((item.closingStock || 0) * (item.weightedAvgCost || 0))),
+                0
+            );
             periodInvest = inventoryValue + (s.totalOtherExpenses || 0);
         }
         
-        // Group Orders by Cashier
-        const cashierMap = {};
-        this.orders.forEach(o => {
-            if (o.status === 'cancelled' || o.isDeleted) return;
-            const name = o.createdBy?.name || 'Unknown Cashier';
-            if (!cashierMap[name]) cashierMap[name] = 0;
-            cashierMap[name] += parseFloat(o.totalAmount || 0);
-        });
-
-        // Split Food/Drinks
-        let foodRev = 0, drinksRev = 0;
-        this.orders.forEach(o => {
-            if (o.status === 'cancelled' || o.isDeleted) return;
-            (o.items || []).forEach(item => {
-                if (item.mainCategory && item.mainCategory.toLowerCase() === 'food') foodRev += (item.price * item.quantity);
-                if (item.mainCategory && item.mainCategory.toLowerCase() === 'drinks') drinksRev += (item.price * item.quantity);
-            });
-        });
+        // Prefer backend aggregates for speed (no heavy order/items fetch needed for Financial slide)
+        const categoryStats = s.categoryStats || {};
+        const foodRev = categoryStats.Food || categoryStats.FOOD || 0;
+        const drinksRev = categoryStats.Drink || categoryStats.DRINK || 0;
 
         // Aggregated Menu Sales (aggregated by "name | cashier")
         const menuSales = {};
@@ -161,38 +169,10 @@ const ReportHub = {
             });
         });
 
-        // Cashier Stats (Detailed)
+        // Cashier stats are already aggregated by backend
         const cashierStats = {};
-        let totalOrdersCount = 0;
-        let foodOrdersCount = 0;
-        let drinksOrdersCount = 0;
-
-        this.orders.forEach(o => {
-            if (o.status === 'cancelled' || o.isDeleted) return;
-            totalOrdersCount++;
-            
-            let hasFood = false;
-            let hasDrinks = false;
-            (o.items||[]).forEach(i => {
-                if ((i.mainCategory||'').toLowerCase() === 'food') hasFood = true;
-                if ((i.mainCategory||'').toLowerCase() === 'drinks') hasDrinks = true;
-            });
-            if (hasFood) foodOrdersCount++;
-            if (hasDrinks) drinksOrdersCount++;
-
-            const name = o.createdBy?.name || 'Unknown Cashier';
-            if (!cashierStats[name]) cashierStats[name] = { amount: 0, count: 0, food: 0, drinks: 0, foodCount: 0, drinksCount: 0 };
-            cashierStats[name].amount += parseFloat(o.totalAmount || 0);
-            cashierStats[name].count++;
-            if (hasFood) cashierStats[name].foodCount++;
-            if (hasDrinks) cashierStats[name].drinksCount++;
-
-            (o.items || []).forEach(item => {
-                const cat = (item.mainCategory || '').toLowerCase();
-                const itemRev = (item.price * item.quantity);
-                if (cat === 'food') cashierStats[name].food += itemRev;
-                else if (cat === 'drinks') cashierStats[name].drinks += itemRev;
-            });
+        Object.entries(s.cashierStats || {}).forEach(([name, amt]) => {
+            cashierStats[name] = { amount: parseFloat(amt || 0), count: 0, food: 0, drinks: 0, foodCount: 0, drinksCount: 0 };
         });
 
         return { 
@@ -202,9 +182,10 @@ const ReportHub = {
             foodRevenue: foodRev, 
             drinksRevenue: drinksRev,
             cashierStats: cashierStats,
-            totalOrdersCount: totalOrdersCount,
-            foodOrdersCount: foodOrdersCount,
-            drinksOrdersCount: drinksOrdersCount,
+            totalOrdersCount: s.totalOrders || 0,
+            foodOrdersCount: 0,
+            drinksOrdersCount: 0,
+            // Menu sales depends on per-order items; only available after lazy orders fetch.
             menuItemSales: Object.values(menuSales),
             periodInvestment: periodInvest,
             periodProfit: totalRev - (s.totalOperationalExpenses || 0) - periodInvest,
@@ -283,6 +264,11 @@ const ReportHub = {
     },
 
     renderFinancial() {
+        // Financial view needs inventory value for "Stock Invest" (remaining stock investment).
+        // Load stock usage data lazily, but immediately when visiting this slide.
+        if (!this.stockUsageData && !this.loadingSecondary) {
+            this.fetchSecondaryData(this.getQueryString());
+        }
         const stats = this.getCalculatedStats();
         const rows = [
             { m: 'Total Revenue',  t: 'SUMMARY',  v: stats.totalRevenue,     c: 'gold',   d: 'Combined Revenue for the period' },
@@ -338,6 +324,13 @@ const ReportHub = {
 
 
     renderInventory() {
+        if (!this.stockUsageData) {
+            this.fetchSecondaryData(this.getQueryString());
+            return `<div class="p-16 text-center text-gray-500">
+                <i data-lucide="loader-2" class="w-6 h-6 animate-spin inline-block mr-2"></i>
+                <span class="text-xs font-bold uppercase tracking-widest">Loading inventory...</span>
+            </div>`;
+        }
         const u = this.stockUsageData?.stockAnalysis || [];
         const filtered = u.filter(i => {
             if (Math.round(i.closingStock||0) <= 0) return false;
@@ -419,6 +412,13 @@ const ReportHub = {
     },
 
     renderStore() {
+        if (!this.stockUsageData) {
+            this.fetchSecondaryData(this.getQueryString());
+            return `<div class="p-16 text-center text-gray-500">
+                <i data-lucide="loader-2" class="w-6 h-6 animate-spin inline-block mr-2"></i>
+                <span class="text-xs font-bold uppercase tracking-widest">Loading store analytics...</span>
+            </div>`;
+        }
         const u = this.stockUsageData?.stockAnalysis || [];
         const filtered = u.filter(i => {
             // Tab Filter (Food/Drinks)
@@ -492,6 +492,13 @@ const ReportHub = {
     },
 
     renderMenuSales() {
+        if (!this.orders || this.orders.length === 0) {
+            this.fetchOrdersData(this.getQueryString());
+            return `<div class="p-16 text-center text-gray-500">
+                <i data-lucide="loader-2" class="w-6 h-6 animate-spin inline-block mr-2"></i>
+                <span class="text-xs font-bold uppercase tracking-widest">Loading orders for menu sales...</span>
+            </div>`;
+        }
         const stats = this.getCalculatedStats();
         const filtered = stats.menuItemSales.filter(s => {
             const currentTab = (this.menuSalesTab || 'All').toLowerCase();
