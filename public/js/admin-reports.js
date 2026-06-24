@@ -285,11 +285,10 @@ const ReportHub = {
     renderFinancial() {
         const stats = this.getCalculatedStats();
         const rows = [
-            { m: 'Room Revenue',   t: 'INCOME',   v: stats.receptionRevenue, c: 'blue',  d: 'Direct Room Booking & stay stays' },
-            { m: 'POS Order Sales',t: 'INCOME',   v: stats.orderRevenue,     c: 'emerald', d: 'All menu sales (Food & Drinks)' },
-            { m: 'Gross Income',   t: 'SUMMARY',  v: stats.totalRevenue,     c: 'gold',    d: 'Combined Revenue for the period' },
-            { m: 'Food Sales',     t: 'BREAKDOWN', v: stats.foodRevenue,     c: 'gray',    d: 'Portion of POS sales from Food' },
-            { m: 'Drink Sales',    t: 'BREAKDOWN', v: stats.drinksRevenue,   c: 'gray',    d: 'Portion of POS sales from Drinks' },
+            { m: 'Total Revenue',  t: 'SUMMARY',  v: stats.totalRevenue,     c: 'gold',   d: 'Combined Revenue for the period' },
+            { m: 'Room Revenue',   t: 'INCOME',   v: stats.receptionRevenue, c: 'blue',   d: 'Direct Room booking revenue', indent: 1 },
+            { m: 'Food Sales',     t: 'INCOME',   v: stats.foodRevenue,      c: 'gray',   d: 'Food portion of POS sales', indent: 1 },
+            { m: 'Drink Sales',    t: 'INCOME',   v: stats.drinksRevenue,    c: 'gray',   d: 'Drink portion of POS sales', indent: 1 },
         ];
         Object.entries(stats.cashierStats).forEach(([name, cStat]) => {
             const amt = cStat.amount;
@@ -325,7 +324,10 @@ const ReportHub = {
                                               blue:'text-blue-400 bg-blue-500/10 border-blue-500/20',
                                               gold:'text-[#c5a059] bg-[#c5a059]/10 border-[#c5a059]/20',
                                               gray:'text-gray-400 bg-gray-700 border-gray-600' }[r.c];
-                                return `<tr class="hover:bg-gray-800/50 transition-colors group"><td class="px-6 py-4"><p class="text-sm font-bold text-gray-200">${r.m}</p><p class="text-xs text-gray-500 font-semibold mt-1">${r.d}</p></td><td class="px-6 py-4"><span class="px-2 py-1 rounded-md border text-xs font-bold ${cls}">${r.t}</span></td><td class="px-6 py-4 text-right font-bold text-base ${r.v >= 0 ? 'text-gray-200' : 'text-red-400'}">${r.v < 0 ? '-' : '+'}${this.fmt(Math.abs(r.v))}</td></tr>`;
+                                const metricPad = r.indent ? 'pl-12' : '';
+                                const metricStyle = r.indent ? 'text-gray-300' : 'text-gray-200';
+                                const metricPrefix = r.indent ? `<span class="mr-2 text-gray-600 font-black">└</span>` : '';
+                                return `<tr class="hover:bg-gray-800/50 transition-colors group"><td class="px-6 py-4 ${metricPad}"><p class="text-sm font-bold ${metricStyle}">${metricPrefix}${r.m}</p><p class="text-xs text-gray-500 font-semibold mt-1">${r.d}</p></td><td class="px-6 py-4"><span class="px-2 py-1 rounded-md border text-xs font-bold ${cls}">${r.t}</span></td><td class="px-6 py-4 text-right font-bold text-base ${r.v >= 0 ? 'text-gray-200' : 'text-red-400'}">${r.v < 0 ? '-' : '+'}${this.fmt(Math.abs(r.v))}</td></tr>`;
                             }).join('')}
                         </tbody>
                     </table>
