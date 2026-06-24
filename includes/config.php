@@ -10,6 +10,9 @@ define('INCLUDES_DIR', BASE_DIR . '/includes');
 define('PAGES_DIR', BASE_DIR . '/pages');
 define('API_DIR', BASE_DIR . '/api');
 
+// Timezone settings
+date_default_timezone_set('Africa/Addis_Ababa'); // Align with user's local time (+3:00)
+
 // Authentication settings
 define('SESSION_LIFETIME', 7 * 24 * 60 * 60); // 7 days in seconds
 

@@ -16,8 +16,8 @@ requireApiAuth(['admin', 'reception', 'store', 'cashier'], [
 try {
     $period = $_GET['period'] ?? 'week';
     $range = resolveReportDateRange($period, $_GET['startDate'] ?? null, $_GET['endDate'] ?? null);
-    $startDate = $range['startDate'];
-    $endDate = $range['endDate'];
+    $start = $range['start'];
+    $end = $range['end'];
 
     $requests = db('receptionRequests')->findMany(['where' => ['isDeleted' => false]]);
 
@@ -33,19 +33,20 @@ try {
         $price = floatval($req['roomPrice'] ?? 0);
         if ($price <= 0) continue;
 
-        $date = null;
+        $dt = null;
         if (!empty($req['checkIn'])) {
-            $date = date('Y-m-d', strtotime($req['checkIn']));
+            $dt = new DateTime($req['checkIn']);
         } elseif (!empty($req['approvedAt'])) {
-            $date = date('Y-m-d', strtotime($req['approvedAt']));
+            $dt = new DateTime($req['approvedAt']);
         } else {
-            $date = !empty($req['updatedAt']) ? date('Y-m-d', strtotime($req['updatedAt'])) : null;
+            $dt = !empty($req['updatedAt']) ? new DateTime($req['updatedAt']) : null;
         }
 
-        if (!$date || $date < $startDate || $date > $endDate) continue;
+        if (!$dt || $dt < $start || $dt >= $end) continue;
 
         $totalRevenue += $price;
         $totalBookings++;
+        $date = $dt->format('Y-m-d');
         $revenueByDay[$date] = ($revenueByDay[$date] ?? 0) + $price;
     }
 

@@ -23,9 +23,11 @@ try {
     $allDailyExpenses = db('dailyExpenses')->findMany();
     $allOperationalExpenses = db('operationalExpenses')->findMany();
     $allRestocks = db('stockRestockEntries')->findMany();
+    $allReception = db('receptionRequests')->findMany(['where' => ['isDeleted' => false]]);
     
     $filteredOrders = [];
-    $totalRevenue = 0;
+    $totalOrderRevenue = 0;
+    $totalReceptionRevenue = 0;
     $orderStats = ['total' => 0, 'completed' => 0, 'pending' => 0, 'cancelled' => 0, 'served' => 0];
     $paymentStats = [];
 
@@ -39,12 +41,29 @@ try {
         if (isset($orderStats[$status])) $orderStats[$status]++;
 
         if ($status !== 'cancelled') {
-            $totalRevenue += floatval($order['totalAmount'] ?? 0);
+            $totalOrderRevenue += floatval($order['totalAmount'] ?? 0);
             $pm = $order['paymentMethod'] ?? 'cash';
             if (!isset($paymentStats[$pm])) $paymentStats[$pm] = 0;
             $paymentStats[$pm] += floatval($order['totalAmount'] ?? 0);
         }
     }
+
+    $revenueStatuses = ['CHECKIN_APPROVED', 'CHECKED_OUT', 'CHECKOUT_APPROVED', 'check_in', 'checked-out'];
+    foreach ($allReception as $req) {
+        if (!in_array($req['status'] ?? '', $revenueStatuses, true)) continue;
+        
+        $price = floatval($req['roomPrice'] ?? 0);
+        $dateStr = !empty($req['checkIn']) ? $req['checkIn'] : (!empty($req['approvedAt']) ? $req['approvedAt'] : ($req['updatedAt'] ?? null));
+        
+        if (!isWithinReportRange($dateStr, $start, $end)) continue;
+        
+        $totalReceptionRevenue += $price;
+        $pm = 'reception';
+        if (!isset($paymentStats[$pm])) $paymentStats[$pm] = 0;
+        $paymentStats[$pm] += $price;
+    }
+
+    $totalRevenue = $totalOrderRevenue + $totalReceptionRevenue;
 
     $totalOtherExpenses = 0;
     foreach ($allDailyExpenses as $expense) {
@@ -79,6 +98,8 @@ try {
             'endDate' => $end->format(DateTime::ATOM),
             'summary' => [
                 'totalRevenue' => $totalRevenue,
+                'orderRevenue' => $totalOrderRevenue,
+                'receptionRevenue' => $totalReceptionRevenue,
                 'totalOrders' => $orderStats['total'],
                 'completedOrders' => $orderStats['completed'] + $orderStats['served'],
                 'pendingOrders' => $orderStats['pending'],

@@ -5,6 +5,7 @@
  */
 require_once 'includes/layout.php';
 require_once 'includes/order-utils.php';
+require_once 'includes/report-dates.php'; // Add this for resolveReportDateRange
 requireAuth(['admin', 'cashier', 'chef', 'reception', 'receptionist', 'store', 'store_keeper'], 'orders:view');
 
 $user = getCurrentUser();
@@ -19,8 +20,10 @@ if ($isCashierView) {
     $config = $manager->getSetting('configuration') ?? [];
     $showRevenue = !empty($config['enable_cashier_today_revenue']);
     $welcomeDate = date('D, M j');
-    $todayStart = date('Y-m-d 00:00:00');
-    $todayEnd = date('Y-m-d 23:59:59');
+    
+    $range = resolveReportDateRange('today');
+    $todayStart = $range['start']->format('Y-m-d H:i:s');
+    $todayEnd = $range['end']->format('Y-m-d H:i:s');
 
     try {
         $todayOrders = db('orders')->findMany([
@@ -354,23 +357,16 @@ try {
 
     // --- Time Filtering (Global) ---
     $now = new DateTime();
-    $todayStr = date('Y-m-d');
-
-    $applyTimeFilter = function ($orders) use ($filter_time, $filter_date, $now, $todayStr) {
-        if ($filter_time === 'all')
-            return $orders;
-        return array_filter($orders, function ($o) use ($filter_time, $filter_date, $now, $todayStr) {
-            $created = new DateTime($o['createdAt'] ?? 'now');
-            $createdDateStr = $created->format('Y-m-d');
-            $diff = $now->diff($created)->days;
-            return match ($filter_time) {
-                'today' => $createdDateStr === $todayStr,
-                'custom' => $createdDateStr === $filter_date,
-                'week' => $diff <= 7,
-                'month' => $diff <= 30,
-                'year' => $diff <= 365,
-                default => true
-            };
+    
+    $applyTimeFilter = function ($orders) use ($filter_time, $filter_date) {
+        if ($filter_time === 'all') return $orders;
+        
+        $range = resolveReportDateRange($filter_time === 'custom' ? 'today' : $filter_time, $filter_date, $filter_date);
+        $start = $range['start'];
+        $end = $range['end'];
+        
+        return array_filter($orders, function ($o) use ($start, $end) {
+            return isWithinReportRange($o['createdAt'] ?? null, $start, $end);
         });
     };
 

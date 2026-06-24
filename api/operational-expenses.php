@@ -3,6 +3,7 @@
  * API: Operational Expenses
  */
 require_once '../includes/auth.php';
+require_once '../includes/report-dates.php'; // Add this for business date logic
 header('Content-Type: application/json');
 if (!isAuthenticated()) { http_response_code(401); echo json_encode(['message'=>'Unauthorized']); exit; }
 function j($d,$c=200){http_response_code($c);echo json_encode($d);exit;}
@@ -16,16 +17,11 @@ try {
         $period = $_GET['period'] ?? 'all';
         if ($period !== 'all') {
             $now = time();
-            $all = array_values(array_filter($all, function($e) use ($period, $now) {
-                $d = strtotime($e['date'] ?? $e['recorded_at'] ?? '');
-                if (!$d) return true;
-                return match($period) {
-                    'today' => date('Y-m-d', $d) === date('Y-m-d'),
-                    'week'  => ($now - $d) < 7  * 86400,
-                    'month' => ($now - $d) < 30 * 86400,
-                    default => true,
-                };
-            }));
+                $range = resolveReportDateRange($period);
+                $start = $range['start'];
+                $end = $range['end'];
+                $eDate = new DateTime($e['date'] ?? $e['recorded_at'] ?? '');
+                return $eDate >= $start && $eDate < $end;
         }
         j($all ?: []);
     }
@@ -42,9 +38,9 @@ try {
             'quantity'    => $qty,
             'unit'        => $d['unit'] ?? 'pcs',
             'amount'      => $unitCost * $qty,
-            'date'        => $d['date'] ?? date('Y-m-d'),
+            'date'        => $d['date'] ?? getActiveBusinessDate(),
             'description' => $d['description'] ?? '',
-            'recorded_at' => date('c'),
+            'recorded_at' => date('Y-m-d H:i:s'),
         ]]);
         j(['message'=>'Expense created','item'=>$expense], 201);
     }

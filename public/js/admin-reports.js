@@ -73,7 +73,8 @@ const ReportHub = {
 
             this.periodData = salesRes?.data || null;
             this.orders = Array.isArray(ordersRes) ? ordersRes : (ordersRes?.data || []);
-            this.receptionRevenue = receptionRes?.data?.totalRevenue || 0;
+            // Use reception revenue from sales summary if available, fallback to separate API
+            this.receptionRevenue = salesRes?.data?.summary?.receptionRevenue ?? (receptionRes?.data?.totalRevenue || 0);
 
             const elapsed = Date.now() - startTime;
             if (elapsed < 1500) await new Promise(r => setTimeout(r, 1500 - elapsed));
@@ -106,8 +107,11 @@ const ReportHub = {
     // ─── CALCULATIONS & AGGREGATIONS ─────────────────────────────────────────────
     getCalculatedStats() {
         const s = this.periodData?.summary || {};
-        const rev = s.totalRevenue || 0;
-        const totalRev = rev + this.receptionRevenue;
+        // totalRevenue from backend now includes both orders and reception
+        const totalRev = s.totalRevenue || 0;
+        const orderRev = s.orderRevenue || 0;
+        const receptionRev = s.receptionRevenue || 0;
+
         let periodInvest = (s.periodStockInvestment || 0) + (s.totalOtherExpenses || 0);
         
         // If secondary data (stockUsageData) is loaded, override with accurate "Current Inventory Value"
@@ -193,7 +197,8 @@ const ReportHub = {
 
         return { 
             totalRevenue: totalRev, 
-            orderRevenue: rev,
+            orderRevenue: orderRev,
+            receptionRevenue: receptionRev,
             foodRevenue: foodRev, 
             drinksRevenue: drinksRev,
             cashierStats: cashierStats,
@@ -280,10 +285,11 @@ const ReportHub = {
     renderFinancial() {
         const stats = this.getCalculatedStats();
         const rows = [
-            { m: 'Total Revenue',  t: 'INCOME',   v: stats.totalRevenue, c: 'emerald', d: 'Combined Order + Bedroom Revenue' },
-            { m: 'Reception Rev',  t: 'INCOME',   v: this.receptionRevenue, c: 'blue',  d: 'Direct Room Booking Income' },
-            { m: 'Food Revenue',   t: 'BREAKDOWN', v: stats.foodRevenue, c: 'gold',  d: 'Total Food Sales from Orders' },
-            { m: 'Drinks Revenue', t: 'BREAKDOWN', v: stats.drinksRevenue, c: 'gold',  d: 'Total Drinks Sales from Orders' },
+            { m: 'Room Revenue',   t: 'INCOME',   v: stats.receptionRevenue, c: 'blue',  d: 'Direct Room Booking & stay stays' },
+            { m: 'POS Order Sales',t: 'INCOME',   v: stats.orderRevenue,     c: 'emerald', d: 'All menu sales (Food & Drinks)' },
+            { m: 'Gross Income',   t: 'SUMMARY',  v: stats.totalRevenue,     c: 'gold',    d: 'Combined Revenue for the period' },
+            { m: 'Food Sales',     t: 'BREAKDOWN', v: stats.foodRevenue,     c: 'gray',    d: 'Portion of POS sales from Food' },
+            { m: 'Drink Sales',    t: 'BREAKDOWN', v: stats.drinksRevenue,   c: 'gray',    d: 'Portion of POS sales from Drinks' },
         ];
         Object.entries(stats.cashierStats).forEach(([name, cStat]) => {
             const amt = cStat.amount;

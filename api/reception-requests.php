@@ -5,6 +5,7 @@
 header('Content-Type: application/json');
 require_once '../includes/auth.php';
 require_once '../includes/JsonDB.php';
+require_once '../includes/report-dates.php'; // Add this for business date logic
 
 function sendJson($data, $status = 200) {
     http_response_code($status);
@@ -33,7 +34,7 @@ function setRoomStatus($roomNumber, $status) {
 }
 
 function todayDate() {
-    return date('Y-m-d');
+    return getActiveBusinessDate();
 }
 
 function addDays($dateStr, $days) {
