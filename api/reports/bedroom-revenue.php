@@ -58,8 +58,8 @@ try {
             'averageRevenuePerRoom' => $totalBookings > 0 ? $totalRevenue / $totalBookings : 0,
             'dailyRevenue' => $dailyChart,
             'period' => [
-                'start' => $startDate,
-                'end' => $endDate
+                'start' => $start->format(DateTime::ATOM),
+                'end' => $end->format(DateTime::ATOM),
             ]
         ]
     ]);

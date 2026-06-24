@@ -46,30 +46,6 @@ try {
 
         if ($status !== 'cancelled') {
             $orderTotal = floatval($order['totalAmount'] ?? 0);
-            
-            // Check if this POS order is actually a Room payment (Bridge logic)
-            $isRoomPOS = false;
-            $items = db('orderItems')->findMany(['where' => ['orderId' => $order['id']]]);
-            $orderRoomAmount = 0;
-            foreach ($items as $it) {
-                $name = strtoupper($it['name'] ?? '');
-                $cat = strtoupper($it['category'] ?? '');
-                // Identify room items: YOYA (common for rooms), or category ROOM/SPECIAL (if 2000+)
-                if (strpos($name, 'YOYA') !== false || strpos($cat, 'SPECIAL') !== false || strpos($cat, 'ROOM') !== false) {
-                    if (abs((float)($it['totalPrice'] ?? $it['price'] * $it['quantity']) - 2000) < 0.1 || 
-                        abs((float)($it['totalPrice'] ?? $it['price'] * $it['quantity']) - 4000) < 0.1 ||
-                        abs((float)($it['totalPrice'] ?? $it['price'] * $it['quantity']) - 6000) < 0.1) {
-                        $isRoomPOS = true;
-                        $orderRoomAmount += (float)($it['totalPrice'] ?? $it['price'] * $it['quantity']);
-                    }
-                }
-            }
-
-            if ($isRoomPOS) {
-                $totalReceptionRevenue += $orderRoomAmount;
-                $orderTotal -= $orderRoomAmount;
-            }
-
             $totalOrderRevenue += $orderTotal;
             
             // Payment method grouping (apply to full amount since it's cash/bank collected)
