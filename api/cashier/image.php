@@ -3,6 +3,7 @@
  * Serve a single menu item image — lazy-loaded by cashier (20 per page).
  */
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/menu-tiers.php';
 
 if (!isAuthenticated()) {
     http_response_code(401);
@@ -22,8 +23,8 @@ if ($id === '') {
 }
 
 $collection = $_GET['collection'] ?? 'menuItems';
-$allowedCollections = ['menuItems', 'vip1Menu', 'vip2Menu', 'receptionRequests'];
-if (!in_array($collection, $allowedCollections, true) && !preg_match('/^vip\d+Menu$/', $collection)) {
+// Allow standard menu + any dynamic VIP menu tier collections + receptionRequests
+if ($collection !== 'receptionRequests' && !isAllowedMenuCollection($collection)) {
     http_response_code(403);
     exit;
 }
