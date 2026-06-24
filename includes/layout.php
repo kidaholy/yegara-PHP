@@ -374,6 +374,20 @@ function getAdminNavLinks($role) {
             $hasPerm = true;
         }
 
+        // Special case for services / reception hub
+        if ($link['url'] === 'services.php' && hasPermission('reception:access')) {
+            $hasPerm = true;
+        }
+
+        // Special case for overview dashboard
+        if ($link['url'] === 'admin.php' && (
+            hasPermission('orders:view') ||
+            hasPermission('stock:view') ||
+            hasPermissionPattern('/^reports:/')
+        )) {
+            $hasPerm = true;
+        }
+
         if ($hasRole || $hasPerm) {
             $filtered[] = $link;
         }

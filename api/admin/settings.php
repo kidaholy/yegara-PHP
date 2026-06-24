@@ -9,9 +9,14 @@ require_once __DIR__ . '/../../includes/auth.php';
 $manager = new SettingsManager();
 
 try {
-    requireApiAuth(['admin']);
-
     $method = $_SERVER['REQUEST_METHOD'];
+
+    if ($method === 'GET') {
+        requireApiAuth(['admin'], 'settings:view');
+    } else {
+        requireApiAuth(['admin'], 'settings:update');
+    }
+
     $input = json_decode(file_get_contents('php://input'), true);
 
     // GET: Fetch all settings

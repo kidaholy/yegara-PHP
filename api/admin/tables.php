@@ -8,13 +8,14 @@ require_once __DIR__ . '/../../includes/auth.php';
 $manager = new SettingsManager();
 
 try {
-    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        http_response_code(403);
-        echo json_encode(['message' => 'Forbidden']);
-        exit;
+    $method = $_SERVER['REQUEST_METHOD'];
+
+    if ($method === 'GET') {
+        requireAuth(['admin', 'reception', 'receptionist'], ['settings:view', 'services:view', 'reception:access']);
+    } else {
+        requireAuth(['admin'], ['settings:update', 'services:update']);
     }
 
-    $method = $_SERVER['REQUEST_METHOD'];
     $id = $_GET['id'] ?? null;
     $input = json_decode(file_get_contents('php://input'), true);
 

@@ -16,9 +16,9 @@ $method = $_SERVER['REQUEST_METHOD'];
 $role = $_SESSION['role'] ?? '';
 
 if ($method === 'GET') {
-    requireAuth(['admin', 'reception', 'receptionist']);
+    requireAuth(['admin', 'reception', 'receptionist'], ['settings:view', 'services:view', 'reception:access']);
 } else {
-    requireAuth(['admin'], 'services:update');
+    requireAuth(['admin'], ['settings:update', 'services:update']);
 }
 
 try {

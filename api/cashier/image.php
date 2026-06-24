@@ -11,7 +11,18 @@ if (!isAuthenticated()) {
 }
 
 $role = $_SESSION['role'] ?? '';
-if (!in_array($role, ['cashier', 'admin', 'reception', 'receptionist'], true)) {
+$allowedRoles = ['cashier', 'admin', 'reception', 'receptionist', 'chef', 'bar', 'display'];
+$hasRole = in_array($role, $allowedRoles, true);
+$hasPerm = hasPermission('cashier:access')
+    || hasPermission('chef:access')
+    || hasPermission('bar:access')
+    || hasPermission('display:access')
+    || hasPermission('reception:access')
+    || hasPermission('services:view')
+    || hasPermission('orders:view')
+    || hasPermission('settings:view');
+
+if (!$hasRole && !$hasPerm) {
     http_response_code(403);
     exit;
 }

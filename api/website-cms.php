@@ -5,14 +5,18 @@
 require_once '../includes/auth.php';
 require_once '../includes/cms.php';
 
-requireAuth(['admin'], 'settings:update');
+$method = $_SERVER['REQUEST_METHOD'];
+
+if ($method === 'GET') {
+    requireAuth(['admin'], ['settings:view', 'settings:update']);
+} else {
+    requireAuth(['admin'], 'settings:update');
+}
 
 // System now uses the db('cms') collection exclusively.
 
 // REMOVED: Automatic reset on missing file to prevent accidental reversion.
 // Restoration now requires explicit admin action via the "Load Defaults" button.
-
-$method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
     header('Content-Type: application/json');

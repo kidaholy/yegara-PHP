@@ -13,7 +13,11 @@ function sendJson($data, $status = 200) {
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
-requireAuth(['admin', 'cashier', 'receptionist', 'reception']);
+if ($method === 'GET') {
+    requireAuth(['admin', 'cashier', 'receptionist', 'reception'], ['services:view', 'users:view']);
+} else {
+    requireAuth(['admin'], ['users:create', 'users:update', 'users:delete']);
+}
 
 try {
     $db = db('users');

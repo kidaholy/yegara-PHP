@@ -18,6 +18,8 @@ if (!isAuthenticated()) {
     sendJson(['message' => 'Unauthorized'], 401);
 }
 
+requireApiAuth(['admin'], ['overview:view', 'orders:view', 'stock:view', 'reports:financial_summary']);
+
 try {
     $range = resolveReportDateRange('today');
     $todayStart = $range['start']->format('Y-m-d H:i:s');

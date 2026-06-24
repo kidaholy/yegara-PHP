@@ -7,7 +7,7 @@ require_once '../includes/auth.php';
 
 header('Content-Type: application/json');
 
-requireApiAuth(['admin', 'store', 'store_keeper']);
+requireApiAuth(['admin', 'store', 'store_keeper'], ['store:view', 'stock:view']);
 
 function j($data, $code = 200) { http_response_code($code); echo json_encode($data); exit; }
 

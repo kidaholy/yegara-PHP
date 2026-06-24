@@ -97,7 +97,7 @@ function applyStatusTransition($request, $newStatus, $input = []) {
     return $data;
 }
 
-requireAuth(['admin', 'reception', 'receptionist']);
+requireAuth(['admin', 'reception', 'receptionist'], ['services:view', 'reception:access']);
 
 $method = $_SERVER['REQUEST_METHOD'];
 $userRole = $_SESSION['role'] ?? '';

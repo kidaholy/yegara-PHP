@@ -14,9 +14,14 @@ function sendJson($data, $status = 200) {
     exit;
 }
 
-requireAuth(['admin'], 'services:update');
-
 $method = $_SERVER['REQUEST_METHOD'];
+
+if ($method === 'GET') {
+    requireAuth(['admin', 'reception', 'receptionist'], ['services:view', 'reception:access']);
+} else {
+    requireAuth(['admin'], ['services:update', 'services:create', 'services:delete']);
+}
+
 $type = $_GET['collection'] ?? 'menuItems';
 
 if (!isAllowedMenuCollection($type)) {

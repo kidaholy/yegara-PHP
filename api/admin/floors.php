@@ -9,20 +9,11 @@ $manager = new SettingsManager();
 
 try {
     $method = $_SERVER['REQUEST_METHOD'];
-    $allowedRoles = ['admin', 'reception', 'receptionist'];
-    $role = $_SESSION['role'] ?? '';
 
-    if (!in_array($role, $allowedRoles)) {
-        http_response_code(403);
-        echo json_encode(['message' => 'Forbidden']);
-        exit;
-    }
-
-    // Only allow admin for mutations
-    if ($method !== 'GET' && $role !== 'admin') {
-        http_response_code(403);
-        echo json_encode(['message' => 'Unauthorized operation']);
-        exit;
+    if ($method === 'GET') {
+        requireAuth(['admin', 'reception', 'receptionist'], ['settings:view', 'services:view', 'reception:access']);
+    } else {
+        requireAuth(['admin'], ['settings:update', 'services:update']);
     }
     $id = $_GET['id'] ?? null;
     $input = json_decode(file_get_contents('php://input'), true);

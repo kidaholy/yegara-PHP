@@ -16,11 +16,11 @@ function sendJson($data, $status = 200) {
 $method = $_SERVER['REQUEST_METHOD'];
 $role = $_SESSION['role'] ?? '';
 
-if ($method === 'GET') {
-    requireAuth(['admin', 'reception', 'receptionist']);
-} else {
-    requireAuth(['admin'], 'services:update');
-}
+    if ($method === 'GET') {
+        requireAuth(['admin', 'reception', 'receptionist'], ['settings:view', 'services:view', 'reception:access']);
+    } else {
+        requireAuth(['admin'], ['settings:update', 'services:update']);
+    }
 
 try {
     $db = db('rooms');
