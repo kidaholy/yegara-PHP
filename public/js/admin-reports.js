@@ -710,9 +710,11 @@ const ReportHub = {
             params.append('endDate', this.dateRangeEnd);
         } else if (this.timeRange === 'custom') {
             params.append('period', 'custom');
-            const d = this.selectedDate.toISOString().split('T')[0];
-            params.append('startDate', d);
-            params.append('endDate', d);
+            const d = this.selectedDate;
+            const Y = d.getFullYear(), M = String(d.getMonth()+1).padStart(2,'0'), D = String(d.getDate()).padStart(2,'0');
+            const dStr = `${Y}-${M}-${D}`;
+            params.append('startDate', dStr);
+            params.append('endDate', dStr);
         } else {
             params.append('period', this.timeRange);
         }

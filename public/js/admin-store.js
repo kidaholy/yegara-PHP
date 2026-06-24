@@ -777,7 +777,11 @@ function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'
 function val(id) { return document.getElementById(id)?.value || ''; }
 function setFormVals(obj) { for (const [id, v] of Object.entries(obj)) { const el = document.getElementById(id); if (el) el.value = v; } }
 function empty(msg) { return `<div class="py-24 text-center"><p class="text-5xl mb-5">🏪</p><p class="text-[10px] uppercase font-black tracking-widest text-gray-600">${msg}</p></div>`; }
-function today() { return new Date().toISOString().split('T')[0]; }
+function today() { 
+    const d = new Date();
+    const Y = d.getFullYear(), M = String(d.getMonth()+1).padStart(2,'0'), D = String(d.getDate()).padStart(2,'0');
+    return `${Y}-${M}-${D}`;
+}
 function sameDay(d, ref) { if (!d) return false; const x = new Date(d); return x.getFullYear()===ref.getFullYear() && x.getMonth()===ref.getMonth() && x.getDate()===ref.getDate(); }
 function sameMonth(d, ref) { if (!d) return false; const x = new Date(d); return x.getFullYear()===ref.getFullYear() && x.getMonth()===ref.getMonth(); }
 function withinDays(d, n) { if (!d) return false; return (Date.now() - new Date(d).getTime()) < n * 86400000; }

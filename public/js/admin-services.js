@@ -14,6 +14,9 @@ const AdminServices = {
     receptionSubView: 'status',   // status | check-in
     receptionRequests: [],
     receptionFilter: 'all',       // all | pending | checked-in | rejected | checked-out
+    receptionPeriod: 'all',       // all | today | week | month | year | specific
+    receptionStartDate: '',
+    receptionEndDate: '',
     checkoutAlertShown: false,
     receptionSearch: '',
     prevReceptionCount: 0,
@@ -36,7 +39,13 @@ const AdminServices = {
     // ─── POLLING ───────────────────────────────────────────────────────────────
     async fetchQueueData() {
         try {
-            const recRes = await this.api('GET', 'api/reception-requests.php?limit=500');
+            const params = new URLSearchParams({
+                limit: 500,
+                period: this.receptionPeriod,
+                startDate: this.receptionStartDate,
+                endDate: this.receptionEndDate
+            });
+            const recRes = await this.api('GET', `api/reception-requests.php?${params.toString()}`);
             const recs = Array.isArray(recRes) ? recRes : (recRes.data || []);
 
             const pendingCount = recs.filter(r => this._isPending(r.status)).length;
@@ -399,8 +408,28 @@ const AdminServices = {
 
     _buildReceptionStatusHTML() {
         const activeFilter = this.receptionFilter || 'all';
+        const activePeriod = this.receptionPeriod || 'all';
         return `
         <div class="space-y-6">
+            <!-- Date Filter Row -->
+            <div class="flex flex-wrap items-center justify-between gap-4 bg-gray-800/40 p-4 rounded-xl border border-gray-700/30">
+                <div class="flex flex-wrap items-center gap-2">
+                    ${['all', 'today', 'week', 'month', 'specific'].map(p => `
+                        <button onclick="AdminServices._setReceptionPeriod('${p}')"
+                            class="px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all
+                            ${activePeriod === p ? 'bg-[#c5a059] text-[#0f1110] shadow-lg shadow-[#c5a059]/20' : 'bg-gray-800 text-gray-500 border border-gray-700 hover:text-gray-300'}">
+                            ${p === 'specific' ? 'Specific Date' : p}
+                        </button>
+                    `).join('')}
+                </div>
+                <div id="rec-custom-dates" class="${activePeriod === 'specific' ? 'flex' : 'hidden'} items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-300">
+                    <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Select Date:</span>
+                    <input type="date" id="rec-specific-date" value="${this.receptionStartDate}" 
+                        onchange="AdminServices._applySpecificDate(this.value)"
+                        class="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-[10px] font-bold text-gray-300 outline-none focus:border-[#c5a059]/50">
+                </div>
+            </div>
+
             <!-- Search Row -->
             <div class="bg-gray-800/40 p-2 rounded-xl border border-gray-700/30">
                 <div class="relative">
@@ -1140,35 +1169,26 @@ const AdminServices = {
 
     _filterReception() {
         let list = [...this.receptionRequests];
-        // Search
         if (this.receptionSearch) {
             const q = this.receptionSearch.toLowerCase();
-            list = list.filter(r => (r.guestName||'').toLowerCase().includes(q) || (r.phone||'').includes(q) || (r.faydaId||'').includes(q) || (r.roomNumber||'').includes(q));
+            list = list.filter(r => 
+                (r.guestName||'').toLowerCase().includes(q) || 
+                (r.phone||'').includes(q) || 
+                (r.faydaId||'').includes(q) || 
+                (r.roomNumber||'').includes(q)
+            );
         }
-        // Status bucket
         const buckets = {
             'checked-in': ['CHECKIN_APPROVED','check_in','ACTIVE','guests','staying'],
             'checked-out': ['CHECKED_OUT','CHECKOUT_APPROVED','check_out','checked-out']
         };
-        if (this.receptionFilter !== 'all') list = list.filter(r => (buckets[this.receptionFilter]||[]).includes(r.status));
+        if (this.receptionFilter !== 'all') {
+            list = list.filter(r => (buckets[this.receptionFilter]||[]).includes(r.status));
+        }
         return list;
     },
 
-    _renderReceptionContent() {
-        const container = document.getElementById('rec-cards-container');
-        if (!container) return;
-        const list = this._filterReception();
-
-        const allBuckets = this._updateStatusCounts();
-
-        const today = new Date().toISOString().slice(0, 10);
-        const dueGuests = this.receptionRequests.filter(r =>
-            r.status === 'CHECKIN_APPROVED' && r.checkOut && r.checkOut.slice(0, 10) <= today
-        );
-        const banner = document.getElementById('rec-checkout-banner');
-        if (banner) banner.classList.toggle('hidden', dueGuests.length === 0);
-
-        // Update top-level Stats
+    _updateReceptionStats() {
         const revEl = document.getElementById('stat-revenue');
         const approvedEl = document.getElementById('stat-guests');
         const stayEl = document.getElementById('stat-stay');
@@ -1178,7 +1198,7 @@ const AdminServices = {
         let totalStayDuration = 0;
         let stayCount = 0;
 
-        allBuckets['all'].forEach(r => {
+        this.receptionRequests.forEach(r => {
             if (r.roomPrice && ['CHECKIN_APPROVED','CHECKED_OUT','ACTIVE'].includes(r.status)) {
                 totalRevenue += Number(r.roomPrice);
             }
@@ -1194,9 +1214,18 @@ const AdminServices = {
         if (revEl) revEl.textContent = totalRevenue.toLocaleString();
         if (approvedEl) approvedEl.textContent = guestsActive;
         if (stayEl) stayEl.textContent = stayCount > 0 ? (totalStayDuration / stayCount).toFixed(1) : '—';
+    },
+
+    _renderReceptionContent() {
+        this._updateReceptionStats();
+        const container = document.getElementById('rec-cards-container');
+        if (!container) return;
+
+        const list = this._filterReception();
+        const allBuckets = this._updateStatusCounts();
 
         if (list.length === 0) {
-            container.innerHTML = '<div class="col-span-full py-32 text-center text-gray-700 uppercase tracking-[1em] text-[10px] font-bold">No requests match your filters</div>';
+            container.innerHTML = `<div class="col-span-full py-32 text-center text-gray-700 text-[10px] uppercase tracking-[1em] font-bold">No guests found</div>`;
             return;
         }
 
@@ -1204,6 +1233,22 @@ const AdminServices = {
             showReceptionActions: r.status === 'CHECKIN_APPROVED'
         })).join('');
         lucide.createIcons();
+    },
+
+    _setReceptionPeriod(p) {
+        this.receptionPeriod = p;
+        if (p !== 'specific') {
+            this.receptionStartDate = '';
+            this.receptionEndDate = '';
+        }
+        this._renderPanel(); 
+        this.fetchQueueData();
+    },
+
+    _applySpecificDate(val) {
+        this.receptionStartDate = val;
+        this.receptionEndDate = val; // Sync for single day business day range
+        this.fetchQueueData();
     },
 
     _renderGuestCard(r, options = {}) {

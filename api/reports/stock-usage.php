@@ -52,11 +52,11 @@ try {
         if ($order['isDeleted'] ?? false) continue;
         if (($order['status'] ?? '') === 'cancelled') continue;
         
-        $orderDate = new DateTime($order['createdAt'] ?? 'now');
+        $orderDateStr = $order['createdAt'] ?? 'now';
         $lineItems = $itemsByOrder[$order['id']] ?? [];
         $consumption = calculateStockConsumption($lineItems);
 
-        if ($orderDate >= $start && $orderDate <= $end) {
+        if (isWithinReportRange($orderDateStr, $start, $end)) {
             foreach ($consumption as $stockId => $qty) {
                 if (!isset($stockMap[$stockId])) continue;
                 $periodConsumption[$stockId] = ($periodConsumption[$stockId] ?? 0) + $qty;
@@ -64,7 +64,7 @@ try {
                 $totalConsumptionValue += $qty * $unitCost;
                 $totalItemsConsumed += $qty;
             }
-        } elseif ($orderDate > $end) {
+        } elseif ((new DateTime($orderDateStr)) > $end) {
             foreach ($consumption as $stockId => $qty) {
                 $postPeriodConsumption[$stockId] = ($postPeriodConsumption[$stockId] ?? 0) + $qty;
             }

@@ -56,7 +56,7 @@ function applyStatusTransition($request, $newStatus, $input = []) {
         $room = findRoomByNumber($request['roomNumber'] ?? '');
         $pricePerNight = floatval($room['price'] ?? 0);
         $stayDuration = (int)($request['stayDuration'] ?? 1);
-        $checkIn = todayDate();
+        $checkIn = date('c');
         $checkOut = addDays($checkIn, $stayDuration);
 
         $data['checkIn'] = $checkIn;
@@ -87,7 +87,7 @@ function applyStatusTransition($request, $newStatus, $input = []) {
     }
     // Direct checkout
     elseif ($newStatus === 'CHECKED_OUT' && (in_array($current, ['CHECKIN_APPROVED', 'CHECKOUT_PENDING'], true))) {
-        $data['checkOut'] = todayDate();
+        $data['checkOut'] = date('c');
         $data['checkedOutAt'] = date('c');
         if ($request['roomNumber'] ?? '') {
             setRoomStatus($request['roomNumber'], 'available');
@@ -113,15 +113,29 @@ try {
         }
 
         $limit = (int)($_GET['limit'] ?? 500);
-        $limit = (int)($_GET['limit'] ?? 500);
-        $minimal = $db->findMany([
+        $period = $_GET['period'] ?? 'all';
+        
+        $requests = $db->findMany([
             'where' => ['isDeleted' => false], 
             'orderBy' => ['createdAt' => 'desc'], 
-            'take' => $limit,
             'exclude' => ['profilePhoto', 'idPhotoFront', 'idPhotoBack']
         ]);
 
-        sendJson(['status' => 'success', 'data' => $minimal, 'total' => count($minimal)]);
+        if ($period !== 'all') {
+            $range = resolveReportDateRange($period, $_GET['startDate'] ?? null, $_GET['endDate'] ?? null);
+            $start = $range['start'];
+            $end = $range['end'];
+            
+            $requests = array_filter($requests, function($req) use ($start, $end) {
+                // For reception, attribution depends on checkIn (business date label)
+                // but we also fall back to approvedAt/updatedAt for pending items
+                $dateStr = !empty($req['checkIn']) ? $req['checkIn'] : (!empty($req['approvedAt']) ? $req['approvedAt'] : ($req['updatedAt'] ?? null));
+                return isWithinReportRange($dateStr, $start, $end);
+            });
+        }
+
+        $limited = array_slice(array_values($requests), 0, $limit);
+        sendJson(['status' => 'success', 'data' => $limited, 'total' => count($requests)]);
     }
     elseif ($method === 'POST') {
         $input = json_decode(file_get_contents('php://input'), true);

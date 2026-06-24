@@ -4,6 +4,8 @@
  * Returns real-time dashboard data
  */
 require_once '../includes/auth.php';
+require_once '../includes/JsonDB.php';
+require_once '../includes/report-dates.php';
 
 function sendJson($data, $status = 200) {
     header('Content-Type: application/json');
@@ -17,8 +19,9 @@ if (!isAuthenticated()) {
 }
 
 try {
-    $todayStart = date('Y-m-d 00:00:00');
-    $todayEnd   = date('Y-m-d 23:59:59');
+    $range = resolveReportDateRange('today');
+    $todayStart = $range['start']->format('Y-m-d H:i:s');
+    $todayEnd   = $range['end']->format('Y-m-d H:i:s');
 
     // Parallel fetch simulation (sequential for PHP)
     $orders = db('orders')->findMany(['where' => [

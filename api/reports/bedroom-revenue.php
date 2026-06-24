@@ -21,33 +21,27 @@ try {
 
     $requests = db('receptionRequests')->findMany(['where' => ['isDeleted' => false]]);
 
-    $revenueStatuses = ['CHECKIN_APPROVED', 'CHECKED_OUT', 'CHECKOUT_APPROVED', 'check_in', 'checked-out'];
+    $revenueStatuses = ['CHECKIN_APPROVED', 'CHECKED_OUT', 'CHECKOUT_APPROVED', 'ACTIVE', 'staying'];
     $revenueByDay = [];
     $totalRevenue = 0;
     $totalBookings = 0;
 
     foreach ($requests as $req) {
-        if ($req['isDeleted'] ?? false) continue;
         if (!in_array($req['status'] ?? '', $revenueStatuses, true)) continue;
 
         $price = floatval($req['roomPrice'] ?? 0);
         if ($price <= 0) continue;
 
-        $dt = null;
-        if (!empty($req['checkIn'])) {
-            $dt = new DateTime($req['checkIn']);
-        } elseif (!empty($req['approvedAt'])) {
-            $dt = new DateTime($req['approvedAt']);
-        } else {
-            $dt = !empty($req['updatedAt']) ? new DateTime($req['updatedAt']) : null;
-        }
-
-        if (!$dt || $dt < $start || $dt >= $end) continue;
+        $dateStr = !empty($req['checkIn']) ? $req['checkIn'] : (!empty($req['approvedAt']) ? $req['approvedAt'] : ($req['updatedAt'] ?? null));
+        
+        if (!isWithinReportRange($dateStr, $start, $end)) continue;
 
         $totalRevenue += $price;
         $totalBookings++;
-        $date = $dt->format('Y-m-d');
-        $revenueByDay[$date] = ($revenueByDay[$date] ?? 0) + $price;
+        $date = getBusinessDateForTimestamp($dateStr);
+        if ($date) {
+            $revenueByDay[$date] = ($revenueByDay[$date] ?? 0) + $price;
+        }
     }
 
     ksort($revenueByDay);

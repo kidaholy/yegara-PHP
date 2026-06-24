@@ -336,7 +336,9 @@ class MenuManager {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         const label = mainCat ? mainCat.toLowerCase() : 'complete';
-        a.download = `${label}_export_${new Date().toISOString().slice(0,10)}.csv`;
+        const d = new Date();
+        const Y = d.getFullYear(), M = String(d.getMonth()+1).padStart(2,'0'), D = String(d.getDate()).padStart(2,'0');
+        a.download = `${label}_export_${Y}-${M}-${D}.csv`;
         a.click();
     }
 
