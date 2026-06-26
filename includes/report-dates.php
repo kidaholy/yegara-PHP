@@ -5,7 +5,7 @@
  */
 function resolveReportDateRange($period = 'week', $startDate = null, $endDate = null) {
     $now = new DateTime();
-    $pivotHour = 6; // Business day starts at 6:00 AM
+    $pivotHour = 0; // Business day starts at midnight
 
     // Calculate the start of the current active business day
     $activeBusinessStart = clone $now;
@@ -73,7 +73,7 @@ function resolveReportDateRange($period = 'week', $startDate = null, $endDate = 
  */
 function getActiveBusinessDate() {
     $now = new DateTime();
-    $pivotHour = 6;
+    $pivotHour = 0;
     if ((int)$now->format('H') < $pivotHour) {
         $now->modify('-1 day');
     }
@@ -97,7 +97,7 @@ function getBusinessDateForTimestamp($timestamp) {
     if (!$timestamp) return null;
     try {
         $dt = new DateTime($timestamp);
-        $pivotHour = 6;
+        $pivotHour = 0;
         if ((int)$dt->format('H') < $pivotHour) {
             $dt->modify('-1 day');
         }
