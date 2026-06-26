@@ -23,15 +23,37 @@ try {
     $endDate = $range['endDate'];
 
     $stocks = db('stocks')->findMany();
-    $orders = db('orders')->findMany();
-    $storeLogs = db('storeLogs')->findMany();
-    $allOrderItems = db('orderItems')->findMany(); // Added: Fetch separate items
-
     $stockMap = [];
     foreach ($stocks as $stock) {
         if ($stock['isDeleted'] ?? false) continue;
         $stockMap[$stock['id']] = $stock;
     }
+
+    // Pre-cache all menu item stock links to avoid repetitive DB hits inside calculateStockConsumption
+    $menuStockLinks = [];
+    $collections = getAllMenuCollections();
+    foreach ($collections as $col) {
+        $items = db($col)->findMany();
+        foreach ($items as $m) {
+            $recipe = $m['recipe'] ?? [];
+            if (!empty($recipe)) {
+                $menuStockLinks[$m['id']] = [];
+                foreach ($recipe as $ing) {
+                    $sid = $ing['stockItemId'] ?? null;
+                    $q = (float)($ing['quantityRequired'] ?? $ing['quantity'] ?? 0);
+                    if ($sid && $q > 0) $menuStockLinks[$m['id']][] = ['id' => $sid, 'qty' => $q];
+                }
+            } else {
+                $sid = $m['stockItemId'] ?? null;
+                $q = (float)($m['reportQuantity'] ?? $m['stockConsumption'] ?? 0);
+                if ($sid && $q > 0) $menuStockLinks[$m['id']] = [['id' => $sid, 'qty' => $q]];
+            }
+        }
+    }
+
+    $orders = db('orders')->findMany();
+    $allOrderItems = db('orderItems')->findMany(); 
+    $storeLogs = db('storeLogs')->findMany();
 
     // Index items by orderId for fast lookup
     $itemsByOrder = [];
@@ -40,23 +62,42 @@ try {
         $itemsByOrder[$it['orderId']][] = $it;
     }
 
-    // Period consumption from order line items
     $periodConsumption = [];
-    $postPeriodConsumption = []; // From period end to NOW
+    $postPeriodConsumption = []; 
     $totalConsumptionValue = 0;
     $totalItemsConsumed = 0;
-
-    $now = new DateTime();
 
     foreach ($orders as $order) {
         if ($order['isDeleted'] ?? false) continue;
         if (($order['status'] ?? '') === 'cancelled') continue;
         
-        $orderDateStr = $order['createdAt'] ?? 'now';
-        $lineItems = $itemsByOrder[$order['id']] ?? [];
-        $consumption = calculateStockConsumption($lineItems);
+        $orderDateStr = $order['createdAt'] ?? null;
+        if (!$orderDateStr) continue;
+        $orderDate = new DateTime($orderDateStr);
 
-        if (isWithinReportRange($orderDateStr, $start, $end)) {
+        // Efficiency: Only calculate consumption for relevant orders
+        $isWithin = ($orderDate >= $start && $orderDate < $end);
+        $isPost = ($orderDate >= $end);
+
+        if (!$isWithin && !$isPost) continue;
+
+        $lineItems = $itemsByOrder[$order['id']] ?? [];
+        
+        // Fast consumption calculation using our cached menu links
+        $consumption = [];
+        foreach ($lineItems as $li) {
+            $mid = $li['menuItemId'] ?? null;
+            $qty = (float)($li['quantity'] ?? 0);
+            if (!$mid || $qty <= 0) continue;
+            
+            $links = $menuStockLinks[$mid] ?? [];
+            foreach ($links as $link) {
+                $sid = $link['id'];
+                $consumption[$sid] = ($consumption[$sid] ?? 0) + ($link['qty'] * $qty);
+            }
+        }
+
+        if ($isWithin) {
             foreach ($consumption as $stockId => $qty) {
                 if (!isset($stockMap[$stockId])) continue;
                 $periodConsumption[$stockId] = ($periodConsumption[$stockId] ?? 0) + $qty;
@@ -64,7 +105,7 @@ try {
                 $totalConsumptionValue += $qty * $unitCost;
                 $totalItemsConsumed += $qty;
             }
-        } elseif ((new DateTime($orderDateStr)) > $end) {
+        } else if ($isPost) {
             foreach ($consumption as $stockId => $qty) {
                 $postPeriodConsumption[$stockId] = ($postPeriodConsumption[$stockId] ?? 0) + $qty;
             }
@@ -73,8 +114,10 @@ try {
 
     // Store movements (restocks)
     $storeInByStock = [];
-    $postPeriodRestock = [];
     $storeOutByStock = [];
+    $postPeriodStoreIn = [];
+    $postPeriodStoreOut = [];
+
     foreach ($storeLogs as $log) {
         $logDateStr = $log['date'] ?? $log['createdAt'] ?? null;
         if (!$logDateStr) continue;
@@ -85,19 +128,17 @@ try {
         $type = $log['type'] ?? '';
         $qty = (float)($log['quantity'] ?? 0);
 
-        if ($logDate >= $start && $logDate <= $end) {
+        if ($logDate >= $start && $logDate < $end) {
             if ($type === 'RESTOCK' || $type === 'PURCHASE') {
                 $storeInByStock[$stockId] = ($storeInByStock[$stockId] ?? 0) + $qty;
             } else if ($type === 'TRANSFER_OUT' || $type === 'TRANSFER') {
                 $storeOutByStock[$stockId] = ($storeOutByStock[$stockId] ?? 0) + $qty;
             }
-        } elseif ($logDate > $end) {
-            // We need to know how much was TRANSFER_IN (from store to POS) to reverse current POS stock
-            // Wait, calculateStockConsumption already looks at what was SOLD from POS.
-            // If movement is RESTOCK (into Store), it doesn't affect POS quantity.
-            // If movement is TRANSFER_OUT (from Store to POS), it REDUCES Store and INCREASES POS.
-            if ($type === 'TRANSFER_OUT' || $type === 'TRANSFER') {
-                $postPeriodRestock[$stockId] = ($postPeriodRestock[$stockId] ?? 0) + $qty;
+        } elseif ($logDate >= $end) {
+            if ($type === 'RESTOCK' || $type === 'PURCHASE') {
+                $postPeriodStoreIn[$stockId] = ($postPeriodStoreIn[$stockId] ?? 0) + $qty;
+            } else if ($type === 'TRANSFER_OUT' || $type === 'TRANSFER') {
+                $postPeriodStoreOut[$stockId] = ($postPeriodStoreOut[$stockId] ?? 0) + $qty;
             }
         }
     }
@@ -107,18 +148,22 @@ try {
         $currentPosStock = (float)($stock['quantity'] ?? 0);
         $consumedInPeriod = (float)($periodConsumption[$stockId] ?? 0);
         
-        // Calculate Closing Stock at End of Period
-        // currentStock = closingStock - consumedSince + restockedSince
-        // so closingStock = currentStock + consumedSince - restockedSince
+        // POS Stock Backtracking
         $consumedSince = (float)($postPeriodConsumption[$stockId] ?? 0);
-        $restockedSince = (float)($postPeriodRestock[$stockId] ?? 0);
-        $closingStock = $currentPosStock + $consumedSince - $restockedSince;
+        // TRANSFER_OUT from Store increases POS stock
+        $posRestockedSince = (float)($postPeriodStoreOut[$stockId] ?? 0); 
+        $closingPosStock = $currentPosStock + $consumedSince - $posRestockedSince;
         
-        $openingStock = $closingStock + $consumedInPeriod;
+        $openingPosStock = $closingPosStock + $consumedInPeriod;
         
+        // Store Stock Backtracking
+        $currentStoreQuantity = (float)($stock['storeQuantity'] ?? 0);
+        $storeInSinceEnd = (float)($postPeriodStoreIn[$stockId] ?? 0);
+        $storeOutSinceEnd = (float)($postPeriodStoreOut[$stockId] ?? 0);
+        $closingStoreQuantity = $currentStoreQuantity - $storeInSinceEnd + $storeOutSinceEnd;
+
         $weightedAvgCost = (float)($stock['averagePurchasePrice'] ?? $stock['unitCost'] ?? 0);
         $currentUnitCost = (float)($stock['unitCost'] ?? $weightedAvgCost);
-        $storeQuantity = (float)($stock['storeQuantity'] ?? 0);
         $minLimit = (float)($stock['minLimit'] ?? 0);
         $storeIn = (float)($storeInByStock[$stockId] ?? 0);
         $storeOut = (float)($storeOutByStock[$stockId] ?? 0);
@@ -128,19 +173,19 @@ try {
             'name' => $stock['name'] ?? 'Unknown',
             'category' => $stock['category'] ?? 'General',
             'unit' => $stock['unit'] ?? 'pcs',
-            'openingStock' => round($openingStock, 2),
-            'closingStock' => round($closingStock, 2),
+            'openingStock' => round($openingPosStock, 2),
+            'closingStock' => round($closingPosStock, 2),
             'consumed' => round($consumedInPeriod, 2),
             'weightedAvgCost' => $weightedAvgCost,
             'currentUnitCost' => $currentUnitCost,
-            // Remaining stock investment at end of selected period (POS stock only)
-            'remainingInvestmentValue' => round($closingStock * $weightedAvgCost, 2),
-            'storeQuantity' => $storeQuantity,
-            'storeClosingValue' => (float)($stock['totalInvestment'] ?? ($storeQuantity * $weightedAvgCost)),
+            // Remaining POS stock investment value at end of selected period
+            'remainingInvestmentValue' => round($closingPosStock * $weightedAvgCost, 2),
+            'storeQuantity' => round($closingStoreQuantity, 2),
+            'storeClosingValue' => round($closingStoreQuantity * $weightedAvgCost, 2),
             'storeIn' => $storeIn,
             'storeOut' => $storeOut,
             'transferred' => $storeOut,
-            'isLowStock' => $minLimit > 0 ? $closingStock <= $minLimit : $closingStock < 5,
+            'isLowStock' => $minLimit > 0 ? $closingPosStock <= $minLimit : $closingPosStock < 5,
             'quantity' => $consumedInPeriod,
             'totalValue' => $consumedInPeriod * $weightedAvgCost,
         ];

@@ -20,6 +20,7 @@ const ReportHub = {
     loadingSlide: false,
     loadingOrders: false,
     loadingSecondary: false,
+    loadingPrimary: false,
     selectedDate: new Date(),
     dateRangeStart: null,   // for duration mode (YYYY-MM-DD)
     dateRangeEnd: null,     // for duration mode (YYYY-MM-DD)
@@ -31,6 +32,7 @@ const ReportHub = {
     menuItems: [],
     periodData: null,      // from /api/reports/sales
     stockUsageData: null,  // from /api/reports/stock-usage
+    menuSalesData: null,   // from /api/reports/menu-sales
     receptionRevenue: 0,   // from /api/reports/bedroom-revenue
     
     // UI Local State
@@ -62,18 +64,25 @@ const ReportHub = {
 
     // ─── DATA FETCHING (TWO-STAGE) ────────────────────────────────────────────────
     async fetchAllData() {
+        this.loadingPrimary = true;
         this.setLoading(true);
         const query = this.getQueryString();
 
+        // Period-scoped data must be cleared so slides don't show stale inventory/orders.
+        this.stockUsageData = null;
+        this.menuSalesData = null;
+        this.orders = [];
+        this.renderActiveSlide();
+
         try {
-            const [salesRes, receptionRes] = await Promise.all([
+            const [salesRes, receptionRes, usageRes] = await Promise.all([
                 this.api('GET', `api/reports/sales.php${query}`),
-                this.api('GET', `api/reports/bedroom-revenue.php${query}`, { optional: true })
+                this.api('GET', `api/reports/bedroom-revenue.php${query}`, { optional: true }),
+                this.api('GET', `api/reports/stock-usage.php${query}`, { optional: true })
             ]);
 
             this.periodData = salesRes?.data || null;
-            // Orders are heavy (each order pulls items). Load them lazily only when needed.
-            this.orders = [];
+            this.stockUsageData = usageRes?.data || null;
             // Use reception revenue from sales summary if available, fallback to separate API
             this.receptionRevenue = salesRes?.data?.summary?.receptionRevenue ?? (receptionRes?.data?.totalRevenue || 0);
             
@@ -84,6 +93,8 @@ const ReportHub = {
             console.error('Core data fetch failed:', e);
             this.showError('Critical data load failed.');
             this.setLoading(false);
+        } finally {
+            this.loadingPrimary = false;
         }
     },
 
@@ -97,6 +108,21 @@ const ReportHub = {
             this.orders = Array.isArray(ordersRes) ? ordersRes : (ordersRes?.data || []);
         } catch (e) {
             console.warn('Orders data load failed:', e);
+        } finally {
+            this.loadingOrders = false;
+            this.renderActiveSlide();
+        }
+    },
+
+    async fetchMenuSalesData(query = null) {
+        if (this.loadingOrders) return;
+        this.loadingOrders = true; // Use existing loading state for simplicity
+        try {
+            const q = query ?? this.getQueryString();
+            const res = await this.api('GET', `api/reports/menu-sales.php${q}`);
+            this.menuSalesData = res?.data || null;
+        } catch (e) {
+            console.warn('Menu sales data load failed:', e);
         } finally {
             this.loadingOrders = false;
             this.renderActiveSlide();
@@ -133,7 +159,6 @@ const ReportHub = {
         let periodInvest = (s.periodStockInvestment || 0) + (s.totalOtherExpenses || 0);
         
         // If secondary data (stockUsageData) is loaded, override with accurate "Remaining Inventory Value"
-        // computed per-stock item as: closingStock * unit cost (purchase/avg cost).
         if (this.stockUsageData && this.stockUsageData.stockAnalysis) {
             const inventoryValue = this.stockUsageData.stockAnalysis.reduce(
                 (sum, item) => sum + (item.remainingInvestmentValue ?? ((item.closingStock || 0) * (item.weightedAvgCost || 0))),
@@ -142,38 +167,23 @@ const ReportHub = {
             periodInvest = inventoryValue + (s.totalOtherExpenses || 0);
         }
         
-        // Prefer backend aggregates for speed (no heavy order/items fetch needed for Financial slide)
         const categoryStats = s.categoryStats || {};
         const foodRev = categoryStats.Food || categoryStats.FOOD || 0;
         const drinksRev = categoryStats.Drink || categoryStats.DRINK || 0;
 
-        // Aggregated Menu Sales (aggregated by "name | cashier")
-        const menuSales = {};
-        this.orders.forEach(o => {
-            if (o.status === 'cancelled' || o.isDeleted) return;
-            (o.items || []).forEach(item => {
-                const cashierName = o.createdBy?.name || 'Unknown';
-                const key = `${item.name}|${cashierName}`;
-                if (!menuSales[key]) {
-                    menuSales[key] = { 
-                        name: item.name, 
-                        cashier: cashierName,
-                        category: item.category,
-                        mainCategory: item.mainCategory || 'Food',
-                        quantity: 0,
-                        revenue: 0 
-                    };
-                }
-                menuSales[key].quantity += parseFloat(item.quantity);
-                menuSales[key].revenue += (item.price * item.quantity);
-            });
-        });
+        // Use pre-aggregated Menu Sales if available
+        let menuItemSales = [];
+        let cashierStats = {};
 
-        // Cashier stats are already aggregated by backend
-        const cashierStats = {};
-        Object.entries(s.cashierStats || {}).forEach(([name, amt]) => {
-            cashierStats[name] = { amount: parseFloat(amt || 0), count: 0, food: 0, drinks: 0, foodCount: 0, drinksCount: 0 };
-        });
+        if (this.menuSalesData) {
+            menuItemSales = this.menuSalesData.menuItemSales || [];
+            cashierStats = this.menuSalesData.cashierStats || {};
+        } else {
+            // Fallback (legacy/minimal)
+            Object.entries(s.cashierStats || {}).forEach(([name, amt]) => {
+                cashierStats[name] = { amount: parseFloat(amt || 0), count: 0, food: 0, drinks: 0, foodCount: 0, drinksCount: 0 };
+            });
+        }
 
         return { 
             totalRevenue: totalRev, 
@@ -185,8 +195,7 @@ const ReportHub = {
             totalOrdersCount: s.totalOrders || 0,
             foodOrdersCount: 0,
             drinksOrdersCount: 0,
-            // Menu sales depends on per-order items; only available after lazy orders fetch.
-            menuItemSales: Object.values(menuSales),
+            menuItemSales: menuItemSales,
             periodInvestment: periodInvest,
             periodProfit: totalRev - (s.totalOperationalExpenses || 0) - periodInvest,
             totalOperationalExpenses: s.totalOperationalExpenses || 0
@@ -266,7 +275,7 @@ const ReportHub = {
     renderFinancial() {
         // Financial view needs inventory value for "Stock Invest" (remaining stock investment).
         // Load stock usage data lazily, but immediately when visiting this slide.
-        if (!this.stockUsageData && !this.loadingSecondary) {
+        if (!this.stockUsageData && !this.loadingSecondary && !this.loadingPrimary) {
             this.fetchSecondaryData(this.getQueryString());
         }
         const stats = this.getCalculatedStats();
@@ -325,7 +334,9 @@ const ReportHub = {
 
     renderInventory() {
         if (!this.stockUsageData) {
-            this.fetchSecondaryData(this.getQueryString());
+            if (!this.loadingSecondary && !this.loadingPrimary) {
+                this.fetchSecondaryData(this.getQueryString());
+            }
             return `<div class="p-16 text-center text-gray-500">
                 <i data-lucide="loader-2" class="w-6 h-6 animate-spin inline-block mr-2"></i>
                 <span class="text-xs font-bold uppercase tracking-widest">Loading inventory...</span>
@@ -413,7 +424,9 @@ const ReportHub = {
 
     renderStore() {
         if (!this.stockUsageData) {
-            this.fetchSecondaryData(this.getQueryString());
+            if (!this.loadingSecondary && !this.loadingPrimary) {
+                this.fetchSecondaryData(this.getQueryString());
+            }
             return `<div class="p-16 text-center text-gray-500">
                 <i data-lucide="loader-2" class="w-6 h-6 animate-spin inline-block mr-2"></i>
                 <span class="text-xs font-bold uppercase tracking-widest">Loading store analytics...</span>
@@ -492,11 +505,11 @@ const ReportHub = {
     },
 
     renderMenuSales() {
-        if (!this.orders || this.orders.length === 0) {
-            this.fetchOrdersData(this.getQueryString());
+        if (!this.menuSalesData) {
+            this.fetchMenuSalesData(this.getQueryString());
             return `<div class="p-16 text-center text-gray-500">
                 <i data-lucide="loader-2" class="w-6 h-6 animate-spin inline-block mr-2"></i>
-                <span class="text-xs font-bold uppercase tracking-widest">Loading orders for menu sales...</span>
+                <span class="text-xs font-bold uppercase tracking-widest">Loading menu sales analytics...</span>
             </div>`;
         }
         const stats = this.getCalculatedStats();

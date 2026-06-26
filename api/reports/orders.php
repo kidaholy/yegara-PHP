@@ -36,6 +36,7 @@ try {
 
     $orders = db('orders')->findMany();
     $users = db('users')->findMany();
+    $allItems = db('orderItems')->findMany();
     
     $userMap = [];
     foreach ($users as $u) {
@@ -44,6 +45,12 @@ try {
             'name' => $u['name'],
             'role' => $u['role']
         ];
+    }
+
+    $itemsByOrder = [];
+    foreach ($allItems as $it) {
+        if ($it['isDeleted'] ?? false) continue;
+        $itemsByOrder[$it['orderId']][] = $it;
     }
 
     $filtered = [];
@@ -57,8 +64,8 @@ try {
             $o['createdBy'] = ['name' => 'Unknown Cashier'];
         }
 
-        // Attach items for reports (Menu Sales logic needs this)
-        $o['items'] = db('orderItems')->findMany(['where' => ['orderId' => $o['id']]]);
+        // Use pre-indexed items
+        $o['items'] = $itemsByOrder[$o['id']] ?? [];
 
         $filtered[] = $o;
     }
