@@ -170,6 +170,28 @@ try {
         $db->create(['data' => $finalData]);
         sendJson(['status' => 'success', 'id' => $id, 'data' => $finalData]);
     }
+    elseif ($method === 'PUT' && isset($_GET['action']) && $_GET['action'] === 'checkout-all') {
+        $activeStatuses = ['CHECKIN_APPROVED', 'CHECKOUT_PENDING', 'check_in', 'ACTIVE', 'guests', 'staying'];
+        $requests = $db->findMany(['where' => [
+            'isDeleted' => false,
+            'status' => ['in' => $activeStatuses]
+        ]]);
+
+        $checkedOut = 0;
+        foreach ($requests as $request) {
+            $data = applyStatusTransition($request, 'CHECKED_OUT', []);
+            $db->update(['where' => ['id' => $request['id']], 'data' => $data]);
+            $checkedOut++;
+        }
+
+        sendJson([
+            'status' => 'success',
+            'message' => $checkedOut > 0
+                ? "Checked out {$checkedOut} guest(s)"
+                : 'No checked-in guests to check out',
+            'count' => $checkedOut
+        ]);
+    }
     elseif ($method === 'PUT') {
         $id = $_GET['id'] ?? '';
         $input = json_decode(file_get_contents('php://input'), true);

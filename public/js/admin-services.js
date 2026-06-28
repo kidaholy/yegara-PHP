@@ -442,14 +442,19 @@ const AdminServices = {
                 </div>
             </div>
 
-            <div id="rec-checkout-banner" class="hidden bg-orange-500/10 border border-orange-500/30 rounded-2xl p-5 flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center text-orange-400 shrink-0">
-                    <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            <div id="rec-checkout-banner" class="hidden bg-orange-500/10 border border-orange-500/30 rounded-2xl p-5 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center text-orange-400 shrink-0">
+                        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-black text-orange-300 uppercase tracking-widest">Checkout Due Today</p>
+                        <p id="rec-checkout-banner-text" class="text-xs text-orange-400/80 mt-1">Guests whose stay ends today need to be checked out.</p>
+                    </div>
                 </div>
-                <div>
-                    <p class="text-sm font-black text-orange-300 uppercase tracking-widest">Checkout Due Today</p>
-                    <p class="text-xs text-orange-400/80 mt-1">Submit checkout requests to admin for guests whose stay ends today.</p>
-                </div>
+                <button onclick="AdminServices.checkoutAllGuests()" class="shrink-0 px-5 py-2.5 bg-purple-500/20 border border-purple-500/30 text-purple-300 hover:bg-purple-500 hover:text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2">
+                    <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Checkout All
+                </button>
             </div>
 
             <!-- Stats Row -->
@@ -473,9 +478,13 @@ const AdminServices = {
 
             <!-- Status Pills -->
             <div class="flex items-center justify-between border-b border-gray-800 pb-4 gap-4">
+                <div class="flex flex-wrap items-center gap-2">
                     ${this._statusFilterPillsHTML(activeFilter === 'pending' ? 'all' : activeFilter)}
                 </div>
                 <div class="flex items-center gap-3">
+                    <button id="rec-checkout-all-btn" onclick="AdminServices.checkoutAllGuests()" class="hidden px-4 py-2 bg-purple-500/10 border border-purple-500/20 text-purple-400 hover:bg-purple-500 hover:text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2">
+                        <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Checkout All
+                    </button>
                     ${window.USER_ROLE === 'admin' ? `
                     <button onclick="AdminServices.wipeReception()" class="px-4 py-2 bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2">
                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear All
@@ -1105,6 +1114,29 @@ const AdminServices = {
         }
     },
 
+    _getCheckedInGuests() {
+        const checkedInStatuses = ['CHECKIN_APPROVED', 'check_in', 'ACTIVE', 'guests', 'staying'];
+        return this.receptionRequests.filter(r => checkedInStatuses.includes(r.status));
+    },
+
+    async checkoutAllGuests() {
+        const checkedIn = this._getCheckedInGuests();
+        if (checkedIn.length === 0) {
+            alert('No checked-in guests to check out.');
+            return;
+        }
+        const names = checkedIn.map(g => g.guestName || 'Guest').join(', ');
+        if (!confirm(`Check out all ${checkedIn.length} guest(s)?\n\n${names}`)) return;
+
+        const res = await this.api('PUT', 'api/reception-requests.php?action=checkout-all', { status: 'CHECKED_OUT' });
+        if (res.status === 'success') {
+            alert(res.message || `Checked out ${res.count || checkedIn.length} guest(s) successfully.`);
+            this.fetchQueueData();
+        } else {
+            alert(res?.message || 'Failed to check out guests');
+        }
+    },
+
     async requestExtend(id) {
         const req = this.receptionRequests.find(r => r.id === id);
         if (!req) return;
@@ -1216,8 +1248,32 @@ const AdminServices = {
         if (stayEl) stayEl.textContent = stayCount > 0 ? (totalStayDuration / stayCount).toFixed(1) : '—';
     },
 
+    _updateCheckoutBanner() {
+        const banner = document.getElementById('rec-checkout-banner');
+        const checkoutAllBtn = document.getElementById('rec-checkout-all-btn');
+        const checkedIn = this._getCheckedInGuests();
+        const today = new Date().toISOString().slice(0, 10);
+        const dueGuests = checkedIn.filter(r => r.checkOut && r.checkOut.slice(0, 10) <= today);
+
+        if (checkoutAllBtn) {
+            checkoutAllBtn.classList.toggle('hidden', checkedIn.length === 0);
+        }
+        if (!banner) return;
+
+        if (dueGuests.length > 0) {
+            banner.classList.remove('hidden');
+            const textEl = document.getElementById('rec-checkout-banner-text');
+            if (textEl) {
+                textEl.textContent = `${dueGuests.length} guest(s) due for checkout today: ${dueGuests.map(g => g.guestName || 'Guest').join(', ')}`;
+            }
+        } else {
+            banner.classList.add('hidden');
+        }
+    },
+
     _renderReceptionContent() {
         this._updateReceptionStats();
+        this._updateCheckoutBanner();
         const container = document.getElementById('rec-cards-container');
         if (!container) return;
 
