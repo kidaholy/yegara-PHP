@@ -61,11 +61,23 @@ $menuTiers = db('menuTiers')->findMany(['where' => ['isDeleted' => false]]) ?: [
     .btn-gold { background: linear-gradient(to right, #c5a059, #b59048); color: #0f1110; transition: transform 0.2s, box-shadow 0.2s; }
     .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(197, 160, 89, 0.3); }
     .btn-gold:active { transform: translateY(0); }
+
+    /* Full-viewport services / reception layout */
+    #services-hub-shell {
+        width: 100%;
+        max-width: 100%;
+        height: calc(100vh - 60px);
+        min-height: 0;
+    }
+    #services-content-panel {
+        min-height: 0;
+        width: 100%;
+    }
 </style>
 
-<div class="max-w-screen-2xl w-full flex flex-col h-[calc(100vh-theme(space.4))] overflow-hidden bg-[#0f1110] rounded-2xl mt-2 mb-2 lg:ml-2">
+<div id="services-hub-shell" class="flex flex-col overflow-hidden bg-[#0f1110] w-full">
     <!-- Header / Tab Bar -->
-    <header class="px-8 pt-8 pb-0 border-b border-gray-700/50 bg-gray-800/80 backdrop-blur-xl shrink-0">
+    <header class="px-4 lg:px-6 xl:px-8 pt-4 lg:pt-6 pb-0 border-b border-gray-700/50 bg-gray-800/80 backdrop-blur-xl shrink-0">
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-0">
             <div>
                 <h1 class="text-2xl font-bold text-gray-200 tracking-tight">Services Hub</h1>
@@ -105,7 +117,7 @@ $menuTiers = db('menuTiers')->findMany(['where' => ['isDeleted' => false]]) ?: [
     </header>
 
     <!-- Content -->
-    <div id="services-content-panel" class="flex-1 overflow-y-auto p-8">
+    <div id="services-content-panel" class="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-6 xl:p-8 w-full min-h-0">
         <!-- Populated by admin-services.js -->
     </div>
 </div>
@@ -326,6 +338,213 @@ $menuTiers = db('menuTiers')->findMany(['where' => ['isDeleted' => false]]) ?: [
                 <button type="button" onclick="document.getElementById('rec-extend-modal').classList.add('hidden')" 
                     class="px-5 py-2.5 rounded-lg text-sm font-bold text-gray-400 hover:text-white bg-gray-800 border border-gray-700 transition-all">Cancel</button>
                 <button type="submit" class="px-5 py-2.5 rounded-lg text-sm font-bold bg-[#c5a059] text-gray-900 border border-[#c5a059] hover:bg-[#b59048] transition-all shadow-lg shadow-[#c5a059]/10">Confirm Extension</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Re-check In Modal -->
+<div id="rec-recheckin-modal" class="hidden fixed inset-0 z-[110] bg-gray-900/80 backdrop-blur-sm flex items-center justify-center p-4 md:p-6">
+    <div class="bg-gray-800 w-full max-w-4xl rounded-2xl border border-gray-700 shadow-2xl animate-in overflow-hidden flex flex-col max-h-[92vh]">
+        <div class="px-6 md:px-8 pt-6 md:pt-8 pb-4 border-b border-gray-700/50 shrink-0">
+            <h2 class="text-xl font-bold text-gray-200">Re-check In Guest</h2>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-gray-500 mt-1">Update guest details, room, stay, and payment before checking in again</p>
+        </div>
+
+        <input type="file" id="recheckin-photo-file" accept="image/*" class="sr-only" onchange="AdminServices._rciProfileFileChange(this)">
+        <input type="file" id="recheckin-id-front-file" accept="image/*" class="sr-only" onchange="AdminServices._rciIdUpload(this,'front')">
+        <input type="file" id="recheckin-id-back-file" accept="image/*" class="sr-only" onchange="AdminServices._rciIdUpload(this,'back')">
+        <input type="file" id="recheckin-receipt-file" accept="application/pdf,.pdf" class="sr-only" onchange="AdminServices._rciReceiptFileChange(this)">
+
+        <form onsubmit="AdminServices._submitRecheckIn(event)" class="overflow-y-auto px-6 md:px-8 py-6 space-y-6">
+            <input type="hidden" id="recheckin-request-id">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                <!-- Guest information -->
+                <div class="space-y-5">
+                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-[#c5a059] flex items-center gap-2">
+                        <i data-lucide="user" class="w-3.5 h-3.5"></i> Guest Information
+                    </p>
+
+                    <div class="space-y-2">
+                        <label class="ci-label">Guest Name *</label>
+                        <input type="text" id="recheckin-name" required class="inp" placeholder="Guest name">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="ci-label">Fayda ID (FAN)</label>
+                            <input type="text" id="recheckin-fayda" class="inp" placeholder="1283478638648345">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="ci-label">Phone</label>
+                            <input type="text" id="recheckin-phone" class="inp" placeholder="+251978574875">
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="ci-label">Profile Photo</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="recheckin-photo-url" oninput="AdminServices._rciProfileUrlChange(this.value)"
+                                class="inp flex-1" placeholder="Paste image URL or upload...">
+                            <button type="button" onclick="document.getElementById('recheckin-photo-file').click()"
+                                class="shrink-0 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-500 hover:text-white transition-colors">
+                                <i data-lucide="camera" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div id="recheckin-photo-preview" class="hidden relative w-24 h-24 mt-1">
+                            <img id="recheckin-photo-img" src="" class="w-full h-full object-cover rounded-xl border border-gray-700">
+                            <button type="button" onclick="AdminServices._rciClearProfile()"
+                                class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-[10px]">✕</button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="ci-label">ID Card Photos</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="relative">
+                                <div id="recheckin-id-front-placeholder" onclick="document.getElementById('recheckin-id-front-file').click()"
+                                    class="h-24 bg-gray-900/50 border border-dashed border-gray-700 rounded-xl flex flex-col items-center justify-center text-gray-600 hover:text-gray-400 hover:border-[#c5a059]/30 transition-all cursor-pointer">
+                                    <i data-lucide="image" class="w-4 h-4 mb-1"></i>
+                                    <span class="text-[8px] font-bold uppercase tracking-widest">ID Front</span>
+                                </div>
+                                <div id="recheckin-id-front-preview" class="hidden h-24 rounded-xl overflow-hidden relative border border-gray-700">
+                                    <img id="recheckin-id-front-img" src="" class="w-full h-full object-cover">
+                                    <button type="button" onclick="AdminServices._rciClearId('front')"
+                                        class="absolute top-1 right-1 w-5 h-5 bg-red-500/80 text-white rounded-full text-[10px]">✕</button>
+                                </div>
+                            </div>
+                            <div class="relative">
+                                <div id="recheckin-id-back-placeholder" onclick="document.getElementById('recheckin-id-back-file').click()"
+                                    class="h-24 bg-gray-900/50 border border-dashed border-gray-700 rounded-xl flex flex-col items-center justify-center text-gray-600 hover:text-gray-400 hover:border-[#c5a059]/30 transition-all cursor-pointer">
+                                    <i data-lucide="image" class="w-4 h-4 mb-1"></i>
+                                    <span class="text-[8px] font-bold uppercase tracking-widest">ID Back</span>
+                                </div>
+                                <div id="recheckin-id-back-preview" class="hidden h-24 rounded-xl overflow-hidden relative border border-gray-700">
+                                    <img id="recheckin-id-back-img" src="" class="w-full h-full object-cover">
+                                    <button type="button" onclick="AdminServices._rciClearId('back')"
+                                        class="absolute top-1 right-1 w-5 h-5 bg-red-500/80 text-white rounded-full text-[10px]">✕</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="ci-label">Notes</label>
+                        <textarea id="recheckin-notes" rows="2" class="inp resize-none" placeholder="Additional details or remarks..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Stay & payment -->
+                <div class="space-y-5">
+                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-[#c5a059] flex items-center gap-2">
+                        <i data-lucide="bed" class="w-3.5 h-3.5"></i> Stay & Payment
+                    </p>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="ci-label">Floor</label>
+                            <select id="recheckin-floor" onchange="AdminServices._recheckinFloorChange(this.value)" class="inp"></select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="ci-label">Room *</label>
+                            <select id="recheckin-room" required onchange="AdminServices._updateRecheckInSummary()" class="inp"></select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="ci-label">Stay Duration (Days) *</label>
+                            <input type="number" id="recheckin-duration" required min="1" value="1"
+                                class="inp text-lg font-bold text-[#c5a059]"
+                                oninput="AdminServices._updateRecheckInSummary()">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="ci-label">Number of Guests</label>
+                            <select id="recheckin-guests" class="inp">
+                                <option value="1">1 Guest</option>
+                                <option value="2">2 Guests</option>
+                                <option value="3">3 Guests</option>
+                                <option value="4">4 Guests</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-gray-900/50 border border-gray-700/50 space-y-3">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-gray-500 font-bold uppercase tracking-wider">Check In</span>
+                            <span id="recheckin-checkin-date" class="text-gray-300 font-medium">Today</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-[#c5a059] font-black uppercase tracking-widest">Check Out</span>
+                            <span id="recheckin-checkout-date" class="text-lg font-black text-white">—</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs border-t border-gray-800 pt-3">
+                            <span class="text-gray-500 font-bold uppercase tracking-wider">Total</span>
+                            <span id="recheckin-total" class="text-[#c5a059] font-black">0 ETB</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="ci-label">Payment Method</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="flex-1">
+                                <input type="radio" name="recheckin-payment" value="CASH" class="pay-radio sr-only" checked onchange="AdminServices._toggleRecheckinPaymentFields()">
+                                <div class="pay-btn text-[9px] py-2">CASH</div>
+                            </label>
+                            <label class="flex-1">
+                                <input type="radio" name="recheckin-payment" value="MOBILE BANKING" class="pay-radio sr-only" onchange="AdminServices._toggleRecheckinPaymentFields()">
+                                <div class="pay-btn text-[9px] py-2">MOBILE BANKING</div>
+                            </label>
+                            <label class="flex-1">
+                                <input type="radio" name="recheckin-payment" value="TELEBIRR" class="pay-radio sr-only" onchange="AdminServices._toggleRecheckinPaymentFields()">
+                                <div class="pay-btn text-[9px] py-2">TELEBIRR</div>
+                            </label>
+                            <label class="flex-1">
+                                <input type="radio" name="recheckin-payment" value="CHEQUE" class="pay-radio sr-only" onchange="AdminServices._toggleRecheckinPaymentFields()">
+                                <div class="pay-btn text-[9px] py-2">CHEQUE</div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="recheckin-payment-extra" class="hidden space-y-4">
+                        <div class="space-y-2">
+                            <label class="ci-label">Transaction Number</label>
+                            <input type="text" id="recheckin-transaction" class="inp" placeholder="Enter transaction number">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="ci-label">Receipt URL or Upload</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="recheckin-receipt-url" oninput="AdminServices._rciReceiptChange(this.value)"
+                                    class="inp flex-1" placeholder="https://receipt.dashensuperapp.com/...">
+                                <button type="button" onclick="document.getElementById('recheckin-receipt-file').click()"
+                                    class="shrink-0 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition-colors">
+                                    PDF
+                                </button>
+                            </div>
+                        </div>
+                        <div id="recheckin-receipt-preview" class="hidden bg-gray-900/50 rounded-xl p-3 border border-gray-700 space-y-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <p id="recheckin-receipt-filename" class="text-xs font-bold text-white truncate">Receipt</p>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <button type="button" onclick="AdminServices.openReceiptFull(document.getElementById('recheckin-receipt-url')?.value)"
+                                        class="px-2 py-1 bg-[#c5a059]/10 border border-[#c5a059]/30 rounded text-[9px] font-black uppercase text-[#c5a059]">Open</button>
+                                    <button type="button" onclick="AdminServices._rciClearReceipt()"
+                                        class="w-6 h-6 rounded bg-red-500/10 border border-red-500/20 text-red-500 text-[10px]">✕</button>
+                                </div>
+                            </div>
+                            <div id="recheckin-receipt-embed-wrap" class="hidden rounded-lg overflow-hidden border border-gray-700 bg-white h-40">
+                                <iframe id="recheckin-receipt-iframe" class="w-full h-full bg-white pointer-events-none" title="Receipt preview" src="about:blank"></iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-gray-700/50">
+                <button type="button" onclick="document.getElementById('rec-recheckin-modal').classList.add('hidden')"
+                    class="px-5 py-2.5 rounded-lg text-sm font-bold text-gray-400 hover:text-white bg-gray-800 border border-gray-700 transition-all">Cancel</button>
+                <button type="submit" class="px-5 py-2.5 rounded-lg text-sm font-bold bg-[#c5a059] text-gray-900 border border-[#c5a059] hover:bg-[#b59048] transition-all shadow-lg shadow-[#c5a059]/10">Confirm Check-in</button>
             </div>
         </form>
     </div>

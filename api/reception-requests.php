@@ -69,6 +69,45 @@ function applyStatusTransition($request, $newStatus, $input = []) {
             setRoomStatus($request['roomNumber'], 'occupied');
         }
     }
+    // Re-check-in (returning checked-out guest)
+    elseif ($newStatus === 'CHECKIN_APPROVED' && in_array($current, ['CHECKED_OUT', 'CHECKOUT_APPROVED', 'check_out', 'checked-out'], true)) {
+        $roomNumber = trim((string)($input['roomNumber'] ?? $request['roomNumber'] ?? ''));
+        $room = findRoomByNumber($roomNumber);
+        $pricePerNight = floatval($room['price'] ?? $request['pricePerNight'] ?? 0);
+        $stayDuration = max(1, (int)($input['stayDuration'] ?? $request['stayDuration'] ?? 1));
+        $guests = max(1, (int)($input['guests'] ?? $request['guests'] ?? 1));
+        $checkIn = date('c');
+        $checkOut = addDays($checkIn, $stayDuration);
+
+        $data['roomNumber'] = $roomNumber;
+        $data['stayDuration'] = $stayDuration;
+        $data['guests'] = $guests;
+        $data['checkIn'] = $checkIn;
+        $data['checkOut'] = $checkOut;
+        $data['pricePerNight'] = $pricePerNight;
+        $data['roomPrice'] = $pricePerNight * $stayDuration;
+        $data['approvedAt'] = date('c');
+        $data['checkedOutAt'] = null;
+
+        $profileFields = ['guestName', 'phone', 'faydaId', 'paymentMethod', 'receiptNumber', 'transactionUrl', 'notes'];
+        foreach ($profileFields as $field) {
+            if (array_key_exists($field, $input)) {
+                $data[$field] = $input[$field];
+            }
+        }
+        if (!empty(trim((string)($input['guestName'] ?? '')))) {
+            $data['guestName'] = trim((string)$input['guestName']);
+        }
+        foreach (['profilePhoto', 'idPhotoFront', 'idPhotoBack'] as $photoField) {
+            if (!empty($input[$photoField])) {
+                $data[$photoField] = $input[$photoField];
+            }
+        }
+
+        if ($roomNumber) {
+            setRoomStatus($roomNumber, 'occupied');
+        }
+    }
     // Direct extension (staying in CHECKIN_APPROVED)
     elseif ($newStatus === 'CHECKIN_APPROVED' && $current === 'CHECKIN_APPROVED') {
         $extraDays = (int)($input['extraDays'] ?? 0);
@@ -213,6 +252,31 @@ try {
 
         if ($newStatus === 'CHECKED_OUT' && (in_array($current, ['CHECKED_OUT'], true))) {
             throw new Exception("Guest is not currently checked in");
+        }
+
+        $checkedOutStatuses = ['CHECKED_OUT', 'CHECKOUT_APPROVED', 'check_out', 'checked-out'];
+        if ($newStatus === 'CHECKIN_APPROVED' && in_array($current, $checkedOutStatuses, true)) {
+            $roomNumber = trim((string)($input['roomNumber'] ?? $request['roomNumber'] ?? ''));
+            if (!$roomNumber) throw new Exception("Room number is required for re-check-in");
+
+            $guestName = trim((string)($input['guestName'] ?? $request['guestName'] ?? ''));
+            if (!$guestName) throw new Exception("Guest name is required");
+
+            $room = findRoomByNumber($roomNumber);
+            if (!$room) throw new Exception("Room {$roomNumber} not found");
+
+            $heldByOther = $db->findFirst(['where' => [
+                'isDeleted' => false,
+                'roomNumber' => $roomNumber,
+                'status' => ['in' => ['CHECKIN_APPROVED', 'CHECKOUT_PENDING', 'EXTEND_PENDING', 'check_in', 'ACTIVE', 'guests', 'staying']],
+                'id' => ['not' => $id]
+            ]]);
+            if ($heldByOther) {
+                throw new Exception("Room {$roomNumber} is already occupied");
+            }
+            if (($room['status'] ?? '') === 'occupied' && (string)($request['roomNumber'] ?? '') !== $roomNumber) {
+                throw new Exception("Room {$roomNumber} is not available");
+            }
         }
 
         $data = applyStatusTransition($request, $newStatus, $input);
