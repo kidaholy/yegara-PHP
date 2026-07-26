@@ -106,3 +106,68 @@ function getBusinessDateForTimestamp($timestamp) {
         return null;
     }
 }
+
+/**
+ * Raise memory for report endpoints that aggregate large JSON collections.
+ */
+function ensureReportMemory($limit = '512M') {
+    $current = ini_get('memory_limit');
+    if ($current === '-1') return;
+    $toBytes = function ($val) {
+        $val = trim((string)$val);
+        $unit = strtolower(substr($val, -1));
+        $num = (float)$val;
+        return match ($unit) {
+            'g' => (int)($num * 1073741824),
+            'm' => (int)($num * 1048576),
+            'k' => (int)($num * 1024),
+            default => (int)$num,
+        };
+    };
+    if ($toBytes($current) < $toBytes($limit)) {
+        @ini_set('memory_limit', $limit);
+    }
+}
+
+/**
+ * Load orders whose createdAt is in [start, end).
+ * Prefer SQL filtering so we never materialize the full orders table.
+ */
+function fetchOrdersInReportRange(DateTime $start, DateTime $end, array $extraWhere = []) {
+    $where = array_merge($extraWhere, [
+        'createdAt' => [
+            'gte' => $start->format('Y-m-d H:i:s'),
+            'lt' => $end->format('Y-m-d H:i:s'),
+        ],
+    ]);
+    return db('orders')->findMany(['where' => $where]);
+}
+
+/**
+ * Load orders with createdAt >= start (period + post-period backtracking).
+ */
+function fetchOrdersSince(DateTime $start, array $extraWhere = []) {
+    $where = array_merge($extraWhere, [
+        'createdAt' => ['gte' => $start->format('Y-m-d H:i:s')],
+    ]);
+    return db('orders')->findMany(['where' => $where]);
+}
+
+/**
+ * Load orderItems for the given order IDs (chunked to stay under SQLite variable limits).
+ */
+function fetchOrderItemsForOrders(array $orderIds) {
+    $orderIds = array_values(array_unique(array_filter($orderIds)));
+    if (empty($orderIds)) return [];
+
+    $items = [];
+    foreach (array_chunk($orderIds, 400) as $chunk) {
+        $batch = db('orderItems')->findMany([
+            'where' => ['orderId' => ['in' => $chunk]],
+        ]);
+        foreach ($batch as $it) {
+            $items[] = $it;
+        }
+    }
+    return $items;
+}

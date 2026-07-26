@@ -20,6 +20,7 @@ $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 1000;
 $includeDeleted = ($_GET['includeDeleted'] ?? 'false') === 'true';
 
 try {
+    ensureReportMemory();
     if ($period || ($startDate && $endDate)) {
         $range = resolveReportDateRange($period ?? 'week', $startDate, $endDate);
         $start = $range['start'];
@@ -34,9 +35,14 @@ try {
         $end = $range['end'];
     }
 
-    $orders = db('orders')->findMany();
+    $orders = fetchOrdersInReportRange($start, $end);
     $users = db('users')->findMany();
-    $allItems = db('orderItems')->findMany();
+    $orderIds = [];
+    foreach ($orders as $o) {
+        if (!$includeDeleted && ($o['isDeleted'] ?? false)) continue;
+        $orderIds[] = $o['id'];
+    }
+    $allItems = fetchOrderItemsForOrders($orderIds);
     
     $userMap = [];
     foreach ($users as $u) {

@@ -33,7 +33,7 @@ const AdminServices = {
         this.setTab(window.INITIAL_TAB || 'menu-standard');
         this.fetchQueueData();
         this.pollingTimer = setInterval(() => this.fetchQueueData(), 15000);
-        lucide.createIcons();
+        window.createLucideIcons();
     },
 
     // ─── POLLING ───────────────────────────────────────────────────────────────
@@ -94,7 +94,12 @@ const AdminServices = {
             const on = btn.dataset.tab === tab;
             btn.classList.toggle('active-tab', on);
         });
-        this._renderPanel();
+        try {
+            this._renderPanel();
+        } catch (e) {
+            console.warn('Panel render error:', e);
+        }
+        // Always fetch data even if icon rendering failed
         if (tab === 'menu-standard') this._initMenuManager();
         if (tab === 'rooms') this.fetchRoomsData();
         if (tab === 'vip') this.fetchTiersData();
@@ -110,7 +115,7 @@ const AdminServices = {
             'reception': () => this._buildReceptionShellHTML()
         };
         panel.innerHTML = `${(map[this.activeTab] || (() => ''))()}`;
-        lucide.createIcons();
+        window.createLucideIcons();
         if (this.activeTab === 'reception') this._renderReceptionContent();
     },
 
@@ -209,14 +214,17 @@ const AdminServices = {
             const [rr, fr, ur, tr] = await Promise.all([
                 this.api('GET', 'api/admin/rooms.php'),
                 this.api('GET', 'api/admin/floors.php'),
-                this.api('GET', 'api/users.php'),
-                this.api('GET', 'api/admin/menu-tiers.php')
+                this.api('GET', 'api/users.php').catch(() => ({ data: [] })),
+                this.api('GET', 'api/admin/menu-tiers.php').catch(() => ({ data: [] }))
             ]);
             this.rooms = rr.data || [];
             this.floors = fr.data || [];
             this.cashiers = (ur.data || []).filter(u => ['admin','cashier'].includes(u.role));
             this.menuTiers = tr.data || [];
-        } catch(e) { console.warn(e); }
+        } catch(e) {
+            console.warn('Rooms load failed:', e);
+            this.rooms = this.rooms || [];
+        }
         if (!skipRender) this._renderPanel();
     },
 
@@ -853,7 +861,7 @@ const AdminServices = {
             this._receiptFullUrl = val.trim();
             this._receiptFullTitle = label;
             pdfPreview.classList.remove('hidden');
-            lucide.createIcons();
+            window.createLucideIcons();
         } else {
             if (iframe) iframe.src = 'about:blank';
             if (embedWrap) embedWrap.classList.add('hidden');
@@ -890,7 +898,7 @@ const AdminServices = {
         if (fallback) fallback.classList.add('hidden');
         if (iframe) iframe.src = receiptUrl;
         if (modal) modal.classList.remove('hidden');
-        lucide.createIcons();
+        window.createLucideIcons();
     },
 
     closeReceiptFull() {
@@ -1150,7 +1158,7 @@ const AdminServices = {
         if (totalDisp) totalDisp.textContent = total.toLocaleString();
         if (infoDisp) infoDisp.textContent = `${price.toLocaleString()} ETB/night × ${days}`;
         
-        lucide.createIcons();
+        window.createLucideIcons();
     },
 
     _togglePaymentFields() {
@@ -1348,7 +1356,7 @@ const AdminServices = {
 
         this._updateRecheckInSummary();
         document.getElementById('rec-recheckin-modal').classList.remove('hidden');
-        lucide.createIcons();
+        window.createLucideIcons();
     },
 
     _recheckinFloorChange(floorId, preselectRoom = null) {
@@ -1621,7 +1629,7 @@ const AdminServices = {
         container.innerHTML = list.map(r => this._renderGuestCard(r, {
             showReceptionActions: r.status === 'CHECKIN_APPROVED'
         })).join('');
-        lucide.createIcons();
+        window.createLucideIcons();
     },
 
     _setReceptionPeriod(p) {
@@ -1660,7 +1668,7 @@ const AdminServices = {
                         <img src="api/cashier/image.php?id=${encodeURIComponent(r.id)}&collection=receptionRequests&t=${Date.now()}" 
                              loading="lazy" decoding="async"
                              class="w-full h-full object-cover rounded-xl"
-                             onerror="this.parentElement.innerHTML='<i data-lucide=&quot;user&quot; class=&quot;w-5 h-5 text-gray-500&quot;></i>';lucide.createIcons();">
+                             onerror="this.parentElement.innerHTML='<i data-lucide=&quot;user&quot; class=&quot;w-5 h-5 text-gray-500&quot;></i>';window.createLucideIcons();">
                     </div>
                     <div class="min-w-0">
                         <h4 class="text-sm font-black text-gray-200 uppercase tracking-widest truncate">${r.guestName || 'Guest'}</h4>
@@ -1850,7 +1858,7 @@ const AdminServices = {
         `;
         document.getElementById('rec-detail-modal').classList.remove('hidden');
         document.getElementById('rec-detail-id-hidden').value = id;
-        lucide.createIcons();
+        window.createLucideIcons();
     },
 
 
@@ -1871,10 +1879,17 @@ const AdminServices = {
     },
 
     // ─── HELPERS ───────────────────────────────────────────────────────────────
-    api(method, url, data) {
-        const opt = { method, headers: { 'Content-Type': 'application/json' } };
+    async api(method, url, data) {
+        const opt = { method, headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin' };
         if (data) opt.body = JSON.stringify(data);
-        return fetch(url, opt).then(r => r.json()).catch(() => ({}));
+        const r = await fetch(url, opt);
+        const text = await r.text();
+        let json = null;
+        try { json = text ? JSON.parse(text) : null; } catch { json = null; }
+        if (!r.ok || (json && json.status === 'error')) {
+            throw new Error((json && (json.message || json.error)) || `Request failed (${r.status})`);
+        }
+        return json || {};
     },
 
     // Stubs overridden by services.php inline script

@@ -3,8 +3,9 @@
 # dependencies
 /vendor/
 
-# data (removed restriction to allow syncing to GitHub)
+# data (database excluded due to size limit)
 # /data/*.json (removed)
+data/database.sqlite
 
 # production / temp
 /build/

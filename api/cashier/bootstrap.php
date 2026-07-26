@@ -191,8 +191,15 @@ try {
     }
 
     $checkedInGuests = array_values(array_filter(
-        db('receptionRequests')->findMany(['where' => ['isDeleted' => false]]),
-        fn($g) => ($g['status'] ?? '') === 'CHECKIN_APPROVED' && trim((string)($g['roomNumber'] ?? '')) !== ''
+        db('receptionRequests')->findMany([
+            'where' => [
+                'isDeleted' => false,
+                'status' => 'CHECKIN_APPROVED',
+            ],
+            // ID/profile photos are huge base64 blobs (~100MB+ total) — never load them here
+            'exclude' => ['profilePhoto', 'idPhotoFront', 'idPhotoBack'],
+        ]),
+        fn($g) => trim((string)($g['roomNumber'] ?? '')) !== ''
     ));
 
     $guestByRoom = [];

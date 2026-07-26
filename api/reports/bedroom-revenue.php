@@ -19,7 +19,10 @@ try {
     $start = $range['start'];
     $end = $range['end'];
 
-    $requests = db('receptionRequests')->findMany(['where' => ['isDeleted' => false]]);
+    $requests = db('receptionRequests')->findMany([
+        'where' => ['isDeleted' => false],
+        'exclude' => ['profilePhoto', 'idPhotoFront', 'idPhotoBack'],
+    ]);
 
     $revenueStatuses = ['CHECKIN_APPROVED', 'CHECKED_OUT', 'CHECKOUT_APPROVED', 'ACTIVE', 'staying'];
     $revenueByDay = [];

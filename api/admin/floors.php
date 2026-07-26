@@ -11,9 +11,9 @@ try {
     $method = $_SERVER['REQUEST_METHOD'];
 
     if ($method === 'GET') {
-        requireAuth(['admin', 'reception', 'receptionist'], ['settings:view', 'services:view', 'reception:access']);
+        requireApiAuth(['admin', 'reception', 'receptionist'], ['settings:view', 'services:view', 'reception:access']);
     } else {
-        requireAuth(['admin'], ['settings:update', 'services:update']);
+        requireApiAuth(['admin'], ['settings:update', 'services:update']);
     }
     $id = $_GET['id'] ?? null;
     $input = json_decode(file_get_contents('php://input'), true);

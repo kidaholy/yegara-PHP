@@ -681,7 +681,7 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
         }
         document.getElementById('room-modal').classList.remove('hidden');
         renderRoomGrid();
-        lucide.createIcons();
+        window.createLucideIcons();
     }
 
     function closeRoomModal() {
@@ -741,7 +741,7 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
         document.getElementById('table-modal').classList.remove('hidden');
         renderFloorTabs();
         renderTableGrid();
-        lucide.createIcons();
+        window.createLucideIcons();
     }
 
     function closeTableModal() {
@@ -825,7 +825,7 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
             }).join('');
         }
         
-        lucide.createIcons();
+        window.createLucideIcons();
     }
 
     function renderGrid() {
@@ -861,7 +861,7 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
         renderMainTabs();
         renderCategoryChips();
         renderGrid();
-        lucide.createIcons();
+        window.createLucideIcons();
     }
 
     function setActiveTab(tab) {
@@ -920,7 +920,7 @@ renderHeader($posTitle, ['nav' => 'pos', 'posTab' => $posTab]);
         document.getElementById('cart-total-val').textContent = Number(total).toLocaleString();
         const totalTop = document.getElementById('cart-total');
         if (totalTop) totalTop.textContent = fmt(total);
-        lucide.createIcons();
+        window.createLucideIcons();
     }
 
     async function placeOrder() {

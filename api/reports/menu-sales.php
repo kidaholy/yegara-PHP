@@ -9,13 +9,20 @@ requireApiAuth(['admin', 'reception', 'store', 'cashier'], [
 ]);
 
 try {
+    ensureReportMemory();
     $period = $_GET['period'] ?? 'week';
     $range = resolveReportDateRange($period, $_GET['startDate'] ?? null, $_GET['endDate'] ?? null);
     $start = $range['start'];
     $end = $range['end'];
 
-    $allOrders = db('orders')->findMany();
-    $allOrderItems = db('orderItems')->findMany();
+    $allOrders = fetchOrdersInReportRange($start, $end);
+    $orderIds = [];
+    foreach ($allOrders as $o) {
+        if ($o['isDeleted'] ?? false) continue;
+        if (($o['status'] ?? '') === 'cancelled') continue;
+        $orderIds[] = $o['id'];
+    }
+    $allOrderItems = fetchOrderItemsForOrders($orderIds);
     $users = db('users')->findMany();
 
     $userMap = [];
@@ -33,6 +40,7 @@ try {
 
     $menuSales = [];
     $cashierStats = [];
+    $processedCount = 0;
     
     // Aggregation Logic (Moved from Frontend)
     foreach ($allOrders as $o) {
@@ -42,6 +50,7 @@ try {
         $orderDateStr = $o['createdAt'] ?? null;
         if (!$orderDateStr) continue;
         if (!isWithinReportRange($orderDateStr, $start, $end)) continue;
+        $processedCount++;
 
         $cashierName = $o['createdBy']['name'] ?? ($userMap[$o['createdById'] ?? ''] ?? 'Unknown');
         
@@ -104,8 +113,8 @@ try {
             'menuItemSales' => array_values($menuSales),
             'cashierStats' => $cashierStats,
             'summary' => [
-                'totalOrders' => count($allOrders), // Total for period info
-                'processed' => count($allOrders)
+                'totalOrders' => $processedCount,
+                'processed' => $processedCount
             ]
         ]
     ]);

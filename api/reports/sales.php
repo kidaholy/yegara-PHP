@@ -14,14 +14,20 @@ requireApiAuth(['admin', 'reception', 'store', 'cashier'], [
 ]);
 
 try {
+    ensureReportMemory();
     $period = $_GET['period'] ?? 'week';
     $range = resolveReportDateRange($period, $_GET['startDate'] ?? null, $_GET['endDate'] ?? null);
     $start = $range['start'];
     $end = $range['end'];
 
-    $allOrders = db('orders')->findMany();
-    // Load order items once (avoid N+1 queries)
-    $allOrderItems = db('orderItems')->findMany();
+    // Date-scoped load — never pull the full orders/orderItems tables into memory.
+    $rangeOrders = fetchOrdersInReportRange($start, $end);
+    $orderIds = [];
+    foreach ($rangeOrders as $o) {
+        if ($o['isDeleted'] ?? false) continue;
+        $orderIds[] = $o['id'];
+    }
+    $allOrderItems = fetchOrderItemsForOrders($orderIds);
     $itemsByOrderId = [];
     foreach ($allOrderItems as $it) {
         $oid = $it['orderId'] ?? null;
@@ -33,7 +39,10 @@ try {
     $allOperationalExpenses = db('operationalExpenses')->findMany();
     // Restock investment is stored inside each stock item (restockHistory[])
     $allStocks = db('stocks')->findMany();
-    $allReception = db('receptionRequests')->findMany(['where' => ['isDeleted' => false]]);
+    $allReception = db('receptionRequests')->findMany([
+        'where' => ['isDeleted' => false],
+        'exclude' => ['profilePhoto', 'idPhotoFront', 'idPhotoBack'],
+    ]);
     
     $filteredOrders = [];
     $totalRevenue = 0;
@@ -46,8 +55,9 @@ try {
     $orderStats = ['total' => 0, 'completed' => 0, 'pending' => 0, 'cancelled' => 0, 'served' => 0];
     $paymentStats = [];
 
-    foreach ($allOrders as $order) {
+    foreach ($rangeOrders as $order) {
         if ($order['isDeleted'] ?? false) continue;
+        // SQL already scoped createdAt; keep PHP guard for edge-format dates
         if (!isWithinReportRange($order['createdAt'] ?? null, $start, $end)) continue;
 
         $filteredOrders[] = $order;

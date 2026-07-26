@@ -16,9 +16,9 @@ $method = $_SERVER['REQUEST_METHOD'];
 $role = $_SESSION['role'] ?? '';
 
 if ($method === 'GET') {
-    requireAuth(['admin', 'reception', 'receptionist'], ['settings:view', 'services:view', 'reception:access']);
+    requireApiAuth(['admin', 'reception', 'receptionist'], ['settings:view', 'services:view', 'reception:access']);
 } else {
-    requireAuth(['admin'], ['settings:update', 'services:update']);
+    requireApiAuth(['admin'], ['settings:update', 'services:update']);
 }
 
 try {

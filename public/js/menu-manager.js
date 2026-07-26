@@ -110,17 +110,24 @@ class MenuManager {
     async loadData() {
         this.state.loading = true;
         try {
-            const [menuRes, catRes, distRes, stockRes] = await Promise.all([
-                this._api('GET', `${this.config.apiBaseUrl}?collection=${this.config.collection}&excludeImages=true&t=${Date.now()}`),
-                this._api('GET', `api/categories.php?type=${this.config.categoryType}`),
-                this._api('GET', `api/categories.php?type=distribution`),
-                this._api('GET', `api/stock.php?availableOnly=false`)
-            ]);
+            const menuRes = await this._api('GET', `${this.config.apiBaseUrl}?collection=${this.config.collection}&excludeImages=true&t=${Date.now()}`);
             this.state.items = menuRes.data || [];
+        } catch (e) {
+            console.error('MenuManager menu load error', e);
+            this.state.items = [];
+        }
+        try {
+            const [catRes, distRes, stockRes] = await Promise.all([
+                this._api('GET', `api/categories.php?type=${this.config.categoryType}`).catch(() => []),
+                this._api('GET', `api/categories.php?type=distribution`).catch(() => []),
+                this._api('GET', `api/stock.php?availableOnly=false`).catch(() => [])
+            ]);
             this.state.categories = Array.isArray(catRes) ? catRes : (catRes.data || []);
             this.state.distributions = Array.isArray(distRes) ? distRes : (distRes.data || []);
             this.state.stocks = Array.isArray(stockRes) ? stockRes : [];
-        } catch(e) { console.error('MenuManager load error', e); }
+        } catch (e) {
+            console.error('MenuManager secondary load error', e);
+        }
         this.state.loading = false;
     }
 
@@ -130,7 +137,7 @@ class MenuManager {
         this._renderFilters();
         this._renderItems();
         this._renderPagination();
-        lucide.createIcons();
+        window.createLucideIcons();
     }
 
     _renderTabs() {
@@ -207,7 +214,7 @@ class MenuManager {
                          loading="lazy" decoding="async"
                          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
                          alt="${item.name}"
-                         onerror="this.parentElement.innerHTML='<div class=&quot;h-full bg-gradient-to-r from-[#c5a059]/10 to-transparent flex items-center justify-center text-gray-700&quot;><i data-lucide=&quot;image-off&quot; class=&quot;w-6 h-6&quot;></i></div>';lucide.createIcons();">
+                         onerror="this.parentElement.innerHTML='<div class=&quot;h-full bg-gradient-to-r from-[#c5a059]/10 to-transparent flex items-center justify-center text-gray-700&quot;><i data-lucide=&quot;image-off&quot; class=&quot;w-6 h-6&quot;></i></div>';window.createLucideIcons();">
                 </div>` : `<div class="h-10 bg-gradient-to-r from-[#c5a059]/10 to-transparent"></div>`}
                 <div class="p-4 space-y-2">
                     <div class="flex items-start justify-between gap-2">
@@ -359,9 +366,16 @@ class MenuManager {
     }
 
     // ─── API Helper ────────────────────────────────────────────────────────────
-    _api(method, url, data) {
-        const opt = { method, headers: { 'Content-Type': 'application/json' } };
+    async _api(method, url, data) {
+        const opt = { method, headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin' };
         if (data) opt.body = JSON.stringify(data);
-        return fetch(url, opt).then(r => r.json()).catch(() => ({}));
+        const r = await fetch(url, opt);
+        const text = await r.text();
+        let json = null;
+        try { json = text ? JSON.parse(text) : null; } catch { json = null; }
+        if (!r.ok || (json && json.status === 'error')) {
+            throw new Error((json && (json.message || json.error)) || `Request failed (${r.status})`);
+        }
+        return json || {};
     }
 }

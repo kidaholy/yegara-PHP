@@ -45,7 +45,10 @@ class SqliteDB {
 
     private function decode($row) {
         if (!$row) return null;
-        $data = json_decode($row['data'], true);
+        $data = json_decode($row['data'] ?? '', true);
+        if (!is_array($data)) {
+            $data = [];
+        }
         $data['id'] = $row['id']; // Ensure ID from column is used
         return $data;
     }

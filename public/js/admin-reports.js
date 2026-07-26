@@ -72,9 +72,9 @@ const ReportHub = {
         this.stockUsageData = null;
         this.menuSalesData = null;
         this.orders = [];
-        this.renderActiveSlide();
 
         try {
+            this.renderActiveSlide();
             const [salesRes, receptionRes, usageRes] = await Promise.all([
                 this.api('GET', `api/reports/sales.php${query}`),
                 this.api('GET', `api/reports/bedroom-revenue.php${query}`, { optional: true }),
@@ -93,6 +93,10 @@ const ReportHub = {
             console.error('Core data fetch failed:', e);
             this.showError('Critical data load failed.');
             this.setLoading(false);
+            const panel = document.getElementById('slide-panel');
+            if (panel) {
+                panel.innerHTML = `<div class="p-20 text-center text-red-400 text-xs font-bold uppercase tracking-widest">Report data failed to load.<br><span class="text-gray-500 font-normal normal-case tracking-normal mt-2 block">${e.message || e}</span></div>`;
+            }
         } finally {
             this.loadingPrimary = false;
         }
@@ -269,7 +273,7 @@ const ReportHub = {
             default: html = `<div class="p-20 text-center">Section ${slide.label} Content</div>`;
         }
         panel.innerHTML = `<div class="${animClass}">${html}</div>`;
-        lucide.createIcons();
+        window.createLucideIcons();
     },
 
     renderFinancial() {
@@ -892,7 +896,7 @@ const ReportHub = {
             if (strArea) {
                 strArea.innerHTML = this.renderStoreResults(filtered);
             }
-            lucide.createIcons();
+            window.createLucideIcons();
         } else {
             this.renderActiveSlide();
         }
@@ -915,7 +919,7 @@ const ReportHub = {
                 return true;
             });
             resultsArea.innerHTML = this.renderMenuSalesResults(stats, filtered);
-            lucide.createIcons();
+            window.createLucideIcons();
         } else {
             this.renderActiveSlide();
         }

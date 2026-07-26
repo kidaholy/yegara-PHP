@@ -15,6 +15,7 @@ requireApiAuth(['admin', 'reception', 'store', 'cashier'], [
 ]);
 
 try {
+    ensureReportMemory();
     $period = $_GET['period'] ?? 'week';
     $range = resolveReportDateRange($period, $_GET['startDate'] ?? null, $_GET['endDate'] ?? null);
     $start = $range['start'];
@@ -51,8 +52,10 @@ try {
         }
     }
 
-    $orders = db('orders')->findMany();
-    $allOrderItems = db('orderItems')->findMany(); 
+    // Period + post-period only (needed for stock backtracking) — not full history
+    $orders = fetchOrdersSince($start);
+    $orderIds = array_map(fn($o) => $o['id'], $orders);
+    $allOrderItems = fetchOrderItemsForOrders($orderIds);
     $storeLogs = db('storeLogs')->findMany();
 
     // Index items by orderId for fast lookup

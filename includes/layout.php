@@ -73,8 +73,20 @@ function renderHeader($title = "Management System", $options = []) {
         <script src="https://cdn.tailwindcss.com"></script>
         <!-- Google Fonts: Inter -->
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-        <!-- Lucide Icons -->
-        <script src="https://unpkg.com/lucide@latest"></script>
+        <!-- Lucide Icons (pinned — @latest can break or fail to load) -->
+        <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+        <script>
+            // Safe global helper — never throw if CDN blocked / not ready
+            window.createLucideIcons = function createLucideIcons() {
+                try {
+                    if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+                        lucide.createIcons();
+                    }
+                } catch (e) {
+                    console.warn('Lucide icons skipped:', e);
+                }
+            };
+        </script>
         <!-- Chart.js -->
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <style>
@@ -311,7 +323,7 @@ function renderFooter() {
         </main>
 
         <script>
-            lucide.createIcons();
+            window.createLucideIcons();
 
             // Mobile Menu Toggle Logic
             const mobileMenu = document.getElementById('mobile-menu');

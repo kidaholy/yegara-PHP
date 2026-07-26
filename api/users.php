@@ -14,9 +14,9 @@ function sendJson($data, $status = 200) {
 
 $method = $_SERVER['REQUEST_METHOD'];
 if ($method === 'GET') {
-    requireAuth(['admin', 'cashier', 'receptionist', 'reception'], ['services:view', 'users:view']);
+    requireApiAuth(['admin', 'cashier', 'receptionist', 'reception'], ['services:view', 'users:view']);
 } else {
-    requireAuth(['admin'], ['users:create', 'users:update', 'users:delete']);
+    requireApiAuth(['admin'], ['users:create', 'users:update', 'users:delete']);
 }
 
 try {
